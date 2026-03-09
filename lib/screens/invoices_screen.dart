@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:facturation/storage/invoices_repo.dart';
+import 'package:my_app/storage/invoices_repo.dart';
 import 'create_invoice_screen.dart';
-import 'invoice_edit_screen.dart'; // ✅ add this screen
+import 'invoice_edit_screen.dart';
 
 class InvoicesScreen extends StatefulWidget {
   const InvoicesScreen({super.key});
@@ -24,11 +24,36 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final data = await _repo.getAllInvoicesWithClient();
-    setState(() {
-      _invoices = data;
-      _loading = false;
-    });
+
+    try {
+      final data = await _repo.getAllInvoices();
+      setState(() {
+        _invoices = data;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _invoices = [];
+        _loading = false;
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Load failed: $e")),
+      );
+    }
+  }
+
+  int _toInt(dynamic v, [int fallback = 0]) {
+    if (v == null) return fallback;
+    if (v is int) return v;
+    return int.tryParse(v.toString()) ?? fallback;
+  }
+
+  double _toDouble(dynamic value, [double fallback = 0.0]) {
+    if (value == null) return fallback;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? fallback;
   }
 
   DateTime _parseDate(String s) {
@@ -61,6 +86,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     return cs.onTertiaryContainer;
   }
 
+  String _money(dynamic value) {
+    final n = _toDouble(value);
+    return n.toStringAsFixed(3);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -76,31 +106,31 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final saved = await Navigator.push(
+          await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
           );
-          if (saved == true) await _load();
+          await _load();
         },
         icon: const Icon(Icons.add),
         label: const Text("New Invoice"),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _invoices.isEmpty
-                ? _EmptyInvoices(onCreate: () async {
-                    final saved = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
-                    );
-                    if (saved == true) await _load();
-                  })
+                ? _EmptyInvoices(
+                    onCreate: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+                      );
+                      await _load();
+                    },
+                  )
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: ListView.separated(
@@ -110,17 +140,19 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                       itemBuilder: (context, i) {
                         final inv = _invoices[i];
 
-                        // ✅ from invoices table
-                        final invoiceId = inv['id'] as int;
-                        final invNumber = (inv['invoiceNumber'] ?? '').toString();
-                        final status = (inv['status'] ?? 'UNPAID').toString();
-                        final total = (inv['total'] as num?)?.toDouble() ?? 0.0;
+                        final invoiceId = _toInt(inv['id']);
+                        final invNumber = (inv['invoice'] ?? '').toString();
+                        final status = (inv['status'] ?? 'open').toString();
+                        final total = _money(inv['total']);
+                        final subtotal = _money(inv['subtotal']);
+                        final vatAmount = _money(inv['montant_tva']);
+                        final email = (inv['custom_email'] ?? '').toString();
+                        final code = (inv['custom_code'] ?? '').toString();
+                        final invoiceType = (inv['invoice_type'] ?? '').toString();
+                        final typeDoc = (inv['type_doc'] ?? '').toString();
 
-                        // ✅ JOIN clients
-                        final clientName = (inv['clientName'] ?? 'Client').toString();
-
-                        final due = _parseDate((inv['dueDate'] ?? '').toString());
-                        final issue = _parseDate((inv['issueDate'] ?? '').toString());
+                        final due = _parseDate((inv['invoice_due_date'] ?? '').toString());
+                        final issue = _parseDate((inv['invoice_date'] ?? '').toString());
 
                         final now = DateTime.now();
                         final overdue = status.toUpperCase() != "PAID" &&
@@ -129,8 +161,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
                         return Card(
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                             title: Row(
                               children: [
                                 Expanded(
@@ -146,47 +180,64 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                 ),
                               ],
                             ),
-
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    clientName,
-                                    style: const TextStyle(fontWeight: FontWeight.w700),
-                                  ),
+                                  if (email.isNotEmpty)
+                                    Text(
+                                      email,
+                                      style: const TextStyle(fontWeight: FontWeight.w700),
+                                    ),
+                                  if (code.isNotEmpty ||
+                                      invoiceType.isNotEmpty ||
+                                      typeDoc.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        [
+                                          if (code.isNotEmpty) "Code: $code",
+                                          if (invoiceType.isNotEmpty) "Type: $invoiceType",
+                                          if (typeDoc.isNotEmpty) "Doc: $typeDoc",
+                                        ].join(" • "),
+                                      ),
+                                    ),
                                   const SizedBox(height: 4),
                                   Text(
                                     "${_daysLeftText(due)} • Issued ${issue.toLocal().toString().split(" ")[0]}",
                                   ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "HT $subtotal • TVA $vatAmount",
+                                    style: TextStyle(color: cs.onSurfaceVariant),
+                                  ),
                                 ],
                               ),
                             ),
-
                             trailing: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  "${total.toStringAsFixed(2)} TND",
+                                  "$total TND",
                                   style: const TextStyle(fontWeight: FontWeight.w900),
                                 ),
                                 const SizedBox(height: 4),
                                 Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
                               ],
                             ),
-
                             onTap: () async {
-                              // ✅ go to edit screen where you add invoice items + product dropdown
+                              if (invoiceId <= 0) return;
+
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => InvoiceEditScreen(invoiceId: invoiceId),
                                 ),
                               );
-                              await _load(); // refresh totals after adding/removing items
+                              await _load();
                             },
                           ),
                         );
@@ -219,14 +270,18 @@ class _StatusPill extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(fontWeight: FontWeight.w900, color: fg, fontSize: 12),
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          color: fg,
+          fontSize: 12,
+        ),
       ),
     );
   }
 }
 
 class _EmptyInvoices extends StatelessWidget {
-  final VoidCallback onCreate;
+  final Future<void> Function() onCreate;
 
   const _EmptyInvoices({required this.onCreate});
 
@@ -236,7 +291,11 @@ class _EmptyInvoices extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: 80),
-        Icon(Icons.receipt_long, size: 70, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          Icons.receipt_long,
+          size: 70,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(height: 14),
         const Center(
           child: Text(

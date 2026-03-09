@@ -30,8 +30,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
             : _products.where((p) {
                 final name = (p['name'] ?? '').toString().toLowerCase();
                 final unit = (p['unit'] ?? '').toString().toLowerCase();
-                final vat = (p['vat'] ?? '').toString().toLowerCase();
-                return name.contains(q) || unit.contains(q) || vat.contains(q);
+                final tvaRate = (p['tva_rate'] ?? '').toString().toLowerCase();
+                final code = (p['code'] ?? '').toString().toLowerCase();
+
+                return name.contains(q) ||
+                    unit.contains(q) ||
+                    tvaRate.contains(q) ||
+                    code.contains(q);
               }).toList();
       });
     });
@@ -45,20 +50,37 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<void> _loadProducts() async {
     setState(() => _loading = true);
-    final data = await _repo.getAllProducts();
-    setState(() {
-      _products = data;
-      _filtered = data;
-      _loading = false;
-    });
+
+    try {
+      final data = await _repo.getAllProducts();
+      setState(() {
+        _products = data;
+        _filtered = data;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Load failed: $e")),
+      );
+    }
   }
 
   Future<void> _editProduct(Map<String, dynamic> product) async {
     final saved = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AddProductScreen(product: product)),
+      MaterialPageRoute(
+        builder: (_) => AddProductScreen(product: product),
+      ),
     );
-    if (saved == true) await _loadProducts();
+
+    if (saved == true) {
+      await _loadProducts();
+    }
   }
 
   Future<bool> _confirmDelete(Map<String, dynamic> product) async {
@@ -84,6 +106,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     if (ok == true) {
       await _repo.deleteProduct(product['id'] as int);
+
       if (!mounted) return false;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,16 +116,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
       await _loadProducts();
       return true;
     }
+
     return false;
   }
 
   String _money(dynamic v) {
     final n = (v is num) ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0;
-    return n.toStringAsFixed(2);
+    return n.toStringAsFixed(3);
   }
 
   Widget _pill(BuildContext context, {required String text}) {
     final cs = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -130,6 +155,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     required Color fg,
   }) {
     final t = Theme.of(context).textTheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
@@ -137,13 +163,17 @@ class _ProductsScreenState extends State<ProductsScreen> {
         borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
-        mainAxisAlignment: alignLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
+        mainAxisAlignment:
+            alignLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
         children: [
           Icon(icon, color: fg),
           const SizedBox(width: 8),
           Text(
             label,
-            style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w900, color: fg),
+            style: t.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: fg,
+            ),
           ),
         ],
       ),
@@ -156,7 +186,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     final name = (p['name'] ?? '').toString();
     final unit = (p['unit'] ?? '-').toString();
-    final vat = (p['vat'] ?? 0).toString();
+    final code = (p['code'] ?? '').toString();
+    final tvaRate = (p['tva_rate'] ?? 0).toString();
     final price = _money(p['price']);
 
     final cardBg = cs.surfaceContainerHighest.withOpacity(.45);
@@ -178,7 +209,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
       ),
       child: Row(
         children: [
-          // left icon block
           Container(
             height: 46,
             width: 46,
@@ -189,10 +219,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             ),
             child: Icon(Icons.inventory_2_outlined, color: cs.primary),
           ),
-
           const SizedBox(width: 12),
-
-          // texts
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +235,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Unit: $unit • VAT $vat%",
+                  [
+                    if (code.isNotEmpty) "Code: $code",
+                    "Unit: $unit",
+                    "TVA $tvaRate%",
+                  ].join(" • "),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: t.bodyMedium?.copyWith(
@@ -219,10 +250,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               ],
             ),
           ),
-
           const SizedBox(width: 10),
-
-          // right price + VAT pill + chevron
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -232,13 +260,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 8),
-              _pill(context, text: "VAT $vat%"),
+              _pill(context, text: "TVA $tvaRate%"),
             ],
           ),
-
           const SizedBox(width: 8),
-
-          Icon(Icons.chevron_right, size: 30, color: cs.onSurface.withOpacity(.55)),
+          Icon(
+            Icons.chevron_right,
+            size: 30,
+            color: cs.onSurface.withOpacity(.55),
+          ),
         ],
       ),
     );
@@ -264,19 +294,19 @@ class _ProductsScreenState extends State<ProductsScreen> {
           const SizedBox(width: 6),
         ],
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final saved = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddProductScreen()),
           );
-          if (saved == true) await _loadProducts();
+          if (saved == true) {
+            await _loadProducts();
+          }
         },
         icon: const Icon(Icons.add),
         label: const Text("Add"),
       ),
-
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -285,46 +315,47 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // premium search
                   Container(
                     decoration: BoxDecoration(
                       color: cs.surfaceContainerHighest.withOpacity(.55),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: cs.outlineVariant.withOpacity(.25)),
+                      border: Border.all(
+                        color: cs.outlineVariant.withOpacity(.25),
+                      ),
                     ),
                     child: TextField(
                       controller: _searchCtrl,
                       decoration: const InputDecoration(
-                        hintText: "Search (name / unit / VAT)...",
+                        hintText: "Search (name / code / unit / TVA)...",
                         prefixIcon: Icon(Icons.search),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 14),
-
                   if (_filtered.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 30),
                       child: Center(
                         child: Text(
                           "No products yet",
-                          style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                          style: t.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     )
                   else
                     ..._filtered.map((p) {
-                      final id = p['id'] as int;
-
+final id = int.tryParse(p['id'].toString()) ?? 0;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Dismissible(
                           key: ValueKey("product_$id"),
-
-                          // ✅ swipe right => edit, swipe left => delete confirm
                           confirmDismiss: (direction) async {
                             if (direction == DismissDirection.startToEnd) {
                               await _editProduct(p);
@@ -336,7 +367,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             }
                             return false;
                           },
-
                           background: _swipeBg(
                             context,
                             icon: Icons.edit,
@@ -353,7 +383,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             color: cs.errorContainer,
                             fg: cs.onErrorContainer,
                           ),
-
                           child: InkWell(
                             borderRadius: BorderRadius.circular(22),
                             onTap: () => _editProduct(p),

@@ -23,10 +23,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Kn7u5CEy+0+MyGENx9k4k2HvuTM=
+			2vy9YReM5ncVeZgBId2kzBae1yg=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"2a7eeee42132fb4f8cc8610dc7d9389361efb933"</string>
+			<string>cdhash H"dafcbd61178ce6771579980121dda4cc169ed728"</string>
 		</dict>
 		<key>Frameworks/FlutterMacOS.framework</key>
 		<dict>
@@ -36,6 +36,33 @@
 			</data>
 			<key>requirement</key>
 			<string>cdhash H"9fb9fc03f7e6016a3fda8d58913ec64a5ef905d0"</string>
+		</dict>
+		<key>Frameworks/file_selector_macos.framework</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			ERuKut+Mtek89KbIYD5UNlzF/WU=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"111b8abadf8cb5e93cf4a6c8603e54365cc5fd65"</string>
+		</dict>
+		<key>Frameworks/printing.framework</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			FtiwWh2QOuzvRxE8ouHBxxfulgk=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"16d8b05a1d903aecef47113ca2e1c1c717ee9609"</string>
+		</dict>
+		<key>Frameworks/shared_preferences_foundation.framework</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			lm+gJRCQ5x1AQ2m7LLC9bOSQl5I=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"966fa0251090e71d404369bb2cb0bd6ce4909792"</string>
 		</dict>
 		<key>Frameworks/sqflite_darwin.framework</key>
 		<dict>
@@ -59,10 +86,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			E+wEm0TtXU1oe3QGzG09vxfrfx8=
+			2XFAsedFsAQupgHyhB6YD/pDDP0=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"13ec049b44ed5d4d687b7406cc6d3dbf17eb7f1f"</string>
+			<string>cdhash H"d97140b1e745b0042ea601f2841e980ffa430cfd"</string>
 		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>

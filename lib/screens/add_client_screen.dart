@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../storage/clients_repo.dart';
+import '../services/api_service.dart';
 import '../widgets/primary_button.dart';
 
 class AddClientScreen extends StatefulWidget {
@@ -12,7 +12,7 @@ class AddClientScreen extends StatefulWidget {
 
 class _AddClientScreenState extends State<AddClientScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _repo = ClientsRepo();
+  final _api = ApiService();
 
   late String _type; // 'company' | 'individual'
 
@@ -56,44 +56,38 @@ class _AddClientScreenState extends State<AddClientScreen> {
     if (_type == t) return;
     setState(() => _type = t);
 
-    // prevent saving both
     if (t == 'company') {
       _cin.clear();
     } else {
       _fiscalId.clear();
     }
   }
+Future<void> _save() async {
+  FocusScope.of(context).unfocus();
 
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
+  if (!_formKey.currentState!.validate()) return;
+  setState(() => _loading = true);
 
-    final name = _name.text.trim();
-    final email = _email.text.trim().isEmpty ? null : _email.text.trim();
-    final phone = _phone.text.trim().isEmpty ? null : _phone.text.trim();
-    final address = _address.text.trim().isEmpty ? null : _address.text.trim();
+  final name = _name.text.trim();
+  final email = _email.text.trim().isEmpty ? null : _email.text.trim();
+  final phone = _phone.text.trim().isEmpty ? null : _phone.text.trim();
+  final address = _address.text.trim().isEmpty ? null : _address.text.trim();
 
-    final fiscalId = _type == 'company'
-        ? (_fiscalId.text.trim().isEmpty ? null : _fiscalId.text.trim())
-        : null;
+  final fiscalId = _type == 'company'
+      ? (_fiscalId.text.trim().isEmpty ? null : _fiscalId.text.trim())
+      : null;
 
-    final cin = _type == 'individual'
-        ? (_cin.text.trim().isEmpty ? null : _cin.text.trim())
-        : null;
+  final cin = _type == 'individual'
+      ? (_cin.text.trim().isEmpty ? null : _cin.text.trim())
+      : null;
 
+  try {
     if (isEdit) {
-      await _repo.updateClient(
-        id: widget.client!['id'] as int,
-        type: _type,
-        name: name,
-        email: email,
-        phone: phone,
-        address: address,
-        fiscalId: fiscalId,
-        cin: cin,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Client update API not added yet.")),
       );
     } else {
-      await _repo.addClient(
+      final result = await _api.addClient(
         type: _type,
         name: name,
         email: email,
@@ -102,14 +96,32 @@ class _AddClientScreenState extends State<AddClientScreen> {
         fiscalId: fiscalId,
         cin: cin,
       );
+
+      print("API RESULT => $result");
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result["message"]?.toString() ?? "Customer saved to MySQL ✅",
+          ),
+        ),
+      );
+      Navigator.pop(context, true);
     }
+  } catch (e) {
+    print("SAVE CLIENT ERROR => $e");
 
-    setState(() => _loading = false);
     if (!mounted) return;
-    Navigator.pop(context, true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Save failed: $e")),
+    );
+  } finally {
+    if (mounted) {
+      setState(() => _loading = false);
+    }
   }
-
-  // ---------- Premium UI helpers ----------
+}
   Widget _pill(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
@@ -199,34 +211,30 @@ class _AddClientScreenState extends State<AddClientScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     final isCompany = _type == 'company';
 
     return Scaffold(
       appBar: AppBar(
         title: Text(isEdit ? "Edit Customer" : "Add Customer"),
       ),
-
-      // ✅ form scrolls
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-
-          // swipe left => CIN, swipe right => MF
           onHorizontalDragEnd: (details) {
             final v = details.primaryVelocity ?? 0;
             if (v < -150) _setType('individual');
             if (v > 150) _setType('company');
           },
-
           child: Form(
             key: _formKey,
             child: ListView(
               children: [
-                Align(alignment: Alignment.centerLeft, child: _pill(context)),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _pill(context),
+                ),
                 const SizedBox(height: 14),
-
                 _premiumCard(
                   context,
                   child: Column(
@@ -236,14 +244,14 @@ class _AddClientScreenState extends State<AddClientScreen> {
                         decoration: _dec(
                           context,
                           isCompany ? "Company name" : "Full name",
-                          icon: isCompany ? Icons.business_outlined : Icons.person_outline,
+                          icon: isCompany
+                              ? Icons.business_outlined
+                              : Icons.person_outline,
                         ),
                         validator: (v) =>
                             (v == null || v.trim().isEmpty) ? "Required" : null,
                       ),
                       const SizedBox(height: 12),
-
-                      // ✅ animated CIN <-> MF field
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 280),
                         switchInCurve: Curves.easeOutCubic,
@@ -265,58 +273,77 @@ class _AddClientScreenState extends State<AddClientScreen> {
                             ? TextFormField(
                                 key: const ValueKey("MF"),
                                 controller: _fiscalId,
-                                decoration: _dec(context, "Matricule Fiscal (MF)", icon: Icons.badge_outlined),
+                                decoration: _dec(
+                                  context,
+                                  "Matricule Fiscal (MF)",
+                                  icon: Icons.badge_outlined,
+                                ),
                                 validator: (v) {
                                   if (_type != 'company') return null;
-                                  if (v == null || v.trim().isEmpty) return "MF required";
+                                  if (v == null || v.trim().isEmpty) {
+                                    return "MF required";
+                                  }
                                   return null;
                                 },
                               )
                             : TextFormField(
                                 key: const ValueKey("CIN"),
                                 controller: _cin,
-                                decoration: _dec(context, "CIN", icon: Icons.credit_card_outlined),
+                                decoration: _dec(
+                                  context,
+                                  "CIN",
+                                  icon: Icons.credit_card_outlined,
+                                ),
                                 keyboardType: TextInputType.number,
                                 validator: (v) {
                                   if (_type != 'individual') return null;
-                                  if (v == null || v.trim().isEmpty) return "CIN required";
-                                  if (v.trim().length < 6) return "CIN looks too short";
+                                  if (v == null || v.trim().isEmpty) {
+                                    return "CIN required";
+                                  }
+                                  if (v.trim().length < 6) {
+                                    return "CIN looks too short";
+                                  }
                                   return null;
                                 },
                               ),
                       ),
-
                       const SizedBox(height: 12),
-
                       TextFormField(
                         controller: _email,
-                        decoration: _dec(context, "Email (optional)", icon: Icons.email_outlined),
+                        decoration: _dec(
+                          context,
+                          "Email (optional)",
+                          icon: Icons.email_outlined,
+                        ),
                       ),
                       const SizedBox(height: 12),
-
                       TextFormField(
                         controller: _phone,
-                        decoration: _dec(context, "Phone (optional)", icon: Icons.phone_outlined),
+                        decoration: _dec(
+                          context,
+                          "Phone (optional)",
+                          icon: Icons.phone_outlined,
+                        ),
                       ),
                       const SizedBox(height: 12),
-
                       TextFormField(
                         controller: _address,
-                        decoration: _dec(context, "Address (optional)", icon: Icons.location_on_outlined),
+                        decoration: _dec(
+                          context,
+                          "Address (optional)",
+                          icon: Icons.location_on_outlined,
+                        ),
                         maxLines: 2,
                       ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 90), // space above bottom save bar
+                const SizedBox(height: 90),
               ],
             ),
           ),
         ),
       ),
-
-      // ✅ fixed bottom save bar (premium)
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),

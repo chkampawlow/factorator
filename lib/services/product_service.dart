@@ -1,5 +1,4 @@
-
-import 'package:facturation/storage/app_db.dart';
+import 'package:my_app/storage/app_db.dart';
 
 class ProductService {
   Future<List<Map<String, dynamic>>> getAll() async {

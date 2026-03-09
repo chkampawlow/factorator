@@ -1,10 +1,19 @@
-import 'package:facturation/storage/app_db.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/screens/invoice_pdf_service.dart';
+import 'package:my_app/services/pdf_preview.dart';
+import 'package:my_app/storage/products_repo.dart';
+import 'package:my_app/storage/invoice_items_repo.dart';
+import 'package:my_app/storage/invoices_repo.dart';
+import 'package:my_app/storage/invoices_api_repo.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
   final int invoiceId;
-  const InvoiceEditScreen({super.key, required this.invoiceId});
+
+  const InvoiceEditScreen({
+    super.key,
+    required this.invoiceId,
+  });
 
   @override
   State<InvoiceEditScreen> createState() => _InvoiceEditScreenState();
@@ -13,6 +22,11 @@ class InvoiceEditScreen extends StatefulWidget {
 class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   bool _loading = true;
   String? _error;
+
+  final _productsRepo = ProductsRepo();
+  final _invoiceItemsRepo = InvoiceItemsRepo();
+  final _invoicesApiRepo = InvoicesApiRepo();
+  final _invoicesRepo = InvoicesRepo();
 
   Map<String, dynamic>? _invoice;
   List<Map<String, dynamic>> _items = [];
@@ -41,11 +55,22 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     super.dispose();
   }
 
-  Future<bool> _columnExists(String table, String col) async {
-    final db = await AppDb.instance;
-    final res = await db.rawQuery("PRAGMA table_info($table)");
-    return res.any((r) => (r['name'] as String).toLowerCase() == col.toLowerCase());
+  int _toInt(dynamic v, [int fallback = 0]) {
+    if (v == null) return fallback;
+    if (v is int) return v;
+    return int.tryParse(v.toString()) ?? fallback;
   }
+
+  double _toD(dynamic v, [double fallback = 0.0]) {
+    if (v == null) return fallback;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString()) ?? fallback;
+  }
+
+  double _qty() => double.tryParse(_qtyCtrl.text.trim().replaceAll(',', '.')) ?? 1.0;
+
+  double _discountPct() =>
+      double.tryParse(_discountCtrl.text.trim().replaceAll(',', '.')) ?? 0.0;
 
   Future<void> _loadAll() async {
     setState(() {
@@ -54,53 +79,47 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     });
 
     try {
-      final db = await AppDb.instance;
+      final remoteInv = await _invoicesRepo.getInvoiceById(widget.invoiceId);
+      final products = await _productsRepo.getAllProducts();
+      final items = await _invoiceItemsRepo.getInvoiceItems(widget.invoiceId);
 
-      final hasInvoiceId = await _columnExists("invoice_items", "invoice_id");
-      if (!hasInvoiceId) {
-        throw Exception(
-          "Your local DB schema is old: invoice_items has no 'invoice_id'.\n"
-          "Fix: delete the local DB file or run migration, then restart.",
-        );
-      }
-
-      final invList = await db.rawQuery('''
-        SELECT i.*, c.name as clientName, c.email as clientEmail
-        FROM invoices i
-        JOIN clients c ON c.id = i.clientId
-        WHERE i.id = ?
-        LIMIT 1
-      ''', [widget.invoiceId]);
-
-      final inv = invList.isEmpty ? null : invList.first;
-
-      final items = await db.rawQuery('''
-        SELECT *
-        FROM invoice_items
-        WHERE invoice_id = ?
-        ORDER BY id DESC
-      ''', [widget.invoiceId]);
-
-      final products = await db.query('products', orderBy: "name ASC");
+      final inv = {
+        'id': remoteInv['id'],
+        'invoiceNumber': remoteInv['invoice'],
+        'issueDate': remoteInv['invoice_date'],
+        'dueDate': remoteInv['invoice_due_date'],
+        'subtotal': remoteInv['subtotal'],
+        'totalVat': remoteInv['montant_tva'],
+        'total': remoteInv['total'],
+        'status': remoteInv['status'],
+        'clientName': remoteInv['custom_email'] ?? 'Client',
+        'clientEmail': remoteInv['custom_email'] ?? '',
+        'clientPhone': '',
+        'clientAddress': '',
+        'clientType': 'individual',
+        'clientFiscalId': '',
+        'clientCin': remoteInv['custom_code'] ?? '',
+      };
 
       setState(() {
         _invoice = inv;
-        _items = items;
         _products = products;
+        _items = items;
 
         if (products.isEmpty) {
           _selectedProduct = null;
           _selectedProductId = null;
         } else {
           final exists = _selectedProductId != null &&
-              products.any((p) => p['id'] == _selectedProductId);
+              products.any((p) => _toInt(p['id']) == _selectedProductId);
 
           if (exists) {
-            _selectedProduct =
-                products.firstWhere((p) => p['id'] == _selectedProductId);
+            _selectedProduct = products.firstWhere(
+              (p) => _toInt(p['id']) == _selectedProductId,
+            );
           } else {
             _selectedProduct = products.first;
-            _selectedProductId = products.first['id'] as int;
+            _selectedProductId = _toInt(products.first['id']);
           }
         }
 
@@ -114,23 +133,15 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     }
   }
 
-  double _toD(dynamic v, [double fallback = 0.0]) {
-    if (v == null) return fallback;
-    if (v is num) return v.toDouble();
-    return double.tryParse(v.toString()) ?? fallback;
-  }
-
-  double _qty() => double.tryParse(_qtyCtrl.text.trim().replaceAll(',', '.')) ?? 1.0;
-  double _discountPct() =>
-      double.tryParse(_discountCtrl.text.trim().replaceAll(',', '.')) ?? 0.0;
-
   double _productPrice() {
     if (_selectedProduct == null) return 0.0;
+
     final override = _customPriceCtrl.text.trim().replaceAll(',', '.');
     if (override.isNotEmpty) {
       final p = double.tryParse(override);
       if (p != null && p >= 0) return p;
     }
+
     return _toD(_selectedProduct!['price'], 0.0);
   }
 
@@ -150,46 +161,20 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     final ht = (htBeforeDiscount - discountValue).clamp(0.0, double.infinity);
     final tva = ht * (tvaRate / 100.0);
     final ttc = ht + tva;
+
     return _LineTotals(ht: ht, tva: tva, ttc: ttc);
   }
 
   Future<void> _recomputeAndUpdateInvoiceTotals() async {
-    final db = await AppDb.instance;
-
-    final sums = (await db.rawQuery('''
-      SELECT
-        COALESCE(SUM(subtotal), 0) AS sumHT,
-        COALESCE(SUM(montant_tva), 0) AS sumTVA,
-        COALESCE(SUM(subtotalTTC), 0) AS sumTTC
-      FROM invoice_items
-      WHERE invoice_id = ?
-    ''', [widget.invoiceId]))
-        .first;
-
-    final sumHT = _toD(sums['sumHT']);
-    final sumTVA = _toD(sums['sumTVA']);
-    final sumTTC = _toD(sums['sumTTC']);
-
-    await db.update(
-      'invoices',
-      {
-        'subtotal': sumHT,
-        'totalVat': sumTVA,
-        'total': sumTTC,
-      },
-      where: 'id = ?',
-      whereArgs: [widget.invoiceId],
-    );
-
+    await _invoicesApiRepo.recomputeInvoiceTotals(widget.invoiceId);
     await _loadAll();
   }
 
   Future<void> _addItem() async {
     if (_invoice == null || _selectedProduct == null) return;
 
-    final db = await AppDb.instance;
-
     final qty = _qty();
+
     if (qty <= 0) {
       _toast("Qty must be > 0");
       return;
@@ -207,22 +192,22 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     );
 
     final invoiceNumber = (_invoice!['invoiceNumber'] ?? '').toString();
-    final issueDate = (_invoice!['issueDate'] ?? '').toString();
+    final issueDate = (_invoice!['issueDate'] ?? '').toString().split(' ').first;
 
-    await db.insert('invoice_items', {
-      'invoice_id': widget.invoiceId,
-      'invoice': invoiceNumber,
-      'product_code': _selectedProduct!['code'],
-      'product': _selectedProduct!['name'],
-      'qty': qty,
-      'tva_rate': tvaRate,
-      'montant_tva': totals.tva,
-      'price': price,
-      'discount': discountPct,
-      'subtotal': totals.ht,
-      'subtotalTTC': totals.ttc,
-      'invoice_date': issueDate,
-    });
+    await _invoiceItemsRepo.addInvoiceItem(
+      invoiceId: widget.invoiceId,
+      invoice: invoiceNumber,
+      productCode: (_selectedProduct!['code'] ?? '').toString(),
+      product: (_selectedProduct!['name'] ?? '').toString(),
+      qty: qty,
+      tvaRate: tvaRate,
+      montantTva: totals.tva,
+      price: price,
+      discount: discountPct,
+      subtotal: totals.ht,
+      subtotalTTC: totals.ttc,
+      invoiceDate: issueDate,
+    );
 
     _qtyCtrl.text = "1";
     _discountCtrl.text = "0";
@@ -232,9 +217,48 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   }
 
   Future<void> _deleteItem(int itemId) async {
-    final db = await AppDb.instance;
-    await db.delete('invoice_items', where: 'id = ?', whereArgs: [itemId]);
+    await _invoiceItemsRepo.deleteInvoiceItem(itemId);
     await _recomputeAndUpdateInvoiceTotals();
+  }
+
+  Future<void> _previewPdf() async {
+    if (_invoice == null) {
+      _toast("Invoice not found.");
+      return;
+    }
+
+    if (_items.isEmpty) {
+      _toast("Add at least one item before previewing the PDF.");
+      return;
+    }
+
+    final client = <String, dynamic>{
+      'name': _invoice!['clientName'],
+      'type': _invoice!['clientType'],
+      'fiscalId': _invoice!['clientFiscalId'],
+      'cin': _invoice!['clientCin'],
+      'email': _invoice!['clientEmail'],
+      'phone': _invoice!['clientPhone'],
+      'address': _invoice!['clientAddress'],
+    };
+
+    final bytes = await InvoicePdfService.buildInvoicePdf(
+      invoice: _invoice!,
+      client: client,
+      items: _items,
+    );
+
+    if (!mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PdfPreviewScreen(
+          pdfBytes: bytes,
+          title: (_invoice!['invoiceNumber'] ?? 'Invoice').toString(),
+        ),
+      ),
+    );
   }
 
   void _toast(String msg) {
@@ -302,8 +326,13 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Edit • $invNum"),
+        title: Text("Fill • $invNum"),
         actions: [
+          IconButton(
+            onPressed: _previewPdf,
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            tooltip: "Preview PDF",
+          ),
           IconButton(
             onPressed: _loadAll,
             icon: const Icon(Icons.refresh),
@@ -359,7 +388,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                           ),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -383,7 +412,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                           child: DropdownButtonFormField<int>(
                             value: _selectedProductId,
                             items: _products.map((p) {
-                              final id = p['id'] as int;
+                              final id = _toInt(p['id']);
                               return DropdownMenuItem<int>(
                                 value: id,
                                 child: Text(
@@ -398,7 +427,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                                   _selectedProduct = null;
                                 } else {
                                   _selectedProduct = _products.firstWhere(
-                                    (p) => p['id'] == id,
+                                    (p) => _toInt(p['id']) == id,
                                   );
                                 }
                               });
@@ -459,26 +488,24 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                         color: cs.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      
-child: Wrap(
-  alignment: WrapAlignment.spaceBetween,
-  spacing: 12,
-  runSpacing: 6,
-  children: [
-    Text(
-      "TVA ${_productTvaRate().toStringAsFixed(0)}%",
-      style: const TextStyle(fontWeight: FontWeight.w800),
-    ),
-    Text("HT ${_money.format(lineTotals.ht)}"),
-    Text("TVA ${_money.format(lineTotals.tva)}"),
-    Text(
-      "TTC ${_money.format(lineTotals.ttc)}",
-      style: const TextStyle(fontWeight: FontWeight.w900),
-    ),
-  ],
-),
-),
-
+                      child: Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        spacing: 12,
+                        runSpacing: 6,
+                        children: [
+                          Text(
+                            "TVA ${_productTvaRate().toStringAsFixed(0)}%",
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          Text("HT ${_money.format(lineTotals.ht)}"),
+                          Text("TVA ${_money.format(lineTotals.tva)}"),
+                          Text(
+                            "TTC ${_money.format(lineTotals.ttc)}",
+                            style: const TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
@@ -508,7 +535,7 @@ child: Wrap(
                         separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (_, i) {
                           final it = _items[i];
-                          final itemId = it['id'] as int;
+                          final itemId = _toInt(it['id']);
 
                           final name = (it['product'] ?? '').toString();
                           final qty = _toD(it['qty']);

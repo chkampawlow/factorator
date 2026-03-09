@@ -1,9 +1,9 @@
-import 'package:facturation/themes/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/screens/products_screen.dart';
+import 'package:my_app/themes/app_theme.dart';
 
 import 'screens/dashboard_screen.dart';
 import 'screens/clients_screen.dart';
-import 'screens/products_screen.dart';
 import 'screens/invoices_screen.dart';
 
 void main() => runApp(const FacturationApp());
@@ -38,7 +38,11 @@ class _FacturationAppState extends State<FacturationApp> {
 
 class MainShell extends StatefulWidget {
   final VoidCallback onToggleTheme;
-  const MainShell({super.key, required this.onToggleTheme});
+
+  const MainShell({
+    super.key,
+    required this.onToggleTheme,
+  });
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -62,10 +66,22 @@ class _MainShellState extends State<MainShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard), label: "Dashboard"),
-          NavigationDestination(icon: Icon(Icons.people), label: "Clients"),
-          NavigationDestination(icon: Icon(Icons.inventory_2), label: "Products"),
-          NavigationDestination(icon: Icon(Icons.receipt_long), label: "Invoices"),
+          NavigationDestination(
+            icon: Icon(Icons.dashboard),
+            label: "Dashboard",
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.people),
+            label: "Clients",
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.list_alt),
+            label: "Items",
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long),
+            label: "Invoices",
+          ),
         ],
       ),
     );

@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../storage/dashboard_repo.dart';
 import '../storage/app_db.dart';
-import '../widgets/stat_card.dart';
 import '../widgets/action_tile.dart';
 
 import 'create_invoice_screen.dart';
 import 'clients_screen.dart';
-import 'products_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -22,7 +20,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool _loading = true;
 
-  int _totalInvoices = 0;
   int _paidInvoices = 0;
   int _pendingInvoices = 0;
   int _customersCount = 0;
@@ -49,7 +46,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final customers = await _countCustomers();
 
     setState(() {
-      _totalInvoices = (stats['totalInvoices'] as int);
       _paidInvoices = (stats['paidInvoices'] as int);
       _pendingInvoices = (stats['pendingInvoices'] as int);
       _customersCount = customers;
@@ -139,12 +135,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         icon: Icons.people_alt_outlined,
                         bg: const Color(0xFFEAF2FF),
                         onTap: () => _go(const ClientsScreen()),
-                      ),
-                      ActionTile(
-                        label: "Items / Services",
-                        icon: Icons.inventory_2_outlined,
-                        bg: const Color(0xFFEFFAF1),
-                        onTap: () => _go(const ProductsScreen()),
                       ),
                       ActionTile(
                         label: "Unpaid (${_pendingInvoices})",
