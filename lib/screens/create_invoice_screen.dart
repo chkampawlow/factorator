@@ -17,12 +17,12 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
   Map<String, dynamic>? _selectedClient;
 
-  DateTime _issueDate = DateTime.now();
+  final DateTime _issueDate = DateTime.now();
   DateTime _dueDate = DateTime.now().add(const Duration(days: 7));
 
   bool _saving = false;
 
-  String _fmtDate(DateTime d) => d.toLocal().toString().split(" ")[0];
+  String _fmtDate(DateTime d) => d.toLocal().toString().split(' ')[0];
 
   int _toInt(dynamic v, [int fallback = 0]) {
     if (v == null) return fallback;
@@ -31,31 +31,26 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   }
 
   String _clientLabel(Map<String, dynamic> c) {
-    final type = c['type']?.toString() ?? 'individual';
+    final type = (c['type'] ?? 'individual').toString();
     if (type == 'company') {
-      return "${c['name']} • MF: ${c['fiscalId'] ?? '-'}";
+      final mf = (c['fiscalId'] ?? c['fiscal_id'] ?? '-').toString();
+      return '${c['name']} • MF: $mf';
     }
-    return "${c['name']} • CIN: ${c['cin'] ?? '-'}";
+    return '${c['name']} • CIN: ${c['cin'] ?? '-'}';
   }
 
-  Future<void> _pickDate(bool isDue) async {
-    final initial = isDue ? _dueDate : _issueDate;
-
+  Future<void> _pickDueDate() async {
     final picked = await showDatePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime(2035),
-      initialDate: initial,
+      initialDate: _dueDate,
     );
 
     if (picked == null) return;
 
     setState(() {
-      if (isDue) {
-        _dueDate = picked;
-      } else {
-        _issueDate = picked;
-      }
+      _dueDate = picked;
     });
   }
 
@@ -70,17 +65,13 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         ),
       );
 
-      if (selected != null) {
-        debugPrint("[CreateInvoiceScreen] selected client => $selected");
+      if (selected != null && mounted) {
         setState(() => _selectedClient = selected);
       }
-    } catch (e, st) {
-      debugPrint("[CreateInvoiceScreen] _chooseClient ERROR => $e");
-      debugPrint("$st");
-
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Client selection failed: $e")),
+        SnackBar(content: Text('Client selection failed: $e')),
       );
     }
   }
@@ -88,7 +79,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   Future<void> _saveInvoice() async {
     if (_selectedClient == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please choose a client.")),
+        const SnackBar(content: Text('Please choose a client.')),
       );
       return;
     }
@@ -98,31 +89,21 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     setState(() => _saving = true);
 
     try {
-      debugPrint("[CreateInvoiceScreen] ---- CREATE INVOICE START ----");
-      debugPrint("[CreateInvoiceScreen] selectedClient => $_selectedClient");
-
       final clientId = _toInt(_selectedClient!['id']);
-      debugPrint("[CreateInvoiceScreen] parsed clientId => $clientId");
 
       if (clientId <= 0) {
-        throw Exception("Invalid client id: ${_selectedClient!['id']}");
+        throw Exception('Invalid client id: ${_selectedClient!['id']}');
       }
-
-      debugPrint("[CreateInvoiceScreen] issueDate => ${_fmtDate(_issueDate)}");
-      debugPrint("[CreateInvoiceScreen] dueDate   => ${_fmtDate(_dueDate)}");
 
       final invoiceId = await _invoicesRepo.createInvoiceHeader(
         clientId: clientId,
         issueDate: _issueDate,
         dueDate: _dueDate,
-        status: "open",
+        status: 'open',
         subtotal: 0,
         totalVat: 0,
         total: 0,
       );
-
-      debugPrint("[CreateInvoiceScreen] invoiceId returned => $invoiceId");
-      debugPrint("[CreateInvoiceScreen] ---- CREATE INVOICE SUCCESS ----");
 
       if (!mounted) return;
 
@@ -132,14 +113,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
           builder: (_) => InvoiceEditScreen(invoiceId: invoiceId),
         ),
       );
-    } catch (e, st) {
-      debugPrint("[CreateInvoiceScreen] _saveInvoice ERROR => $e");
-      debugPrint("$st");
-
+    } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Save failed: $e")),
+        SnackBar(content: Text('Save failed: $e')),
       );
     } finally {
       if (mounted) {
@@ -154,18 +132,38 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("New Invoice"),
+        title: const Text('New Invoice'),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: SizedBox(
+            height: 52,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.primary,
+              ),
+              onPressed: _saving ? null : _saveInvoice,
+              child: Text(
+                _saving ? 'Saving...' : 'Create Invoice',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(
+          padding: const EdgeInsets.only(bottom: 90),
           children: [
             Card(
               child: ListTile(
-                title: const Text("Client"),
+                title: const Text('Client'),
                 subtitle: Text(
                   _selectedClient == null
-                      ? "Choose client or add new"
+                      ? 'Choose client or add new'
                       : _clientLabel(_selectedClient!),
                 ),
                 trailing: const Icon(Icons.chevron_right),
@@ -175,28 +173,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
             const SizedBox(height: 10),
             Card(
               child: ListTile(
-                title: const Text("Issue date"),
-                subtitle: Text(_fmtDate(_issueDate)),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextButton(
-                      onPressed: () => setState(() => _issueDate = DateTime.now()),
-                      child: const Text("Today"),
-                    ),
-                    const Icon(Icons.date_range),
-                  ],
-                ),
-                onTap: () => _pickDate(false),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Card(
-              child: ListTile(
-                title: const Text("Due date"),
+                title: const Text('Due date'),
                 subtitle: Text(_fmtDate(_dueDate)),
                 trailing: const Icon(Icons.event),
-                onTap: () => _pickDate(true),
+                onTap: _pickDueDate,
               ),
             ),
             const SizedBox(height: 24),
@@ -207,32 +187,18 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: cs.outlineVariant.withOpacity(.22)),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Next step",
+                  const Text(
+                    'Next step',
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    "After saving the invoice, you will be redirected to the invoice detail screen where you can add invoice items.",
+                    'The issue date will be set automatically to today (${_fmtDate(_issueDate)}). After creating the invoice, you will be redirected to the invoice detail screen where you can add invoice items.',
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: cs.primary,
-                ),
-                onPressed: _saving ? null : _saveInvoice,
-                child: Text(
-                  _saving ? "Saving..." : "Create Invoice",
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
               ),
             ),
           ],
@@ -274,7 +240,9 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
             ? _clients
             : _clients.where((c) {
                 final name = (c['name'] ?? '').toString().toLowerCase();
-                final mf = (c['fiscalId'] ?? '').toString().toLowerCase();
+                final mf = (c['fiscalId'] ?? c['fiscal_id'] ?? '')
+                    .toString()
+                    .toLowerCase();
                 final cin = (c['cin'] ?? '').toString().toLowerCase();
                 return name.contains(q) || mf.contains(q) || cin.contains(q);
               }).toList();
@@ -289,21 +257,17 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
     });
 
     try {
-      debugPrint("[_ClientPickerSheet] ---- LOAD CLIENTS START ----");
-
       final data = await widget.clientsRepo.getAllClients();
 
-      debugPrint("[_ClientPickerSheet] clients loaded => ${data.length}");
-      debugPrint("[_ClientPickerSheet] first client => ${data.isNotEmpty ? data.first : 'none'}");
+      if (!mounted) return;
 
       setState(() {
         _clients = data;
         _filtered = data;
         _loading = false;
       });
-    } catch (e, st) {
-      debugPrint("[_ClientPickerSheet] _load ERROR => $e");
-      debugPrint("$st");
+    } catch (e) {
+      if (!mounted) return;
 
       setState(() {
         _error = e.toString();
@@ -331,7 +295,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
             children: [
               const SizedBox(height: 10),
               const Text(
-                "Choose Client",
+                'Choose Client',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
@@ -340,7 +304,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                 child: TextField(
                   controller: _searchCtrl,
                   decoration: const InputDecoration(
-                    hintText: "Search (name / MF / CIN)...",
+                    hintText: 'Search (name / MF / CIN)...',
                     prefixIcon: Icon(Icons.search),
                   ),
                 ),
@@ -359,10 +323,12 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                           builder: (_) => const AddClientScreen(),
                         ),
                       );
-                      if (saved == true) await _load();
+                      if (saved == true) {
+                        await _load();
+                      }
                     },
                     icon: const Icon(Icons.person_add),
-                    label: const Text("Add new client"),
+                    label: const Text('Add new client'),
                   ),
                 ),
               ),
@@ -371,7 +337,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _error != null
-                        ? Center(child: Text("Load failed: $_error"))
+                        ? Center(child: Text('Load failed: $_error'))
                         : ListView.builder(
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) {

@@ -9,22 +9,31 @@ class PdfPreviewScreen extends StatelessWidget {
   const PdfPreviewScreen({
     super.key,
     required this.pdfBytes,
-    this.title = "Invoice PDF",
+    this.title = 'Invoice PDF',
   });
 
   @override
   Widget build(BuildContext context) {
+    final safeTitle = title.trim().isEmpty ? 'Invoice PDF' : title.trim();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(safeTitle),
       ),
-      body: PdfPreview(
-        build: (format) async => pdfBytes,
-        canChangePageFormat: false,
-        canDebug: false,
-        allowPrinting: true,
-        allowSharing: true,
-      ),
+      body: pdfBytes.isEmpty
+          ? const Center(
+              child: Text('PDF is empty'),
+            )
+          : PdfPreview(
+              build: (format) async => pdfBytes,
+              canChangePageFormat: false,
+              canDebug: false,
+              allowPrinting: true,
+              allowSharing: true,
+              loadingWidget: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
     );
   }
 }

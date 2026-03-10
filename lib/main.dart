@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/screens/auth_gate_screen.dart';
+import 'package:my_app/screens/clients_screen.dart';
+import 'package:my_app/screens/dashboard_screen.dart';
+import 'package:my_app/screens/invoices_screen.dart';
+import 'package:my_app/screens/login_screen.dart';
 import 'package:my_app/screens/products_screen.dart';
+import 'package:my_app/screens/signup_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
-import 'screens/dashboard_screen.dart';
-import 'screens/clients_screen.dart';
-import 'screens/invoices_screen.dart';
-
-void main() => runApp(const FacturationApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const FacturationApp());
+}
 
 class FacturationApp extends StatefulWidget {
   const FacturationApp({super.key});
@@ -31,7 +36,16 @@ class _FacturationAppState extends State<FacturationApp> {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: _mode,
-      home: MainShell(onToggleTheme: _toggleTheme),
+      routes: {
+        '/login': (_) => const LoginScreen(),
+        '/home': (_) => MainShell(onToggleTheme: _toggleTheme),
+        '/signup': (_) => const SignupScreen(),
+        '/dashboard': (context) => MainShell(onToggleTheme: _toggleTheme),
+
+      },
+      home: AuthGateScreen(
+        home: MainShell(onToggleTheme: _toggleTheme),
+      ),
     );
   }
 }

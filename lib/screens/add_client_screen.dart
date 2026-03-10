@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import 'package:my_app/storage/clients_repo.dart';
 import '../widgets/primary_button.dart';
 
 class AddClientScreen extends StatefulWidget {
@@ -12,8 +12,7 @@ class AddClientScreen extends StatefulWidget {
 
 class _AddClientScreenState extends State<AddClientScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _api = ApiService();
-
+final _repo = ClientsRepo();
   late String _type; // 'company' | 'individual'
 
   final _name = TextEditingController();
@@ -87,7 +86,7 @@ Future<void> _save() async {
         const SnackBar(content: Text("Client update API not added yet.")),
       );
     } else {
-      final result = await _api.addClient(
+      final result = await _repo.addClient(
         type: _type,
         name: name,
         email: email,
@@ -103,7 +102,9 @@ Future<void> _save() async {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            result["message"]?.toString() ?? "Customer saved to MySQL ✅",
+            result > 0
+                ? "Client added successfully with ID: $result"
+                : "Client added successfully",
           ),
         ),
       );

@@ -3,7 +3,7 @@ import '../storage/products_repo.dart';
 import '../widgets/primary_button.dart';
 
 class AddProductScreen extends StatefulWidget {
-  final Map<String, dynamic>? product; // null = add, not null = edit
+  final Map<String, dynamic>? product;
 
   const AddProductScreen({super.key, this.product});
 
@@ -19,6 +19,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _price = TextEditingController();
   final _tvaRate = TextEditingController();
   final _unit = TextEditingController();
+  final _code = TextEditingController();
 
   bool _loading = false;
 
@@ -31,17 +32,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final p = widget.product;
 
     if (p != null) {
+      _code.text = (p['code'] ?? '').toString();
       _name.text = (p['name'] ?? '').toString();
       _price.text = (p['price'] ?? '').toString();
-      _tvaRate.text = (p['tva_rate'] ?? 0).toString();
+      _tvaRate.text = (p['tva_rate'] ?? p['tvaRate'] ?? 0).toString();
       _unit.text = (p['unit'] ?? '').toString();
     } else {
-      _tvaRate.text = "0";
+      _tvaRate.text = '0';
     }
   }
 
   @override
   void dispose() {
+    _code.dispose();
     _name.dispose();
     _price.dispose();
     _tvaRate.dispose();
@@ -54,6 +57,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return double.tryParse(cleaned);
   }
 
+  String? _requiredValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Required';
+    }
+    return null;
+  }
+
+  String? _priceValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Required';
+    }
+    if (_parseNum(value) == null) {
+      return 'Invalid number';
+    }
+    return null;
+  }
+
   Future<void> _save() async {
     if (_loading) return;
 
@@ -64,6 +84,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     setState(() => _loading = true);
 
     try {
+      final code = _code.text.trim().isEmpty ? null : _code.text.trim();
       final name = _name.text.trim();
       final unit = _unit.text.trim().isEmpty ? null : _unit.text.trim();
 
@@ -71,25 +92,42 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final tvaRate = _parseNum(_tvaRate.text);
 
       if (price == null || tvaRate == null) {
-        throw Exception("Price and TVA must be valid numbers.");
+        throw Exception('Price and TVA must be valid numbers.');
       }
 
       if (isEdit) {
-        final id = widget.product!['id'];
+        final rawId = widget.product!['id'];
+        final id = rawId is int ? rawId : int.tryParse(rawId.toString());
+
+        if (id == null) {
+          throw Exception('Invalid product id');
+        }
 
         await _repo.updateProduct(
-          id: id is int ? id : int.parse(id.toString()),
+          id: id,
+          code: code,
           name: name,
           price: price,
           tvaRate: tvaRate,
           unit: unit,
         );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Product updated successfully')),
+        );
       } else {
         await _repo.addProduct(
+          code: code,
           name: name,
           price: price,
           tvaRate: tvaRate,
           unit: unit,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Product saved successfully')),
         );
       }
 
@@ -99,12 +137,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
       );
-    }
-
-    if (mounted) {
-      setState(() => _loading = false);
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -121,7 +163,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       hintText: hint,
       prefixIcon: icon == null ? null : Icon(icon),
       filled: true,
-      fillColor: cs.surfaceContainerHighest.withOpacity(.45),
+      fillColor: cs.surfaceContainerHighest.withOpacity(.40),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
       ),
@@ -151,7 +193,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isEdit ? "Edit Product" : "Add Product",
+          isEdit ? 'Edit Product' : 'Add Product',
           style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
       ),
@@ -164,7 +206,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             bottom: 16,
           ),
           child: PrimaryButton(
-            text: isEdit ? "Save Changes" : "Save Product",
+            text: isEdit ? 'Save Changes' : 'Save Product',
             loading: _loading,
             onTap: _save,
           ),
@@ -213,8 +255,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     Expanded(
                       child: Text(
                         isEdit
-                            ? "Update product details"
-                            : "Create a new product/service",
+                            ? 'Update product details'
+                            : 'Create a new product or service',
                         style: t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -223,67 +265,66 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 16),
-
+              TextFormField(
+                controller: _code,
+                decoration: _fieldDeco(
+                  context,
+                  label: 'Code (optional)',
+                  hint: 'e.g. PRD-001',
+                  icon: Icons.qr_code_2_outlined,
+                ),
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _name,
                 decoration: _fieldDeco(
                   context,
-                  label: "Product / Service name",
-                  hint: "e.g. Web design, Consulting…",
+                  label: 'Product / Service name',
+                  hint: 'e.g. Web design, Consulting...',
                   icon: Icons.text_fields,
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? "Required" : null,
+                validator: _requiredValidator,
                 textInputAction: TextInputAction.next,
               ),
-
               const SizedBox(height: 12),
-
               TextFormField(
                 controller: _price,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: _fieldDeco(
                   context,
-                  label: "Price",
-                  hint: "e.g. 120 or 120,50",
+                  label: 'Price',
+                  hint: 'e.g. 120 or 120,50',
                   icon: Icons.payments_outlined,
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? "Required" : null,
+                validator: _priceValidator,
                 textInputAction: TextInputAction.next,
               ),
-
               const SizedBox(height: 12),
-
               TextFormField(
                 controller: _tvaRate,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: _fieldDeco(
                   context,
-                  label: "TVA %",
-                  hint: "e.g. 19",
+                  label: 'TVA %',
+                  hint: 'e.g. 19',
                   icon: Icons.percent,
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? "Required" : null,
+                validator: _priceValidator,
                 textInputAction: TextInputAction.next,
               ),
-
               const SizedBox(height: 12),
-
               TextFormField(
                 controller: _unit,
                 decoration: _fieldDeco(
                   context,
-                  label: "Unit (optional)",
-                  hint: "hour / piece / kg…",
+                  label: 'Unit (optional)',
+                  hint: 'hour / piece / kg...',
                   icon: Icons.straighten,
                 ),
                 textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _save(),
               ),
             ],
           ),

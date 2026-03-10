@@ -1,8 +1,11 @@
-import 'app_db.dart';
+import 'package:my_app/core/api_client.dart';
+import 'package:my_app/core/api_config.dart';
 
 class ClientsRepo {
+  final ApiClient _api = ApiClient.instance;
+
   Future<int> addClient({
-    required String type, // 'company' or 'individual'
+    required String type,
     required String name,
     String? email,
     String? phone,
@@ -10,21 +13,49 @@ class ClientsRepo {
     String? fiscalId,
     String? cin,
   }) async {
-    final db = await AppDb.instance;
-    return db.insert('clients', {
-      'type': type,
-      'name': name,
-      'email': email,
-      'phone': phone,
-      'address': address,
-      'fiscalId': fiscalId,
-      'cin': cin,
-    });
+    final response = await _api.post(
+      ApiConfig.addClient,
+      authRequired: true,
+      body: {
+        'type': type,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'address': address,
+        'fiscalId': fiscalId,
+        'cin': cin,
+      },
+    ) as Map<String, dynamic>;
+
+    if (response['success'] == true && response['id'] != null) {
+      return int.tryParse(response['id'].toString()) ?? 0;
+    }
+
+    throw Exception(response['message'] ?? 'Failed to add client');
   }
 
   Future<List<Map<String, dynamic>>> getAllClients() async {
-    final db = await AppDb.instance;
-    return db.query('clients', orderBy: 'id DESC');
+    final response = await _api.get(
+      ApiConfig.getClients,
+      authRequired: true,
+    );
+
+    if (response is Map<String, dynamic>) {
+      final data = response['data'];
+      if (data is List) {
+        return data
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    }
+
+    if (response is List) {
+      return response
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    }
+
+    throw Exception('Invalid clients response');
   }
 
   Future<int> updateClient({
@@ -37,10 +68,11 @@ class ClientsRepo {
     String? fiscalId,
     String? cin,
   }) async {
-    final db = await AppDb.instance;
-    return db.update(
-      'clients',
-      {
+    final response = await _api.post(
+      ApiConfig.updateClient,
+      authRequired: true,
+      body: {
+        'id': id,
         'type': type,
         'name': name,
         'email': email,
@@ -49,13 +81,43 @@ class ClientsRepo {
         'fiscalId': fiscalId,
         'cin': cin,
       },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    ) as Map<String, dynamic>;
+
+    if (response['success'] == true) {
+      return 1;
+    }
+
+    throw Exception(response['message'] ?? 'Failed to update client');
   }
 
   Future<int> deleteClient(int id) async {
-    final db = await AppDb.instance;
-    return db.delete('clients', where: 'id = ?', whereArgs: [id]);
+    final response = await _api.post(
+      ApiConfig.deleteClient,
+      authRequired: true,
+      body: {
+        'id': id,
+      },
+    ) as Map<String, dynamic>;
+
+    if (response['success'] == true) {
+      return 1;
+    }
+
+    throw Exception(response['message'] ?? 'Failed to delete client');
   }
+  Future<Map<String, dynamic>> getClientById(int id) async {
+  final clients = await getAllClients();
+
+  try {
+    return clients.firstWhere(
+      (c) {
+        final rawId = c['id'];
+        final clientId = rawId is int ? rawId : int.tryParse(rawId.toString());
+        return clientId == id;
+      },
+    );
+  } catch (_) {
+    throw Exception('Client not found');
+  }
+}
 }

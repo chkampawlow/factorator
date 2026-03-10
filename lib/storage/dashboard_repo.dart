@@ -1,42 +1,19 @@
-import 'app_db.dart';
+import 'package:my_app/storage/invoices_repo.dart';
 
 class DashboardRepo {
-  Future<Map<String, dynamic>> getStats() async {
-    final db = await AppDb.instance;
-
-    final totalRow = (await db.rawQuery("SELECT COUNT(*) AS c FROM invoices")).first;
-    final paidRow = (await db.rawQuery(
-      "SELECT COUNT(*) AS c FROM invoices WHERE UPPER(status) = 'PAID'",
-    )).first;
-
-    final unpaidRow = (await db.rawQuery(
-      "SELECT COUNT(*) AS c FROM invoices WHERE UPPER(status) = 'UNPAID'",
-    )).first;
-
-    return {
-      'totalInvoices': (totalRow['c'] as int),
-      'paidInvoices': (paidRow['c'] as int),
-      'pendingInvoices': (unpaidRow['c'] as int), // pending = unpaid (simple)
-    };
-  }
+  final InvoicesRepo _invoicesRepo = InvoicesRepo();
 
   Future<List<Map<String, dynamic>>> getRecentInvoices({int limit = 5}) async {
-    final db = await AppDb.instance;
+    final invoices = await _invoicesRepo.getAllInvoices();
 
-    // Join invoices with clients to show client name
-    return db.rawQuery('''
-      SELECT 
-        i.id,
-        i.invoiceNumber,
-        i.status,
-        i.issueDate,
-        i.dueDate,
-        i.total,
-        c.name AS clientName
-      FROM invoices i
-      JOIN clients c ON c.id = i.clientId
-      ORDER BY i.id DESC
-      LIMIT ?
-    ''', [limit]);
+    // sort newest first (same behavior as invoices screen)
+    invoices.sort((a, b) {
+      final aId = int.tryParse(a['id'].toString()) ?? 0;
+      final bId = int.tryParse(b['id'].toString()) ?? 0;
+      return bId.compareTo(aId);
+    });
+
+    // only return the last invoices
+    return invoices.take(limit).toList();
   }
 }

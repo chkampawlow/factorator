@@ -1,30 +1,31 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:my_app/core/api_client.dart';
+import 'package:my_app/core/api_config.dart';
 
 class InvoicesRepo {
-  static const String baseUrl = "http://localhost/facturation_api";
+  final ApiClient _api = ApiClient.instance;
 
   Future<List<Map<String, dynamic>>> getAllInvoices() async {
-    final uri = Uri.parse("$baseUrl/get_invoices.php");
-
-    final response = await http.get(
-      uri,
-      headers: const {"Accept": "application/json"},
+    final response = await _api.get(
+      ApiConfig.getInvoices,
+      authRequired: true,
     );
 
-    if (response.statusCode != 200) {
-      throw Exception("HTTP ${response.statusCode}: ${response.body}");
-    }
-
-    final decoded = jsonDecode(response.body);
-
-    if (decoded is List) {
-      return decoded
-          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+    if (response is List) {
+      return response
+          .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
     }
 
-    throw Exception("Invalid invoices response");
+    if (response is Map<String, dynamic>) {
+      final data = response['data'];
+      if (data is List) {
+        return data
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    }
+
+    throw Exception('Invalid invoices response');
   }
 
   Future<int> createInvoiceHeader({
@@ -36,51 +37,67 @@ class InvoicesRepo {
     required double totalVat,
     required double total,
   }) async {
-    final uri = Uri.parse("$baseUrl/add_invoice.php");
-
-    final response = await http.post(
-      uri,
-      headers: const {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
+    final response = await _api.post(
+      ApiConfig.addInvoice,
+      authRequired: true,
+      body: {
+        'client_id': clientId,
+        'invoice_date': issueDate.toIso8601String().split('T').first,
+        'invoice_due_date': dueDate.toIso8601String().split('T').first,
+        'status': status,
+        'subtotal': subtotal,
+        'montant_tva': totalVat,
+        'subtotal_ttc': total,
+        'total': total,
+        'invoice_type': 'FACTURE',
+        'notes': '',
       },
-      body: jsonEncode({
-        "client_id": clientId,
-        "invoice_date": issueDate.toIso8601String().split('T').first,
-        "invoice_due_date": dueDate.toIso8601String().split('T').first,
-        "status": status,
-        "subtotal": subtotal,
-        "montant_tva": totalVat,
-        "subtotal_ttc": total,
-        "total": total,
-        "invoice_type": "FACTURE",
-        "notes": "",
-      }),
-    );
+    ) as Map<String, dynamic>;
 
-    final decoded = jsonDecode(response.body);
-
-    if (response.statusCode != 200 || decoded["success"] != true) {
-      throw Exception(decoded["message"] ?? "Create invoice failed");
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Create invoice failed');
     }
 
-    final id = decoded["id"];
+    final id = response['id'];
+    if (id == null) {
+      throw Exception('Invoice created but id is missing');
+    }
+
     return id is int ? id : int.parse(id.toString());
   }
+
   Future<Map<String, dynamic>> getInvoiceById(int invoiceId) async {
-  final uri = Uri.parse("$baseUrl/get_invoice_by_id.php?id=$invoiceId");
+    final response = await _api.get(
+      ApiConfig.getInvoiceById,
+      authRequired: true,
+      queryParams: {'id': invoiceId},
+    ) as Map<String, dynamic>;
 
-  final response = await http.get(
-    uri,
-    headers: const {"Accept": "application/json"},
-  );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Load invoice failed');
+    }
 
-  final decoded = jsonDecode(response.body);
+    final invoice = response['invoice'];
+    if (invoice is Map<String, dynamic>) {
+      return invoice;
+    }
+    if (invoice is Map) {
+      return Map<String, dynamic>.from(invoice);
+    }
 
-  if (response.statusCode != 200 || decoded["success"] != true) {
-    throw Exception(decoded["message"] ?? "Load invoice failed");
+    throw Exception('Invalid invoice response');
   }
+  Future<void> recomputeInvoiceTotals(int invoiceId) async {
+  final response = await _api.post(
+    ApiConfig.recomputeInvoiceTotals,
+    authRequired: true,
+    body: {
+      'invoice_id': invoiceId,
+    },
+  ) as Map<String, dynamic>;
 
-  return Map<String, dynamic>.from(decoded["invoice"]);
+  if (response['success'] != true) {
+    throw Exception(response['message'] ?? 'Recompute totals failed');
+  }
 }
 }
