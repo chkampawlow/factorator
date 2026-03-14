@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/screens/%20profile_screen.dart';
 import 'package:my_app/screens/auth_gate_screen.dart';
 import 'package:my_app/screens/clients_screen.dart';
 import 'package:my_app/screens/dashboard_screen.dart';
@@ -72,6 +73,8 @@ class _MainShellState extends State<MainShell> {
       const ClientsScreen(),
       const ProductsScreen(),
       const InvoicesScreen(),
+      ProfileScreen(onToggleTheme: widget.onToggleTheme),
+
     ];
 
     return Scaffold(
@@ -96,6 +99,10 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.receipt_long),
             label: "Invoices",
           ),
+          const NavigationDestination(
+  icon: Icon(Icons.person_outline),
+  label: "Profile",
+),
         ],
       ),
     );

@@ -745,29 +745,26 @@ final _authService = AuthService();
           ),
         ],
       ),
+
       body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SafeArea(
-          child: AnimatedPadding(
-            duration: const Duration(milliseconds: 180),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildSummaryCard(cs),
-                const SizedBox(height: 12),
-                _buildAddItemCard(cs),
-                const SizedBox(height: 12),
-                _buildItemsCard(cs),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        ),
-      ),
+  onTap: () => FocusScope.of(context).unfocus(),
+  child: SafeArea(
+    child: ListView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildSummaryCard(cs),
+        const SizedBox(height: 12),
+        _buildAddItemCard(cs),
+        const SizedBox(height: 12),
+        _buildItemsCard(cs),
+        const SizedBox(height: 20),
+      ],
+    ),
+  ),
+),
     );
+    
   }
 }
 

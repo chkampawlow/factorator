@@ -1,5 +1,5 @@
 class ApiConfig {
-  static const String baseUrl = 'http://172.20.10.3/facturation_api/php';
+  static const String baseUrl = 'http://192.168.1.28/facturation_api/php';
 
   // Auth
   static const String login = '$baseUrl/login.php';
