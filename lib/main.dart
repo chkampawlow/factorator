@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/screens/%20profile_screen.dart';
-import 'package:my_app/screens/auth_gate_screen.dart';
-import 'package:my_app/screens/clients_screen.dart';
-import 'package:my_app/screens/dashboard_screen.dart';
-import 'package:my_app/screens/invoices_screen.dart';
-import 'package:my_app/screens/login_screen.dart';
 import 'package:my_app/screens/products_screen.dart';
-import 'package:my_app/screens/signup_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const FacturationApp());
-}
+import 'screens/clients_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/invoices_screen.dart';
+
+void main() => runApp(const FacturationApp());
 
 class FacturationApp extends StatefulWidget {
   const FacturationApp({super.key});
@@ -23,6 +18,7 @@ class FacturationApp extends StatefulWidget {
 
 class _FacturationAppState extends State<FacturationApp> {
   ThemeMode _mode = ThemeMode.light;
+  Color _primaryColor = AppTheme.mint;
 
   void _toggleTheme() {
     setState(() {
@@ -30,22 +26,23 @@ class _FacturationAppState extends State<FacturationApp> {
     });
   }
 
+  void _changePrimaryColor(Color color) {
+    setState(() {
+      _primaryColor = color;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light(primaryColor: _primaryColor),
+      darkTheme: AppTheme.dark(primaryColor: _primaryColor),
       themeMode: _mode,
-      routes: {
-        '/login': (_) => const LoginScreen(),
-        '/home': (_) => MainShell(onToggleTheme: _toggleTheme),
-        '/signup': (_) => const SignupScreen(),
-        '/dashboard': (context) => MainShell(onToggleTheme: _toggleTheme),
-
-      },
-      home: AuthGateScreen(
-        home: MainShell(onToggleTheme: _toggleTheme),
+      home: MainShell(
+        onToggleTheme: _toggleTheme,
+        onChangePrimaryColor: _changePrimaryColor,
+        currentPrimaryColor: _primaryColor,
       ),
     );
   }
@@ -53,10 +50,14 @@ class _FacturationAppState extends State<FacturationApp> {
 
 class MainShell extends StatefulWidget {
   final VoidCallback onToggleTheme;
+  final void Function(Color color) onChangePrimaryColor;
+  final Color currentPrimaryColor;
 
   const MainShell({
     super.key,
     required this.onToggleTheme,
+    required this.onChangePrimaryColor,
+    required this.currentPrimaryColor,
   });
 
   @override
@@ -73,8 +74,11 @@ class _MainShellState extends State<MainShell> {
       const ClientsScreen(),
       const ProductsScreen(),
       const InvoicesScreen(),
-      ProfileScreen(onToggleTheme: widget.onToggleTheme),
-
+      ProfileScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
     ];
 
     return Scaffold(
@@ -99,10 +103,10 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.receipt_long),
             label: "Invoices",
           ),
-          const NavigationDestination(
-  icon: Icon(Icons.person_outline),
-  label: "Profile",
-),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            label: "Profile",
+          ),
         ],
       ),
     );

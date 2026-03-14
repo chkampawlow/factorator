@@ -3,10 +3,14 @@ import 'package:my_app/services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
+  final void Function(Color color) onChangePrimaryColor;
+  final Color currentPrimaryColor;
 
   const ProfileScreen({
     super.key,
     required this.onToggleTheme,
+    required this.onChangePrimaryColor,
+    required this.currentPrimaryColor,
   });
 
   @override
@@ -19,6 +23,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _user;
+
+  final List<Color> _colors = const [
+    Color(0xFF16B39A),
+    Color(0xFF2563EB),
+    Color(0xFF7C3AED),
+    Color(0xFFDC2626),
+    Color(0xFFF59E0B),
+    Color(0xFF059669),
+    Color(0xFFEC4899),
+    Color(0xFF0EA5E9),
+  ];
 
   @override
   void initState() {
@@ -95,6 +110,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildColorCircle(Color color) {
+    final isSelected = widget.currentPrimaryColor.value == color.value;
+
+    return GestureDetector(
+      onTap: () => widget.onChangePrimaryColor(color),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? Colors.black : Colors.transparent,
+            width: 3,
+          ),
+        ),
+        child: isSelected
+            ? const Icon(Icons.check, color: Colors.white, size: 20)
+            : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -144,8 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  '${_user?['first_name'] ?? ''} ${_user?['last_name'] ?? ''}'
-                                      .trim(),
+                                  '${_user?['first_name'] ?? ''} ${_user?['last_name'] ?? ''}'.trim(),
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -177,6 +214,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 value: (_user?['email'] ?? '').toString(),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'App color',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: _colors
+                                      .map((color) => _buildColorCircle(color))
+                                      .toList(),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),

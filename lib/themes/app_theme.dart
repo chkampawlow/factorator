@@ -6,16 +6,16 @@ class AppTheme {
   static const textDark = Color(0xFF0F172A);
   static const textMuted = Color(0xFF64748B);
 
-  static ThemeData light() {
+  static ThemeData light({Color primaryColor = mint}) {
     final cs = ColorScheme.fromSeed(
-      seedColor: mint,
+      seedColor: primaryColor,
       brightness: Brightness.light,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: cs.copyWith(
-        primary: mint,
+        primary: primaryColor,
         surface: Colors.white,
         background: const Color(0xFFF7FAFC),
       ),
@@ -43,7 +43,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: mint,
+          backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -61,16 +61,16 @@ class AppTheme {
     );
   }
 
-  static ThemeData dark() {
+  static ThemeData dark({Color primaryColor = mint}) {
     final cs = ColorScheme.fromSeed(
-      seedColor: mint,
+      seedColor: primaryColor,
       brightness: Brightness.dark,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: cs.copyWith(
-        primary: mint,
+        primary: primaryColor,
         surface: const Color(0xFF0F172A),
         background: const Color(0xFF020617),
       ),
@@ -98,7 +98,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: mint,
+          backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
