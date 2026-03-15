@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/services/auth_service.dart';
+import 'package:my_app/services/settings_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
+  final void Function(String code) onChangeLanguage;
   final Color currentPrimaryColor;
 
   const ProfileScreen({
     super.key,
     required this.onToggleTheme,
     required this.onChangePrimaryColor,
+    required this.onChangeLanguage,
     required this.currentPrimaryColor,
   });
 
@@ -19,10 +22,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
+  final SettingsService _settingsService = SettingsService();
 
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _user;
+
+  String _currency = 'TND';
+  String _language = 'fr';
 
   final List<Color> _colors = const [
     Color(0xFF16B39A),
@@ -38,10 +45,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    _loadProfileData();
   }
 
-  Future<void> _loadUser() async {
+  Future<void> _loadProfileData() async {
     setState(() {
       _loading = true;
       _error = null;
@@ -49,11 +56,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final user = await _authService.me();
+      final currency = await _settingsService.getCurrency();
+      final language = await _settingsService.getLanguage();
 
       if (!mounted) return;
 
       setState(() {
         _user = user;
+        _currency = currency;
+        _language = language;
         _loading = false;
       });
     } catch (e) {
@@ -64,6 +75,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _loading = false;
       });
     }
+  }
+
+  Future<void> _changeCurrency(String? value) async {
+    if (value == null) return;
+
+    await _settingsService.setCurrency(value);
+
+    if (!mounted) return;
+
+    setState(() {
+      _currency = value;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Currency changed to $value')),
+    );
+  }
+
+  Future<void> _changeLanguage(String? value) async {
+    if (value == null) return;
+
+    await _settingsService.setLanguage(value);
+
+    if (!mounted) return;
+
+    setState(() {
+      _language = value;
+    });
+
+    widget.onChangeLanguage(value);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Language changed to $value')),
+    );
   }
 
   Future<void> _logout() async {
@@ -143,7 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Profile'),
         actions: [
           IconButton(
-            onPressed: _loadUser,
+            onPressed: _loadProfileData,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
           ),
@@ -214,6 +259,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 value: (_user?['email'] ?? '').toString(),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Currency',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                DropdownButtonFormField<String>(
+                                  value: _currency,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Select currency',
+                                    prefixIcon: Icon(Icons.attach_money),
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'TND',
+                                      child: Text('TND - Tunisian Dinar'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'EUR',
+                                      child: Text('EUR - Euro'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'USD',
+                                      child: Text('USD - US Dollar'),
+                                    ),
+                                  ],
+                                  onChanged: _changeCurrency,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Language',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                DropdownButtonFormField<String>(
+                                  value: _language,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Select language',
+                                    prefixIcon: Icon(Icons.language),
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'fr',
+                                      child: Text('Français'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'en',
+                                      child: Text('English'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'ar',
+                                      child: Text('العربية'),
+                                    ),
+                                  ],
+                                  onChanged: _changeLanguage,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),

@@ -91,10 +91,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
-          ),
+FilledButton(
+  onPressed: () async {
+    await _authService.logout();
+
+    if (!mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/login',
+      (route) => false,
+    );
+  },
+  child: const Text('Logout'),
+)
         ],
       ),
     );

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:my_app/screens/%20profile_screen.dart';
-import 'package:my_app/screens/products_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
 import 'screens/clients_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/invoices_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/products_screen.dart';
+import 'screens/signup_screen.dart';
+import 'services/auth_service.dart';
 
 void main() => runApp(const FacturationApp());
 
@@ -19,16 +23,23 @@ class FacturationApp extends StatefulWidget {
 class _FacturationAppState extends State<FacturationApp> {
   ThemeMode _mode = ThemeMode.light;
   Color _primaryColor = AppTheme.mint;
+  Locale _locale = const Locale('fr');
 
   void _toggleTheme() {
     setState(() {
-      _mode = (_mode == ThemeMode.light) ? ThemeMode.dark : ThemeMode.light;
+      _mode = _mode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
   }
 
   void _changePrimaryColor(Color color) {
     setState(() {
       _primaryColor = color;
+    });
+  }
+
+  void _changeLanguage(String code) {
+    setState(() {
+      _locale = Locale(code);
     });
   }
 
@@ -39,11 +50,117 @@ class _FacturationAppState extends State<FacturationApp> {
       theme: AppTheme.light(primaryColor: _primaryColor),
       darkTheme: AppTheme.dark(primaryColor: _primaryColor),
       themeMode: _mode,
-      home: MainShell(
+      locale: _locale,
+      supportedLocales: const [
+        Locale('fr'),
+        Locale('en'),
+        Locale('ar'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
+        '/dashboard': (context) => MainShell(
+              onToggleTheme: _toggleTheme,
+              onChangePrimaryColor: _changePrimaryColor,
+              currentPrimaryColor: _primaryColor,
+              onChangeLanguage: _changeLanguage,
+            ),
+      },
+      home: AppStartGate(
         onToggleTheme: _toggleTheme,
         onChangePrimaryColor: _changePrimaryColor,
         currentPrimaryColor: _primaryColor,
+        onChangeLanguage: _changeLanguage,
       ),
+    );
+  }
+}
+
+class AppStartGate extends StatefulWidget {
+  final VoidCallback onToggleTheme;
+  final void Function(Color color) onChangePrimaryColor;
+  final Color currentPrimaryColor;
+  final void Function(String code) onChangeLanguage;
+
+  const AppStartGate({
+    super.key,
+    required this.onToggleTheme,
+    required this.onChangePrimaryColor,
+    required this.currentPrimaryColor,
+    required this.onChangeLanguage,
+  });
+
+  @override
+  State<AppStartGate> createState() => _AppStartGateState();
+}
+
+class _AppStartGateState extends State<AppStartGate> {
+  final AuthService _authService = AuthService();
+
+  bool _loading = true;
+  bool _loggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    try {
+      final token = await _authService.getAccessToken();
+
+      if (token == null || token.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _loggedIn = false;
+          _loading = false;
+        });
+        return;
+      }
+
+      await _authService.me();
+
+      if (!mounted) return;
+      setState(() {
+        _loggedIn = true;
+        _loading = false;
+      });
+    } catch (_) {
+      await _authService.logout();
+
+      if (!mounted) return;
+      setState(() {
+        _loggedIn = false;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (!_loggedIn) {
+      return const LoginScreen();
+    }
+
+    return MainShell(
+      onToggleTheme: widget.onToggleTheme,
+      onChangePrimaryColor: widget.onChangePrimaryColor,
+      currentPrimaryColor: widget.currentPrimaryColor,
+      onChangeLanguage: widget.onChangeLanguage,
     );
   }
 }
@@ -52,12 +169,14 @@ class MainShell extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
   final Color currentPrimaryColor;
+  final void Function(String code) onChangeLanguage;
 
   const MainShell({
     super.key,
     required this.onToggleTheme,
     required this.onChangePrimaryColor,
     required this.currentPrimaryColor,
+    required this.onChangeLanguage,
   });
 
   @override
@@ -75,10 +194,11 @@ class _MainShellState extends State<MainShell> {
       const ProductsScreen(),
       const InvoicesScreen(),
       ProfileScreen(
-        onToggleTheme: widget.onToggleTheme,
-        onChangePrimaryColor: widget.onChangePrimaryColor,
-        currentPrimaryColor: widget.currentPrimaryColor,
-      ),
+  onToggleTheme: widget.onToggleTheme,
+  onChangePrimaryColor: widget.onChangePrimaryColor,
+  onChangeLanguage: widget.onChangeLanguage,
+  currentPrimaryColor: widget.currentPrimaryColor,
+),
     ];
 
     return Scaffold(
@@ -89,23 +209,23 @@ class _MainShellState extends State<MainShell> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard),
-            label: "Dashboard",
+            label: 'Dashboard',
           ),
           NavigationDestination(
             icon: Icon(Icons.people),
-            label: "Clients",
+            label: 'Clients',
           ),
           NavigationDestination(
             icon: Icon(Icons.list_alt),
-            label: "Items",
+            label: 'Items',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long),
-            label: "Invoices",
+            label: 'Invoices',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
-            label: "Profile",
+            label: 'Profile',
           ),
         ],
       ),
