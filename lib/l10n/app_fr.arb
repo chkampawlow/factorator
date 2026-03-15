@@ -1,0 +1,129 @@
+{
+  "@@locale": "fr",
+
+  "profile": "Profil",
+  "logout": "Déconnexion",
+  "cancel": "Annuler",
+  "currency": "Devise",
+  "selectCurrency": "Choisir la devise",
+  "language": "Langue",
+  "selectLanguage": "Choisir la langue",
+  "appColor": "Couleur de l'application",
+  "toggleTheme": "Changer le thème",
+  "email": "Email",
+  "fiscalId": "Matricule fiscal",
+  "noUserData": "Aucune donnée utilisateur",
+  "logoutQuestion": "Voulez-vous vous déconnecter ?",
+
+  "currencyChanged": "Devise changée en {value}",
+  "@currencyChanged": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+
+  "languageChanged": "Langue changée en {value}",
+  "@languageChanged": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+
+  "clientUpdateApiNotAddedYet": "API de mise à jour du client non disponible",
+  "clientAddedSuccessfully": "Client ajouté avec succès",
+  "clientAddedSuccessfullyWithId": "Client ajouté avec succès avec l'ID : {id}",
+  "@clientAddedSuccessfullyWithId": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+
+  "saveFailed": "Échec de l'enregistrement",
+
+  "fiscalIdMf": "Matricule Fiscal (MF)",
+  "cin": "CIN",
+
+  "editCustomer": "Modifier le client",
+  "addCustomer": "Ajouter un client",
+
+  "companyName": "Nom de l'entreprise",
+  "fullName": "Nom complet",
+
+  "requiredField": "Champ requis",
+
+  "mfRequired": "MF requis",
+  "cinRequired": "CIN requis",
+  "cinTooShort": "Le CIN est trop court",
+
+  "emailOptional": "Email (optionnel)",
+  "phoneOptional": "Téléphone (optionnel)",
+  "addressOptional": "Adresse (optionnelle)",
+
+  "saveChanges": "Enregistrer les modifications",
+  "saveCustomer": "Enregistrer le client",
+  
+
+  "newInvoice": "Nouvelle facture",
+  "saving": "Enregistrement...",
+  "createInvoice": "Créer la facture",
+  "client": "Client",
+  "chooseClientOrAddNew": "Choisir un client ou en ajouter un",
+  "dueDate": "Date d'échéance",
+  "nextStep": "Étape suivante",
+  "issueDateAutoToday": "La date de facture sera définie automatiquement à aujourd'hui ({date}). Après la création de la facture, vous serez redirigé vers l'écran de détail de la facture où vous pourrez ajouter des articles.",
+  "@issueDateAutoToday": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "clientSelectionFailed": "Échec de la sélection du client",
+  "pleaseChooseClient": "Veuillez choisir un client.",
+  "chooseClient": "Choisir un client",
+  "addNewClient": "Ajouter un nouveau client",
+  "loadFailed": "Échec du chargement",
+
+  "invalidNumber": "Nombre invalide",
+  "priceAndTvaMustBeValidNumbers": "Le prix et la TVA doivent être des nombres valides.",
+  "invalidProductId": "Identifiant produit invalide",
+  "productUpdatedSuccessfully": "Produit mis à jour avec succès",
+  "productSavedSuccessfully": "Produit enregistré avec succès",
+  "editProduct": "Modifier le produit",
+  "addProduct": "Ajouter un produit",
+  "saveProduct": "Enregistrer le produit",
+  "updateProductDetails": "Mettre à jour les détails du produit",
+  "createNewProductOrService": "Créer un nouveau produit ou service",
+  "codeOptional": "Code (optionnel)",
+  "productCodeExample": "ex. PRD-001",
+  "productServiceName": "Nom du produit / service",
+  "productServiceNameExample": "ex. Web design, Consulting...",
+  "price": "Prix",
+  "priceExample": "ex. 120 ou 120,50",
+  "tvaPercent": "TVA %",
+  "tvaExample": "ex. 19",
+  "unitOptional": "Unité (optionnelle)",
+  "unitExample": "heure / pièce / kg...",
+
+  "failedToLoadCustomers": "Échec du chargement des clients",
+  "mfLabel": "MF",
+  "missingClientId": "Identifiant client manquant",
+  "invalidClientId": "Identifiant client invalide",
+  "deleteCustomerQuestion": "Supprimer le client ?",
+  "areYouSureDeleteCustomer": "Voulez-vous vraiment supprimer \"{name}\" ?",
+  "@areYouSureDeleteCustomer": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "delete": "Supprimer",
+  "customerDeletedSuccessfully": "Client supprimé avec succès",
+  "deleteFailed": "Échec de la suppression",
+  "unnamedCustomer": "Client sans nom",
+  "customers": "Clients",
+  "refresh": "Actualiser",
+  "add": "Ajouter",
+  "searchNameMfCin": "Rechercher (nom / MF / CIN)...",
+  "allCustomers": "Tous les clients",
+  "noCustomersYet": "Aucun client pour le moment",
+  "edit": "Modifier"
+
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import '../storage/products_repo.dart';
 import '../widgets/primary_button.dart';
 
@@ -59,17 +60,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   String? _requiredValidator(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Required';
+      return AppLocalizations.of(context)!.requiredField;
     }
     return null;
   }
 
   String? _priceValidator(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Required';
+      return AppLocalizations.of(context)!.requiredField;
     }
     if (_parseNum(value) == null) {
-      return 'Invalid number';
+      return AppLocalizations.of(context)!.invalidNumber;
     }
     return null;
   }
@@ -92,7 +93,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final tvaRate = _parseNum(_tvaRate.text);
 
       if (price == null || tvaRate == null) {
-        throw Exception('Price and TVA must be valid numbers.');
+        throw Exception(AppLocalizations.of(context)!.priceAndTvaMustBeValidNumbers);
       }
 
       if (isEdit) {
@@ -100,7 +101,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         final id = rawId is int ? rawId : int.tryParse(rawId.toString());
 
         if (id == null) {
-          throw Exception('Invalid product id');
+          throw Exception(AppLocalizations.of(context)!.invalidProductId);
         }
 
         await _repo.updateProduct(
@@ -114,7 +115,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Product updated successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.productUpdatedSuccessfully)),
         );
       } else {
         await _repo.addProduct(
@@ -127,7 +128,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Product saved successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.productSavedSuccessfully)),
         );
       }
 
@@ -187,13 +188,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     const bottomSafeSpace = 90.0;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isEdit ? 'Edit Product' : 'Add Product',
+          isEdit ? l10n.editProduct : l10n.addProduct,
           style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
       ),
@@ -206,7 +208,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             bottom: 16,
           ),
           child: PrimaryButton(
-            text: isEdit ? 'Save Changes' : 'Save Product',
+            text: isEdit ? l10n.saveChanges : l10n.saveProduct,
             loading: _loading,
             onTap: _save,
           ),
@@ -255,8 +257,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     Expanded(
                       child: Text(
                         isEdit
-                            ? 'Update product details'
-                            : 'Create a new product or service',
+                            ? l10n.updateProductDetails
+                            : l10n.createNewProductOrService,
                         style: t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -270,8 +272,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 controller: _code,
                 decoration: _fieldDeco(
                   context,
-                  label: 'Code (optional)',
-                  hint: 'e.g. PRD-001',
+                  label: l10n.codeOptional,
+                  hint: l10n.productCodeExample,
                   icon: Icons.qr_code_2_outlined,
                 ),
                 textInputAction: TextInputAction.next,
@@ -281,8 +283,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 controller: _name,
                 decoration: _fieldDeco(
                   context,
-                  label: 'Product / Service name',
-                  hint: 'e.g. Web design, Consulting...',
+                  label: l10n.productServiceName,
+                  hint: l10n.productServiceNameExample,
                   icon: Icons.text_fields,
                 ),
                 validator: _requiredValidator,
@@ -294,8 +296,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: _fieldDeco(
                   context,
-                  label: 'Price',
-                  hint: 'e.g. 120 or 120,50',
+                  label: l10n.price,
+                  hint: l10n.priceExample,
                   icon: Icons.payments_outlined,
                 ),
                 validator: _priceValidator,
@@ -307,8 +309,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: _fieldDeco(
                   context,
-                  label: 'TVA %',
-                  hint: 'e.g. 19',
+                  label: l10n.tvaPercent,
+                  hint: l10n.tvaExample,
                   icon: Icons.percent,
                 ),
                 validator: _priceValidator,
@@ -319,8 +321,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 controller: _unit,
                 decoration: _fieldDeco(
                   context,
-                  label: 'Unit (optional)',
-                  hint: 'hour / piece / kg...',
+                  label: l10n.unitOptional,
+                  hint: l10n.unitExample,
                   icon: Icons.straighten,
                 ),
                 textInputAction: TextInputAction.done,

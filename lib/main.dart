@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/%20profile_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
@@ -39,7 +40,7 @@ class _FacturationAppState extends State<FacturationApp> {
 
   void _changeLanguage(String code) {
     setState(() {
-      _locale = Locale(code);
+      _locale = Locale(code.toLowerCase());
     });
   }
 
@@ -51,31 +52,28 @@ class _FacturationAppState extends State<FacturationApp> {
       darkTheme: AppTheme.dark(primaryColor: _primaryColor),
       themeMode: _mode,
       locale: _locale,
-      supportedLocales: const [
-        Locale('fr'),
-        Locale('en'),
-        Locale('ar'),
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/dashboard': (context) => MainShell(
+        '/login': (_) => const LoginScreen(),
+        '/signup': (_) => const SignupScreen(),
+        '/dashboard': (_) => MainShell(
               onToggleTheme: _toggleTheme,
               onChangePrimaryColor: _changePrimaryColor,
-              currentPrimaryColor: _primaryColor,
               onChangeLanguage: _changeLanguage,
+              currentPrimaryColor: _primaryColor,
             ),
       },
       home: AppStartGate(
         onToggleTheme: _toggleTheme,
         onChangePrimaryColor: _changePrimaryColor,
-        currentPrimaryColor: _primaryColor,
         onChangeLanguage: _changeLanguage,
+        currentPrimaryColor: _primaryColor,
       ),
     );
   }
@@ -84,15 +82,15 @@ class _FacturationAppState extends State<FacturationApp> {
 class AppStartGate extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
-  final Color currentPrimaryColor;
   final void Function(String code) onChangeLanguage;
+  final Color currentPrimaryColor;
 
   const AppStartGate({
     super.key,
     required this.onToggleTheme,
     required this.onChangePrimaryColor,
-    required this.currentPrimaryColor,
     required this.onChangeLanguage,
+    required this.currentPrimaryColor,
   });
 
   @override
@@ -146,9 +144,7 @@ class _AppStartGateState extends State<AppStartGate> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -159,8 +155,8 @@ class _AppStartGateState extends State<AppStartGate> {
     return MainShell(
       onToggleTheme: widget.onToggleTheme,
       onChangePrimaryColor: widget.onChangePrimaryColor,
-      currentPrimaryColor: widget.currentPrimaryColor,
       onChangeLanguage: widget.onChangeLanguage,
+      currentPrimaryColor: widget.currentPrimaryColor,
     );
   }
 }
@@ -168,15 +164,15 @@ class _AppStartGateState extends State<AppStartGate> {
 class MainShell extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
-  final Color currentPrimaryColor;
   final void Function(String code) onChangeLanguage;
+  final Color currentPrimaryColor;
 
   const MainShell({
     super.key,
     required this.onToggleTheme,
     required this.onChangePrimaryColor,
-    required this.currentPrimaryColor,
     required this.onChangeLanguage,
+    required this.currentPrimaryColor,
   });
 
   @override
@@ -194,11 +190,11 @@ class _MainShellState extends State<MainShell> {
       const ProductsScreen(),
       const InvoicesScreen(),
       ProfileScreen(
-  onToggleTheme: widget.onToggleTheme,
-  onChangePrimaryColor: widget.onChangePrimaryColor,
-  onChangeLanguage: widget.onChangeLanguage,
-  currentPrimaryColor: widget.currentPrimaryColor,
-),
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
     ];
 
     return Scaffold(
@@ -207,26 +203,11 @@ class _MainShellState extends State<MainShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people),
-            label: 'Clients',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.list_alt),
-            label: 'Items',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long),
-            label: 'Invoices',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
+          NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          NavigationDestination(icon: Icon(Icons.people), label: 'Clients'),
+          NavigationDestination(icon: Icon(Icons.list_alt), label: 'Items'),
+          NavigationDestination(icon: Icon(Icons.receipt_long), label: 'Invoices'),
+          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
     );

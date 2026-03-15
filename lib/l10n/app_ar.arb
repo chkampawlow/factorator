@@ -1,0 +1,128 @@
+{
+  "@@locale": "ar",
+
+  "profile": "الملف الشخصي",
+  "logout": "تسجيل الخروج",
+  "cancel": "إلغاء",
+  "currency": "العملة",
+  "selectCurrency": "اختر العملة",
+  "language": "اللغة",
+  "selectLanguage": "اختر اللغة",
+  "appColor": "لون التطبيق",
+  "toggleTheme": "تبديل المظهر",
+  "email": "البريد الإلكتروني",
+  "fiscalId": "المعرّف الجبائي",
+  "noUserData": "لا توجد بيانات مستخدم",
+  "logoutQuestion": "هل تريد تسجيل الخروج؟",
+
+  "currencyChanged": "تم تغيير العملة إلى {value}",
+  "@currencyChanged": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+
+  "languageChanged": "تم تغيير اللغة إلى {value}",
+  "@languageChanged": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+
+  "clientUpdateApiNotAddedYet": "واجهة تحديث العميل غير متوفرة بعد",
+  "clientAddedSuccessfully": "تمت إضافة العميل بنجاح",
+  "clientAddedSuccessfullyWithId": "تمت إضافة العميل بنجاح بالمعرف {id}",
+  "@clientAddedSuccessfullyWithId": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+
+  "saveFailed": "فشل الحفظ",
+
+  "fiscalIdMf": "المعرّف الجبائي (MF)",
+  "cin": "رقم الهوية",
+
+  "editCustomer": "تعديل العميل",
+  "addCustomer": "إضافة عميل",
+
+  "companyName": "اسم الشركة",
+  "fullName": "الاسم الكامل",
+
+  "requiredField": "حقل مطلوب",
+
+  "mfRequired": "المعرّف الجبائي مطلوب",
+  "cinRequired": "رقم الهوية مطلوب",
+  "cinTooShort": "رقم الهوية قصير جداً",
+
+  "emailOptional": "البريد الإلكتروني (اختياري)",
+  "phoneOptional": "الهاتف (اختياري)",
+  "addressOptional": "العنوان (اختياري)",
+
+  "saveChanges": "حفظ التغييرات",
+  "saveCustomer": "حفظ العميل",
+
+  "invalidNumber": "رقم غير صالح",
+  "priceAndTvaMustBeValidNumbers": "يجب أن يكون السعر ونسبة TVA أرقامًا صالحة.",
+  "invalidProductId": "معرّف المنتج غير صالح",
+  "productUpdatedSuccessfully": "تم تحديث المنتج بنجاح",
+  "productSavedSuccessfully": "تم حفظ المنتج بنجاح",
+  "editProduct": "تعديل المنتج",
+  "addProduct": "إضافة منتج",
+  "saveProduct": "حفظ المنتج",
+  "updateProductDetails": "تحديث تفاصيل المنتج",
+  "createNewProductOrService": "إنشاء منتج أو خدمة جديدة",
+  "codeOptional": "الرمز (اختياري)",
+  "productCodeExample": "مثال: PRD-001",
+  "productServiceName": "اسم المنتج / الخدمة",
+  "productServiceNameExample": "مثال: تصميم ويب، استشارة...",
+  "newInvoice": "فاتورة جديدة",
+  "saving": "جارٍ الحفظ...",
+  "createInvoice": "إنشاء الفاتورة",
+  "client": "العميل",
+  "chooseClientOrAddNew": "اختر عميلًا أو أضف واحدًا جديدًا",
+  "dueDate": "تاريخ الاستحقاق",
+  "nextStep": "الخطوة التالية",
+  "issueDateAutoToday": "سيتم ضبط تاريخ الفاتورة تلقائيًا على تاريخ اليوم ({date}). بعد إنشاء الفاتورة، سيتم توجيهك إلى شاشة تفاصيل الفاتورة حيث يمكنك إضافة عناصر الفاتورة.",
+  "@issueDateAutoToday": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "clientSelectionFailed": "فشل اختيار العميل",
+  "pleaseChooseClient": "يرجى اختيار عميل.",
+  "chooseClient": "اختر العميل",
+  "addNewClient": "إضافة عميل جديد",
+  "loadFailed": "فشل التحميل",
+  "price": "السعر",
+  "priceExample": "مثال: 120 أو 120,50",
+  "tvaPercent": "نسبة TVA %",
+  "tvaExample": "مثال: 19",
+  "unitOptional": "الوحدة (اختيارية)",
+  "unitExample": "ساعة / قطعة / كغ...",
+
+
+
+  "failedToLoadCustomers": "فشل تحميل العملاء",
+  "mfLabel": "المعرف الجبائي",
+  "missingClientId": "معرّف العميل مفقود",
+  "invalidClientId": "معرّف العميل غير صالح",
+  "deleteCustomerQuestion": "حذف العميل؟",
+  "areYouSureDeleteCustomer": "هل أنت متأكد أنك تريد حذف \"{name}\"؟",
+  "@areYouSureDeleteCustomer": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "delete": "حذف",
+  "customerDeletedSuccessfully": "تم حذف العميل بنجاح",
+  "deleteFailed": "فشل الحذف",
+  "unnamedCustomer": "عميل بدون اسم",
+  "customers": "العملاء",
+  "refresh": "تحديث",
+  "add": "إضافة",
+  "searchNameMfCin": "بحث (الاسم / MF / CIN)...",
+  "allCustomers": "كل العملاء",
+  "noCustomersYet": "لا يوجد عملاء بعد",
+  "edit": "تعديل"
+}

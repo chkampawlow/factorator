@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/storage/clients_repo.dart';
 import '../widgets/primary_button.dart';
 
@@ -83,7 +84,7 @@ Future<void> _save() async {
   try {
     if (isEdit) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Client update API not added yet.")),
+        SnackBar(content: Text(AppLocalizations.of(context)!.clientUpdateApiNotAddedYet)),
       );
     } else {
       final result = await _repo.addClient(
@@ -103,8 +104,8 @@ Future<void> _save() async {
         SnackBar(
           content: Text(
             result > 0
-                ? "Client added successfully with ID: $result"
-                : "Client added successfully",
+                ? AppLocalizations.of(context)!.clientAddedSuccessfullyWithId(result.toString())
+                : AppLocalizations.of(context)!.clientAddedSuccessfully,
           ),
         ),
       );
@@ -115,7 +116,7 @@ Future<void> _save() async {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Save failed: $e")),
+      SnackBar(content: Text('${AppLocalizations.of(context)!.saveFailed}: $e')),
     );
   } finally {
     if (mounted) {
@@ -126,6 +127,7 @@ Future<void> _save() async {
   Widget _pill(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     final isCompany = _type == 'company';
 
@@ -162,7 +164,7 @@ Future<void> _save() async {
             ),
             const SizedBox(width: 10),
             Text(
-              isCompany ? "Matricule Fiscal (MF)" : "CIN",
+              isCompany ? l10n.fiscalIdMf : l10n.cin,
               style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w900),
             ),
             const SizedBox(width: 10),
@@ -213,10 +215,11 @@ Future<void> _save() async {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isCompany = _type == 'company';
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? "Edit Customer" : "Add Customer"),
+        title: Text(isEdit ? l10n.editCustomer : l10n.addCustomer),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -244,13 +247,13 @@ Future<void> _save() async {
                         controller: _name,
                         decoration: _dec(
                           context,
-                          isCompany ? "Company name" : "Full name",
+                          isCompany ? l10n.companyName : l10n.fullName,
                           icon: isCompany
                               ? Icons.business_outlined
                               : Icons.person_outline,
                         ),
                         validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? "Required" : null,
+                            (v == null || v.trim().isEmpty) ? l10n.requiredField : null,
                       ),
                       const SizedBox(height: 12),
                       AnimatedSwitcher(
@@ -276,13 +279,13 @@ Future<void> _save() async {
                                 controller: _fiscalId,
                                 decoration: _dec(
                                   context,
-                                  "Matricule Fiscal (MF)",
+                                  l10n.fiscalIdMf,
                                   icon: Icons.badge_outlined,
                                 ),
                                 validator: (v) {
                                   if (_type != 'company') return null;
                                   if (v == null || v.trim().isEmpty) {
-                                    return "MF required";
+                                    return l10n.mfRequired;
                                   }
                                   return null;
                                 },
@@ -292,17 +295,17 @@ Future<void> _save() async {
                                 controller: _cin,
                                 decoration: _dec(
                                   context,
-                                  "CIN",
+                                  l10n.cin,
                                   icon: Icons.credit_card_outlined,
                                 ),
                                 keyboardType: TextInputType.number,
                                 validator: (v) {
                                   if (_type != 'individual') return null;
                                   if (v == null || v.trim().isEmpty) {
-                                    return "CIN required";
+                                    return l10n.cinRequired;
                                   }
                                   if (v.trim().length < 6) {
-                                    return "CIN looks too short";
+                                    return l10n.cinTooShort;
                                   }
                                   return null;
                                 },
@@ -313,7 +316,7 @@ Future<void> _save() async {
                         controller: _email,
                         decoration: _dec(
                           context,
-                          "Email (optional)",
+                          l10n.emailOptional,
                           icon: Icons.email_outlined,
                         ),
                       ),
@@ -322,7 +325,7 @@ Future<void> _save() async {
                         controller: _phone,
                         decoration: _dec(
                           context,
-                          "Phone (optional)",
+                          l10n.phoneOptional,
                           icon: Icons.phone_outlined,
                         ),
                       ),
@@ -331,7 +334,7 @@ Future<void> _save() async {
                         controller: _address,
                         decoration: _dec(
                           context,
-                          "Address (optional)",
+                          l10n.addressOptional,
                           icon: Icons.location_on_outlined,
                         ),
                         maxLines: 2,
@@ -355,7 +358,7 @@ Future<void> _save() async {
             ),
           ),
           child: PrimaryButton(
-            text: isEdit ? "Save Changes" : "Save Customer",
+            text: isEdit ? l10n.saveChanges : l10n.saveCustomer,
             loading: _loading,
             onTap: _save,
           ),

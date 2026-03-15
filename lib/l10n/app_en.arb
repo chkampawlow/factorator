@@ -1,0 +1,126 @@
+{
+  "@@locale": "en",
+
+  "profile": "Profile",
+  "logout": "Logout",
+  "cancel": "Cancel",
+  "currency": "Currency",
+  "selectCurrency": "Select currency",
+  "language": "Language",
+  "selectLanguage": "Select language",
+  "appColor": "App color",
+  "toggleTheme": "Toggle theme",
+  "email": "Email",
+  "fiscalId": "Fiscal ID",
+  "noUserData": "No user data",
+  "logoutQuestion": "Do you want to logout?",
+
+  "currencyChanged": "Currency changed to {value}",
+  "@currencyChanged": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+
+  "languageChanged": "Language changed to {value}",
+  "@languageChanged": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+
+  "clientUpdateApiNotAddedYet": "Client update API not added yet",
+  "clientAddedSuccessfully": "Client added successfully",
+  "clientAddedSuccessfullyWithId": "Client added successfully with ID: {id}",
+  "@clientAddedSuccessfullyWithId": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+
+  "saveFailed": "Save failed",
+
+  "fiscalIdMf": "Fiscal ID (MF)",
+  "cin": "CIN",
+
+  "editCustomer": "Edit Customer",
+  "addCustomer": "Add Customer",
+
+  "companyName": "Company name",
+  "fullName": "Full name",
+
+  "requiredField": "Required",
+
+  "mfRequired": "Fiscal ID required",
+  "cinRequired": "CIN required",
+  "cinTooShort": "CIN looks too short",
+
+  "emailOptional": "Email (optional)",
+  "phoneOptional": "Phone (optional)",
+  "addressOptional": "Address (optional)",
+
+  "saveChanges": "Save Changes",
+  "saveCustomer": "Save Customer",
+
+  "newInvoice": "New Invoice",
+  "saving": "Saving...",
+  "createInvoice": "Create Invoice",
+  "client": "Client",
+  "chooseClientOrAddNew": "Choose client or add new",
+  "dueDate": "Due date",
+  "nextStep": "Next step",
+  "issueDateAutoToday": "The issue date will be set automatically to today ({date}). After creating the invoice, you will be redirected to the invoice detail screen where you can add invoice items.",
+  "@issueDateAutoToday": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+    "clientSelectionFailed": "Client selection failed",
+  "pleaseChooseClient": "Please choose a client.",
+  "chooseClient": "Choose Client",
+  "addNewClient": "Add new client",
+  "loadFailed": "Load failed",
+  "invalidNumber": "Invalid number",
+  "priceAndTvaMustBeValidNumbers": "Price and TVA must be valid numbers.",
+  "invalidProductId": "Invalid product id",
+  "productUpdatedSuccessfully": "Product updated successfully",
+  "productSavedSuccessfully": "Product saved successfully",
+  "editProduct": "Edit Product",
+  "addProduct": "Add Product",
+  "saveProduct": "Save Product",
+  "updateProductDetails": "Update product details",
+  "createNewProductOrService": "Create a new product or service",
+  "codeOptional": "Code (optional)",
+  "productCodeExample": "e.g. PRD-001",
+  "productServiceName": "Product / Service name",
+  "productServiceNameExample": "e.g. Web design, Consulting...",
+  "price": "Price",
+  "priceExample": "e.g. 120 or 120,50",
+  "tvaPercent": "TVA %",
+  "tvaExample": "e.g. 19",
+  "unitOptional": "Unit (optional)",
+  "unitExample": "hour / piece / kg...",
+
+  "failedToLoadCustomers": "Failed to load customers",
+  "mfLabel": "MF",
+  "missingClientId": "Missing client id",
+  "invalidClientId": "Invalid client id",
+  "deleteCustomerQuestion": "Delete customer?",
+  "areYouSureDeleteCustomer": "Are you sure you want to delete \"{name}\"?",
+  "@areYouSureDeleteCustomer": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "delete": "Delete",
+  "customerDeletedSuccessfully": "Customer deleted successfully",
+  "deleteFailed": "Delete failed",
+  "unnamedCustomer": "Unnamed customer",
+  "customers": "Customers",
+  "refresh": "Refresh",
+  "add": "Add",
+  "searchNameMfCin": "Search (name / MF / CIN)...",
+  "allCustomers": "All customers",
+  "noCustomersYet": "No customers yet",
+  "edit": "Edit"
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import '../storage/clients_repo.dart';
 import 'add_client_screen.dart';
 
@@ -77,7 +78,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to load customers: ${e.toString().replaceFirst('Exception: ', '')}'),
+          content: Text('${AppLocalizations.of(context)!.failedToLoadCustomers}: ${e.toString().replaceFirst('Exception: ', '')}'),
         ),
       );
     }
@@ -94,10 +95,10 @@ class _ClientsScreenState extends State<ClientsScreen> {
   String _clientSubtitle(Map<String, dynamic> c) {
     if (_isCompany(c)) {
       final mf = _getFiscalId(c);
-      return 'MF: ${mf.isEmpty ? '-' : mf}';
+      return '${AppLocalizations.of(context)!.mfLabel}: ${mf.isEmpty ? '-' : mf}';
     } else {
       final cin = (c['cin'] ?? '').toString();
-      return 'CIN: ${cin.isEmpty ? '-' : cin}';
+      return '${AppLocalizations.of(context)!.cin}: ${cin.isEmpty ? '-' : cin}';
     }
   }
 
@@ -124,7 +125,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
     if (rawId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing client id')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.missingClientId)),
       );
       return false;
     }
@@ -132,7 +133,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
     final int? id = rawId is int ? rawId : int.tryParse(rawId.toString());
     if (id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid client id')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.invalidClientId)),
       );
       return false;
     }
@@ -140,16 +141,16 @@ class _ClientsScreenState extends State<ClientsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete customer?'),
-        content: Text('Are you sure you want to delete "$name"?'),
+        title: Text(AppLocalizations.of(context)!.deleteCustomerQuestion),
+        content: Text(AppLocalizations.of(context)!.areYouSureDeleteCustomer(name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -163,7 +164,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
       if (!mounted) return false;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Customer deleted ✅')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.customerDeletedSuccessfully)),
       );
 
       await _loadClients();
@@ -173,7 +174,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Delete failed: ${e.toString().replaceFirst('Exception: ', '')}'),
+          content: Text('${AppLocalizations.of(context)!.deleteFailed}: ${e.toString().replaceFirst('Exception: ', '')}'),
         ),
       );
       return false;
@@ -223,7 +224,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name.isEmpty ? 'Unnamed customer' : name,
+                  name.isEmpty ? AppLocalizations.of(context)!.unnamedCustomer : name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: t.titleMedium?.copyWith(
@@ -291,18 +292,19 @@ class _ClientsScreenState extends State<ClientsScreen> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Customers',
+          l10n.customers,
           style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
             onPressed: _loadClients,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: l10n.refresh,
           ),
           const SizedBox(width: 6),
         ],
@@ -319,7 +321,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
           }
         },
         icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Add'),
+        label: Text(l10n.add),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -339,11 +341,11 @@ class _ClientsScreenState extends State<ClientsScreen> {
                     ),
                     child: TextField(
                       controller: _searchCtrl,
-                      decoration: const InputDecoration(
-                        hintText: 'Search (name / MF / CIN)...',
-                        prefixIcon: Icon(Icons.search),
+                      decoration: InputDecoration(
+                        hintText: l10n.searchNameMfCin,
+                        prefixIcon: const Icon(Icons.search),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 14,
                         ),
@@ -355,7 +357,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'All customers',
+                          l10n.allCustomers,
                           style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
                         ),
                       ),
@@ -374,7 +376,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                       padding: const EdgeInsets.only(top: 30),
                       child: Center(
                         child: Text(
-                          'No customers yet',
+                          l10n.noCustomersYet,
                           style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -403,7 +405,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           background: _swipeBg(
                             context,
                             icon: Icons.edit,
-                            label: 'Edit',
+                            label: l10n.edit,
                             alignLeft: true,
                             color: cs.primaryContainer,
                             fg: cs.onPrimaryContainer,
@@ -411,7 +413,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           secondaryBackground: _swipeBg(
                             context,
                             icon: Icons.delete_outline,
-                            label: 'Delete',
+                            label: l10n.delete,
                             alignLeft: false,
                             color: cs.errorContainer,
                             fg: cs.onErrorContainer,

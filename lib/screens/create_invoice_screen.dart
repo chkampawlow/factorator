@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import '../storage/clients_repo.dart';
 import '../storage/invoices_repo.dart';
 import 'add_client_screen.dart';
@@ -30,13 +31,16 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     return int.tryParse(v.toString()) ?? fallback;
   }
 
-  String _clientLabel(Map<String, dynamic> c) {
+  String _clientLabel(BuildContext context, Map<String, dynamic> c) {
+    final l10n = AppLocalizations.of(context)!;
     final type = (c['type'] ?? 'individual').toString();
+
     if (type == 'company') {
       final mf = (c['fiscalId'] ?? c['fiscal_id'] ?? '-').toString();
-      return '${c['name']} • MF: $mf';
+      return '${c['name']} • ${l10n.mfLabel}: $mf';
     }
-    return '${c['name']} • CIN: ${c['cin'] ?? '-'}';
+
+    return '${c['name']} • ${l10n.cin}: ${c['cin'] ?? '-'}';
   }
 
   Future<void> _pickDueDate() async {
@@ -55,13 +59,15 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   }
 
   Future<void> _chooseClient() async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
       final selected = await showModalBottomSheet<Map<String, dynamic>>(
         context: context,
         isScrollControlled: true,
         builder: (_) => _ClientPickerSheet(
           clientsRepo: _clientsRepo,
-          clientLabel: _clientLabel,
+          clientLabel: (c) => _clientLabel(context, c),
         ),
       );
 
@@ -71,15 +77,17 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Client selection failed: $e')),
+        SnackBar(content: Text('${l10n.clientSelectionFailed}: $e')),
       );
     }
   }
 
   Future<void> _saveInvoice() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (_selectedClient == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please choose a client.')),
+        SnackBar(content: Text(l10n.pleaseChooseClient)),
       );
       return;
     }
@@ -92,7 +100,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       final clientId = _toInt(_selectedClient!['id']);
 
       if (clientId <= 0) {
-        throw Exception('Invalid client id: ${_selectedClient!['id']}');
+        throw Exception('${l10n.invalidClientId}: ${_selectedClient!['id']}');
       }
 
       final invoiceId = await _invoicesRepo.createInvoiceHeader(
@@ -117,7 +125,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Save failed: $e')),
+        SnackBar(content: Text('${l10n.saveFailed}: $e')),
       );
     } finally {
       if (mounted) {
@@ -129,10 +137,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Invoice'),
+        title: Text(l10n.newInvoice),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -146,7 +155,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               ),
               onPressed: _saving ? null : _saveInvoice,
               child: Text(
-                _saving ? 'Saving...' : 'Create Invoice',
+                _saving ? l10n.saving : l10n.createInvoice,
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
@@ -160,11 +169,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
           children: [
             Card(
               child: ListTile(
-                title: const Text('Client'),
+                title: Text(l10n.client),
                 subtitle: Text(
                   _selectedClient == null
-                      ? 'Choose client or add new'
-                      : _clientLabel(_selectedClient!),
+                      ? l10n.chooseClientOrAddNew
+                      : _clientLabel(context, _selectedClient!),
                 ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _chooseClient,
@@ -173,7 +182,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
             const SizedBox(height: 10),
             Card(
               child: ListTile(
-                title: const Text('Due date'),
+                title: Text(l10n.dueDate),
                 subtitle: Text(_fmtDate(_dueDate)),
                 trailing: const Icon(Icons.event),
                 onTap: _pickDueDate,
@@ -190,13 +199,13 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Next step',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  Text(
+                    l10n.nextStep,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'The issue date will be set automatically to today (${_fmtDate(_issueDate)}). After creating the invoice, you will be redirected to the invoice detail screen where you can add invoice items.',
+                    l10n.issueDateAutoToday(_fmtDate(_issueDate)),
                   ),
                 ],
               ),
@@ -285,6 +294,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final l10n = AppLocalizations.of(context)!;
 
     return SafeArea(
       child: Padding(
@@ -294,18 +304,18 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
           child: Column(
             children: [
               const SizedBox(height: 10),
-              const Text(
-                'Choose Client',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              Text(
+                l10n.chooseClient,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
                   controller: _searchCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'Search (name / MF / CIN)...',
-                    prefixIcon: Icon(Icons.search),
+                  decoration: InputDecoration(
+                    hintText: l10n.searchNameMfCin,
+                    prefixIcon: const Icon(Icons.search),
                   ),
                 ),
               ),
@@ -328,7 +338,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                       }
                     },
                     icon: const Icon(Icons.person_add),
-                    label: const Text('Add new client'),
+                    label: Text(l10n.addNewClient),
                   ),
                 ),
               ),
@@ -337,7 +347,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _error != null
-                        ? Center(child: Text('Load failed: $_error'))
+                        ? Center(child: Text('${l10n.loadFailed}: $_error'))
                         : ListView.builder(
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) {

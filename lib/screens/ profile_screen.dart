@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/settings_service.dart';
 
@@ -57,14 +58,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = await _authService.me();
       final currency = await _settingsService.getCurrency();
-      final language = await _settingsService.getLanguage();
+      final language = (await _settingsService.getLanguage()).toLowerCase();
 
       if (!mounted) return;
 
       setState(() {
         _user = user;
         _currency = currency;
-        _language = language;
+        _language = ['fr', 'en', 'ar'].contains(language) ? language : 'fr';
         _loading = false;
       });
     } catch (e) {
@@ -96,35 +97,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _changeLanguage(String? value) async {
     if (value == null) return;
 
-    await _settingsService.setLanguage(value);
+    final normalized = value.toLowerCase();
+
+    await _settingsService.setLanguage(normalized);
 
     if (!mounted) return;
 
     setState(() {
-      _language = value;
+      _language = normalized;
     });
 
-    widget.onChangeLanguage(value);
+    widget.onChangeLanguage(normalized);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Language changed to $value')),
+      SnackBar(content: Text('Language changed to $normalized')),
     );
   }
 
   Future<void> _logout() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Do you want to logout?'),
+        title: Text(l10n.logout),
+        content: Text(l10n.logoutQuestion),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
+            child: Text(l10n.logout),
           ),
         ],
       ),
@@ -182,10 +187,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(l10n.profile),
         actions: [
           IconButton(
             onPressed: _loadProfileData,
@@ -207,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 )
               : _user == null
-                  ? const Center(child: Text('No user data'))
+                  ? Center(child: Text(l10n.noUserData))
                   : ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
@@ -227,7 +233,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  '${_user?['first_name'] ?? ''} ${_user?['last_name'] ?? ''}'.trim(),
+                                  '${_user?['first_name'] ?? ''} ${_user?['last_name'] ?? ''}'
+                                      .trim(),
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -249,13 +256,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               _infoTile(
                                 icon: Icons.badge_outlined,
-                                label: 'Fiscal ID',
+                                label: l10n.fiscalId,
                                 value: (_user?['fiscal_id'] ?? '').toString(),
                               ),
                               const Divider(height: 1),
                               _infoTile(
                                 icon: Icons.mail_outline,
-                                label: 'Email',
+                                label: l10n.email,
                                 value: (_user?['email'] ?? '').toString(),
                               ),
                             ],
@@ -269,7 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Currency',
+                                  l10n.currency,
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -277,10 +284,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 const SizedBox(height: 14),
                                 DropdownButtonFormField<String>(
                                   value: _currency,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Select currency',
-                                    prefixIcon: Icon(Icons.attach_money),
-                                    border: OutlineInputBorder(),
+                                  decoration: InputDecoration(
+                                    labelText: l10n.selectCurrency,
+                                    prefixIcon: const Icon(Icons.attach_money),
+                                    border: const OutlineInputBorder(),
                                   ),
                                   items: const [
                                     DropdownMenuItem(
@@ -310,7 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Language',
+                                  l10n.language,
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -318,10 +325,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 const SizedBox(height: 14),
                                 DropdownButtonFormField<String>(
                                   value: _language,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Select language',
-                                    prefixIcon: Icon(Icons.language),
-                                    border: OutlineInputBorder(),
+                                  decoration: InputDecoration(
+                                    labelText: l10n.selectLanguage,
+                                    prefixIcon: const Icon(Icons.language),
+                                    border: const OutlineInputBorder(),
                                   ),
                                   items: const [
                                     DropdownMenuItem(
@@ -351,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'App color',
+                                  l10n.appColor,
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -374,7 +381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               ListTile(
                                 leading: const Icon(Icons.palette_outlined),
-                                title: const Text('Toggle theme'),
+                                title: Text(l10n.toggleTheme),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: widget.onToggleTheme,
                               ),
@@ -385,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   color: cs.error,
                                 ),
                                 title: Text(
-                                  'Logout',
+                                  l10n.logout,
                                   style: TextStyle(color: cs.error),
                                 ),
                                 trailing: const Icon(Icons.chevron_right),
