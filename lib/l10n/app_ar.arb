@@ -246,8 +246,15 @@
   "phone": "الهاتف",
   "createAccount": "إنشاء حساب",
   "back": "رجوع",
-  "continueText": "متابعة"
-
+  "continueText": "متابعة",
+  "invalidFiscalId": "المعرف الجبائي غير صالح",
+"phoneNumberRequired": "رقم الهاتف مطلوب",
+"phoneNumberInvalid": "رقم الهاتف غير صالح",
+"clients": "العملاء",
+"items": "العناصر",
+"searchProduct": "ابحث عن منتج",
+"noProductsFound": "لم يتم العثور على منتجات",
+"selectProduct": "اختر منتجًا"
 
 
 

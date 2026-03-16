@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/screens/add_client_screen.dart';
+import 'package:my_app/screens/create_invoice_screen.dart';
+import 'package:my_app/screens/invoice_edit_screen.dart';
 import 'package:my_app/storage/invoices_repo.dart';
-import 'create_invoice_screen.dart';
-import 'invoice_edit_screen.dart';
 
 class InvoicesScreen extends StatefulWidget {
   const InvoicesScreen({super.key});
@@ -30,7 +31,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Future<void> _openCreate() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+      MaterialPageRoute(builder: (_) => CreateInvoiceScreen()),
     );
 
     if (!mounted) return;

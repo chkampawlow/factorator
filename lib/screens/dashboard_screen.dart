@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/screens/add_client_screen.dart';
+import 'package:my_app/screens/clients_screen.dart';
 
 import '../services/auth_service.dart';
 import '../storage/clients_repo.dart';
 import '../storage/dashboard_repo.dart';
 import '../widgets/action_tile.dart';
 
-import 'clients_screen.dart';
-import 'create_invoice_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -159,8 +159,7 @@ Future<void> _logout() async {
                         label: l10n.createInvoice,
                         icon: Icons.add_circle_outline,
                         bg: cs.primaryContainer.withOpacity(.40),
-                        onTap: () => _go(const CreateInvoiceScreen()),
-                      ),
+onTap: () => _go(AddClientScreen()),                      ),
                       ActionTile(
                         label: l10n.advanceInvoice,
                         icon: Icons.request_quote_outlined,
@@ -211,7 +210,6 @@ Future<void> _logout() async {
                     Card(
                       child: Column(
                         children: _recent.map((inv) {
-                          final name = (inv['custom_email'] ?? l10n.client).toString();
                           final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase();
                           final total = double.tryParse(inv['total'].toString()) ?? 0.0;
                           final issue = _parseDate((inv['invoice_date'] ?? '').toString());
@@ -233,7 +231,7 @@ Future<void> _logout() async {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            name,
+                                            '${inv['invoice']} • ${_dateOnly(issue)}',
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: t.bodyLarge?.copyWith(
@@ -241,12 +239,6 @@ Future<void> _logout() async {
                                             ),
                                           ),
                                           const SizedBox(height: 6),
-                                          Text(
-                                            '${inv['invoice']} • ${_dateOnly(issue)}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: t.bodySmall,
-                                          ),
                                         ],
                                       ),
                                     ),

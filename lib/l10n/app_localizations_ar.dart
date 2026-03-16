@@ -571,4 +571,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get continueText => 'متابعة';
+
+  @override
+  String get invalidFiscalId => 'المعرف الجبائي غير صالح';
+
+  @override
+  String get phoneNumberRequired => 'رقم الهاتف مطلوب';
+
+  @override
+  String get phoneNumberInvalid => 'رقم الهاتف غير صالح';
+
+  @override
+  String get clients => 'العملاء';
+
+  @override
+  String get items => 'العناصر';
+
+  @override
+  String get searchProduct => 'ابحث عن منتج';
+
+  @override
+  String get noProductsFound => 'لم يتم العثور على منتجات';
+
+  @override
+  String get selectProduct => 'اختر منتجًا';
 }

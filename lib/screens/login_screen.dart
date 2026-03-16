@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
-import 'package:my_app/themes/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -51,13 +50,14 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       final user = response['user'] as Map<String, dynamic>?;
-      final firstName = (user?['first_name'] ?? '').toString();
+      final organizationName =
+          (user?['organization_name'] ?? '').toString().trim();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            firstName.isNotEmpty
-                ? l10n.welcomeUser(firstName)
+            organizationName.isNotEmpty
+                ? l10n.welcomeUser(organizationName)
                 : l10n.loginSuccess,
           ),
         ),
@@ -93,7 +93,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -112,13 +111,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 74,
                       width: 74,
                       decoration: BoxDecoration(
-                        color: AppTheme.mintSoft.withOpacity(isDark ? 0.15 : 1),
+                        color: cs.primaryContainer,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.lock_outline_rounded,
                         size: 34,
-                        color: AppTheme.mint,
+                        color: cs.onPrimaryContainer,
                       ),
                     ),
                   ),
@@ -130,7 +129,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                   Text(
                     l10n.loginToManageApp,
-                    style: theme.textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 22),
                   Card(
@@ -191,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Checkbox(
                                   value: _rememberMe,
-                                  activeColor: AppTheme.mint,
+                                  activeColor: cs.primary,
                                   onChanged: (value) {
                                     setState(() {
                                       _rememberMe = value ?? false;
@@ -258,7 +259,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           l10n.dontHaveAccount,
-                          style: theme.textTheme.bodySmall,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
                         ),
                         TextButton(
                           onPressed: () {

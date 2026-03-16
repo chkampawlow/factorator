@@ -1188,6 +1188,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get continueText;
+
+  /// No description provided for @invalidFiscalId.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid fiscal ID'**
+  String get invalidFiscalId;
+
+  /// No description provided for @phoneNumberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get phoneNumberRequired;
+
+  /// No description provided for @phoneNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid phone number'**
+  String get phoneNumberInvalid;
+
+  /// No description provided for @clients.
+  ///
+  /// In en, this message translates to:
+  /// **'Clients'**
+  String get clients;
+
+  /// No description provided for @items.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get items;
+
+  /// No description provided for @searchProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Search product'**
+  String get searchProduct;
+
+  /// No description provided for @noProductsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No products found'**
+  String get noProductsFound;
+
+  /// No description provided for @selectProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Select product'**
+  String get selectProduct;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

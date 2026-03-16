@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'dart:io';
+import 'package:flutter/material.dart' show Color, ColorScheme;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -22,7 +24,20 @@ class InvoicePdfService {
     return _money.format(_toDouble(value));
   }
 
-  static pw.Widget _infoLine(String label, String value) {
+  static PdfColor _pdfColor(Color color) {
+    return PdfColor(
+      color.red / 255,
+      color.green / 255,
+      color.blue / 255,
+    );
+  }
+
+  static pw.Widget _infoLine(
+    String label,
+    String value, {
+    required PdfColor labelColor,
+    required PdfColor valueColor,
+  }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.only(bottom: 4),
       child: pw.Row(
@@ -35,14 +50,17 @@ class InvoicePdfService {
               style: pw.TextStyle(
                 fontWeight: pw.FontWeight.bold,
                 fontSize: 10,
-                color: PdfColors.grey700,
+                color: labelColor,
               ),
             ),
           ),
           pw.Expanded(
             child: pw.Text(
               value,
-              style: const pw.TextStyle(fontSize: 10),
+              style: pw.TextStyle(
+                fontSize: 10,
+                color: valueColor,
+              ),
             ),
           ),
         ],
@@ -50,10 +68,16 @@ class InvoicePdfService {
     );
   }
 
-  static pw.Widget _summaryRow(String label, String value, {bool bold = false}) {
+  static pw.Widget _summaryRow(
+    String label,
+    String value, {
+    bool bold = false,
+    required PdfColor textColor,
+  }) {
     final style = pw.TextStyle(
       fontSize: bold ? 12 : 10,
       fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+      color: textColor,
     );
 
     return pw.Padding(
@@ -72,20 +96,44 @@ class InvoicePdfService {
     required Map<String, dynamic> invoice,
     required Map<String, dynamic> client,
     required List<Map<String, dynamic>> items,
+    required ColorScheme colorScheme,
+    Uint8List? logoBytes,
+    String? logoPath,
   }) async {
     final pdf = pw.Document();
+
+    // Resolve logo from either memory bytes or local file path
+    Uint8List? resolvedLogo;
+
+    if (logoBytes != null) {
+      resolvedLogo = logoBytes;
+    } else if (logoPath != null) {
+      try {
+        final file = File(logoPath);
+        if (await file.exists()) {
+          resolvedLogo = await file.readAsBytes();
+        }
+      } catch (_) {}
+    }
+
+    final primary = _pdfColor(colorScheme.primary);
+    final onPrimary = _pdfColor(colorScheme.onPrimary);
+    final surface = _pdfColor(colorScheme.surface);
+    final surfaceContainer = _pdfColor(colorScheme.surfaceContainerHighest);
+    final outline = _pdfColor(colorScheme.outlineVariant);
+    final onSurface = _pdfColor(colorScheme.onSurface);
+    final onSurfaceVariant = _pdfColor(colorScheme.onSurfaceVariant);
+    final primaryContainer = _pdfColor(colorScheme.primaryContainer);
+    final successColor = PdfColors.green700;
+    final warningColor = PdfColors.orange700;
 
     final invoiceNumber = _safe(invoice['invoiceNumber'], 'N/A');
     final issueDate = _safe(invoice['issueDate'], '-');
     final dueDate = _safe(invoice['dueDate'], '-');
     final status = _safe(invoice['status'], 'OPEN').toUpperCase();
 
-    final userFirstName = _safe(invoice['userFirstName'], '-');
-    final userLastName = _safe(invoice['userLastName'], '-');
+    final userOrganizationName = _safe(invoice['userOrganizationName'], '-');
     final userFiscalId = _safe(invoice['userFiscalId'], '-');
-    final fullUserName = '$userFirstName $userLastName'.trim() == ''
-        ? '-'
-        : '$userFirstName $userLastName'.trim();
 
     final clientName = _safe(client['name'], 'Client');
     final clientType = _safe(client['type'], 'individual');
@@ -137,22 +185,23 @@ class InvoicePdfService {
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(
-                      'INVOICE',
-                      style: pw.TextStyle(
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.teal700,
-                      ),
-                    ),
+                    resolvedLogo != null
+                        ? pw.Container(
+                            height: 80,
+                            child: pw.Image(
+                              pw.MemoryImage(resolvedLogo),
+                              fit: pw.BoxFit.contain,
+                            ),
+                          )
+                        : pw.Text(
+                            'INVOICE',
+                            style: pw.TextStyle(
+                              fontSize: 24,
+                              fontWeight: pw.FontWeight.bold,
+                              color: primary,
+                            ),
+                          ),
                     pw.SizedBox(height: 6),
-                    pw.Text(
-                      'Professional Invoice Document',
-                      style: const pw.TextStyle(
-                        fontSize: 10,
-                        color: PdfColors.grey700,
-                      ),
-                    ),
                   ],
                 ),
                 pw.Container(
@@ -161,9 +210,9 @@ class InvoicePdfService {
                     vertical: 8,
                   ),
                   decoration: pw.BoxDecoration(
-                    color: PdfColors.teal50,
+                    color: primaryContainer,
                     borderRadius: pw.BorderRadius.circular(8),
-                    border: pw.Border.all(color: PdfColors.teal200),
+                    border: pw.Border.all(color: outline),
                   ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
@@ -173,6 +222,7 @@ class InvoicePdfService {
                         style: pw.TextStyle(
                           fontSize: 12,
                           fontWeight: pw.FontWeight.bold,
+                          color: onSurface,
                         ),
                       ),
                       pw.SizedBox(height: 4),
@@ -180,9 +230,7 @@ class InvoicePdfService {
                         status,
                         style: pw.TextStyle(
                           fontSize: 10,
-                          color: status == 'PAID'
-                              ? PdfColors.green700
-                              : PdfColors.orange700,
+                          color: status == 'PAID' ? successColor : warningColor,
                           fontWeight: pw.FontWeight.bold,
                         ),
                       ),
@@ -193,7 +241,7 @@ class InvoicePdfService {
             ),
           ),
 
-          pw.Divider(color: PdfColors.grey300),
+          pw.Divider(color: outline),
           pw.SizedBox(height: 14),
 
           pw.Row(
@@ -203,26 +251,38 @@ class InvoicePdfService {
                 child: pw.Container(
                   padding: const pw.EdgeInsets.all(12),
                   decoration: pw.BoxDecoration(
-                    color: PdfColors.grey50,
+                    color: surfaceContainer,
                     borderRadius: pw.BorderRadius.circular(8),
-                    border: pw.Border.all(color: PdfColors.grey300),
+                    border: pw.Border.all(color: outline),
                   ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text(
-                        'Bill To',
-                        style: pw.TextStyle(
-                          fontSize: 12,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.teal700,
-                        ),
-                      ),
                       pw.SizedBox(height: 8),
-                      _infoLine('Date facture', issueDate),
-                      _infoLine('Échéance', dueDate),
-                      _infoLine('Nom et prénom', fullUserName),
-                      _infoLine('MF utilisateur', userFiscalId),
+                      _infoLine(
+                        'Date facture',
+                        issueDate,
+                        labelColor: onSurfaceVariant,
+                        valueColor: onSurface,
+                      ),
+                      _infoLine(
+                        'Échéance',
+                        dueDate,
+                        labelColor: onSurfaceVariant,
+                        valueColor: onSurface,
+                      ),
+                      _infoLine(
+                        'Organisation',
+                        userOrganizationName,
+                        labelColor: onSurfaceVariant,
+                        valueColor: onSurface,
+                      ),
+                      _infoLine(
+                        'MF utilisateur',
+                        userFiscalId,
+                        labelColor: onSurfaceVariant,
+                        valueColor: onSurface,
+                      ),
                     ],
                   ),
                 ),
@@ -232,31 +292,52 @@ class InvoicePdfService {
                 child: pw.Container(
                   padding: const pw.EdgeInsets.all(12),
                   decoration: pw.BoxDecoration(
-                    color: PdfColors.grey50,
+                    color: surfaceContainer,
                     borderRadius: pw.BorderRadius.circular(8),
-                    border: pw.Border.all(color: PdfColors.grey300),
+                    border: pw.Border.all(color: outline),
                   ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text(
-                        'Invoice Details',
-                        style: pw.TextStyle(
-                          fontSize: 12,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.teal700,
-                        ),
-                      ),
                       pw.SizedBox(height: 8),
-                      _infoLine('Nom', clientName),
+                      _infoLine(
+                        'Nom',
+                        clientName,
+                        labelColor: onSurfaceVariant,
+                        valueColor: onSurface,
+                      ),
                       _infoLine(
                         identityLabel,
                         identityValue.isNotEmpty ? identityValue : '-',
+                        labelColor: onSurfaceVariant,
+                        valueColor: onSurface,
                       ),
-                      _infoLine('Adresse', clientAddress),
-                      if (clientEmail.isNotEmpty) _infoLine('Email', clientEmail),
-                      if (clientPhone.isNotEmpty) _infoLine('Phone', clientPhone),
-                      _infoLine('Type', clientType),
+                      _infoLine(
+                        'Adresse',
+                        clientAddress,
+                        labelColor: onSurfaceVariant,
+                        valueColor: onSurface,
+                      ),
+                      if (clientEmail.isNotEmpty)
+                        _infoLine(
+                          'Email',
+                          clientEmail,
+                          labelColor: onSurfaceVariant,
+                          valueColor: onSurface,
+                        ),
+                      if (clientPhone.isNotEmpty)
+                        _infoLine(
+                          'Phone',
+                          clientPhone,
+                          labelColor: onSurfaceVariant,
+                          valueColor: onSurface,
+                        ),
+                      _infoLine(
+                        'Type',
+                        clientType,
+                        labelColor: onSurfaceVariant,
+                        valueColor: onSurface,
+                      ),
                     ],
                   ),
                 ),
@@ -271,7 +352,7 @@ class InvoicePdfService {
             style: pw.TextStyle(
               fontSize: 13,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColors.teal700,
+              color: primary,
             ),
           ),
 
@@ -291,13 +372,16 @@ class InvoicePdfService {
             data: tableData,
             headerStyle: pw.TextStyle(
               fontWeight: pw.FontWeight.bold,
-              color: PdfColors.white,
+              color: onPrimary,
               fontSize: 10,
             ),
-            headerDecoration: const pw.BoxDecoration(
-              color: PdfColors.teal700,
+            headerDecoration: pw.BoxDecoration(
+              color: primary,
             ),
-            cellStyle: const pw.TextStyle(fontSize: 9),
+            cellStyle: pw.TextStyle(
+              fontSize: 9,
+              color: onSurface,
+            ),
             cellAlignment: pw.Alignment.centerLeft,
             headerAlignment: pw.Alignment.centerLeft,
             cellPadding: const pw.EdgeInsets.symmetric(
@@ -309,7 +393,7 @@ class InvoicePdfService {
               vertical: 8,
             ),
             border: pw.TableBorder.all(
-              color: PdfColors.grey300,
+              color: outline,
               width: 0.5,
             ),
             columnWidths: {
@@ -333,7 +417,8 @@ class InvoicePdfService {
                 child: pw.Container(
                   padding: const pw.EdgeInsets.all(12),
                   decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey300),
+                    color: surface,
+                    border: pw.Border.all(color: outline),
                     borderRadius: pw.BorderRadius.circular(8),
                   ),
                   child: pw.Column(
@@ -344,13 +429,16 @@ class InvoicePdfService {
                         style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold,
                           fontSize: 11,
-                          color: PdfColors.teal700,
+                          color: primary,
                         ),
                       ),
                       pw.SizedBox(height: 6),
                       pw.Text(
                         'Thank you for your business. Please verify the invoice details before payment.',
-                        style: const pw.TextStyle(fontSize: 9),
+                        style: pw.TextStyle(
+                          fontSize: 9,
+                          color: onSurface,
+                        ),
                       ),
                     ],
                   ),
@@ -361,16 +449,29 @@ class InvoicePdfService {
                 width: 180,
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey50,
+                  color: surfaceContainer,
                   borderRadius: pw.BorderRadius.circular(8),
-                  border: pw.Border.all(color: PdfColors.grey300),
+                  border: pw.Border.all(color: outline),
                 ),
                 child: pw.Column(
                   children: [
-                    _summaryRow('Subtotal', '$subtotal TND'),
-                    _summaryRow('TVA', '$totalVat TND'),
-                    pw.Divider(color: PdfColors.grey400),
-                    _summaryRow('TOTAL', '$total TND', bold: true),
+                    _summaryRow(
+                      'Subtotal',
+                      '$subtotal TND',
+                      textColor: onSurface,
+                    ),
+                    _summaryRow(
+                      'TVA',
+                      '$totalVat TND',
+                      textColor: onSurface,
+                    ),
+                    pw.Divider(color: outline),
+                    _summaryRow(
+                      'TOTAL',
+                      '$total TND',
+                      bold: true,
+                      textColor: primary,
+                    ),
                   ],
                 ),
               ),
@@ -381,13 +482,13 @@ class InvoicePdfService {
           margin: const pw.EdgeInsets.only(top: 14),
           child: pw.Column(
             children: [
-              pw.Divider(color: PdfColors.grey300),
+              pw.Divider(color: outline),
               pw.SizedBox(height: 4),
               pw.Text(
                 'Generated electronically • Page ${context.pageNumber} / ${context.pagesCount}',
-                style: const pw.TextStyle(
+                style: pw.TextStyle(
                   fontSize: 8,
-                  color: PdfColors.grey700,
+                  color: onSurfaceVariant,
                 ),
               ),
             ],

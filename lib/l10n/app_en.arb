@@ -247,6 +247,14 @@
   "phone": "Phone",
   "createAccount": "Create account",
   "back": "Back",
-  "continueText": "Continue"
+  "continueText": "Continue",
+  "invalidFiscalId": "Invalid fiscal ID",
+"phoneNumberRequired": "Phone number is required",
+"phoneNumberInvalid": "Invalid phone number",
+"clients": "Clients",
+"items": "Items",
+"searchProduct": "Search product",
+"noProductsFound": "No products found",
+"selectProduct": "Select product"
 
 }

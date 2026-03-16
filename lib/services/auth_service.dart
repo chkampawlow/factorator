@@ -82,8 +82,6 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> signup({
-    required String firstName,
-    required String lastName,
     required String organizationName,
     required String fiscalId,
     required String email,
@@ -94,8 +92,7 @@ class AuthService {
     final Map<String, dynamic> data = await _api.post(
       ApiConfig.signup,
       body: {
-        'first_name': firstName,
-        'last_name': lastName,
+
         'organization_name': organizationName,
         'fiscal_id': fiscalId,
         'email': email,

@@ -8,6 +8,7 @@ import 'package:my_app/storage/clients_repo.dart';
 import 'package:my_app/storage/invoice_items_repo.dart';
 import 'package:my_app/storage/invoices_repo.dart';
 import 'package:my_app/storage/products_repo.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
   final int invoiceId;
@@ -118,6 +119,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         'userFirstName': currentUser['first_name'] ?? '',
         'userLastName': currentUser['last_name'] ?? '',
         'userFiscalId': currentUser['fiscal_id'] ?? '',
+        'userOrganizationName': currentUser['organization_name'] ?? '',
       };
 
       if (!mounted) return;
@@ -393,10 +395,15 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       'address': _invoice!['clientAddress'],
     };
 
+    final prefs = await SharedPreferences.getInstance();
+    final logoPath = prefs.getString('profile_image_path');
+
     final bytes = await InvoicePdfService.buildInvoicePdf(
       invoice: _invoice!,
       client: client,
       items: _items,
+      colorScheme: Theme.of(context).colorScheme,
+      logoPath: logoPath,
     );
 
     if (!mounted) return;
@@ -432,7 +439,9 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Row(
+        child: 
+        
+        Row(
           children: [
             Expanded(
               child: Column(
@@ -479,154 +488,301 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
             ),
           ],
         ),
+      
       ),
     );
   }
 
-  Widget _buildAddItemCard(ColorScheme cs) {
-    final l10n = AppLocalizations.of(context)!;
+Future<void> _pickProduct() async {
+  final l10n = AppLocalizations.of(context)!;
+  final searchCtrl = TextEditingController();
 
-    final lineTotals = _selectedProduct == null
-        ? _LineTotals(ht: 0, tva: 0, ttc: 0)
-        : _computeLineTotals(
-            qty: _qty(),
-            price: _productPrice(),
-            discountPct: _discountPct().clamp(0, 100),
-            tvaRate: _productTvaRate(),
-          );
+  List<Map<String, dynamic>> filtered =
+      List<Map<String, dynamic>>.from(_products);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.addItem,
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: DropdownButtonFormField<int>(
-                    value: _products.isEmpty ? null : _selectedProductId,
-                    items: _products.map((p) {
-                      final id = _toInt(p['id']);
-                      return DropdownMenuItem<int>(
-                        value: id,
-                        child: Text(
-                          '${(p['name'] ?? '')} • ${_money.format(_toD(p['price']))}',
-                          overflow: TextOverflow.ellipsis,
+  final selected = await showModalBottomSheet<Map<String, dynamic>>(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          void applySearch(String q) {
+            final query = q.trim().toLowerCase();
+
+            setModalState(() {
+              filtered = query.isEmpty
+                  ? List<Map<String, dynamic>>.from(_products)
+                  : _products.where((p) {
+                      final name = (p['name'] ?? '').toString().toLowerCase();
+                      final code = (p['code'] ?? '').toString().toLowerCase();
+                      final unit = (p['unit'] ?? '').toString().toLowerCase();
+
+                      return name.contains(query) ||
+                          code.contains(query) ||
+                          unit.contains(query);
+                    }).toList();
+            });
+          }
+
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.72,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).dividerColor,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TextField(
+                        controller: searchCtrl,
+                        onChanged: applySearch,
+                        decoration: InputDecoration(
+                          hintText: l10n.searchProduct,
+                          prefixIcon: const Icon(Icons.search),
+                          border: const OutlineInputBorder(),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (id) {
-                      setState(() {
-                        _selectedProductId = id;
-                        if (id == null) {
-                          _selectedProduct = null;
-                        } else {
-                          _selectedProduct = _products.firstWhere(
-                            (p) => _toInt(p['id']) == id,
-                          );
-                        }
-                      });
-                    },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Text(l10n.noProductsFound),
+                            )
+                          : ListView.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (_, i) {
+                                final p = filtered[i];
+                                final name = (p['name'] ?? '').toString();
+                                final code = (p['code'] ?? '').toString();
+                                final unit = (p['unit'] ?? '').toString();
+                                final price = _money.format(_toD(p['price']));
+                                final tva =
+                                    _toD(p['tva_rate']).toStringAsFixed(0);
+
+                                return ListTile(
+                                  title: Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    [
+                                      if (code.isNotEmpty) code,
+                                      if (unit.isNotEmpty) unit,
+                                      'TVA $tva%',
+                                    ].join(' • '),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing: Text(
+                                    '$price TND',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  onTap: () => Navigator.pop(context, p),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+
+  if (selected != null && mounted) {
+    setState(() {
+      _selectedProduct = selected;
+      _selectedProductId = _toInt(selected['id']);
+    });
+  }
+}
+
+Widget _buildAddItemCard(ColorScheme cs) {
+  final l10n = AppLocalizations.of(context)!;
+
+  final lineTotals = _selectedProduct == null
+      ? _LineTotals(ht: 0, tva: 0, ttc: 0)
+      : _computeLineTotals(
+          qty: _qty(),
+          price: _productPrice(),
+          discountPct: _discountPct().clamp(0, 100),
+          tvaRate: _productTvaRate(),
+        );
+
+  final selectedProductLabel = _selectedProduct == null
+      ? l10n.selectProduct
+      : '${(_selectedProduct!['name'] ?? '').toString()} • ${_money.format(_productPrice())}';
+
+  return Card(
+    child: Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.addItem,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: FilledButton(
+                  onPressed: _products.isEmpty ? null : _addItem,
+                  style: FilledButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    shape: const CircleBorder(),
+                  ),
+                  child: const Icon(Icons.add, size: 20),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 5,
+                child: InkWell(
+                  onTap: _products.isEmpty ? null : _pickProduct,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InputDecorator(
                     decoration: InputDecoration(
                       labelText: l10n.product,
                       border: const OutlineInputBorder(),
+                      suffixIcon: const Icon(Icons.search),
+                    ),
+                    child: Text(
+                      selectedProductLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _selectedProduct == null
+                            ? cs.onSurfaceVariant
+                            : cs.onSurface,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: _qtyCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: l10n.qty,
-                      border: const OutlineInputBorder(),
-                    ),
-                    onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _qtyCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: l10n.qty,
+                    border: const OutlineInputBorder(),
                   ),
+                  onChanged: (_) => setState(() {}),
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _discountCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: l10n.discountPercent,
-                      border: const OutlineInputBorder(),
-                    ),
-                    onChanged: (_) => setState(() {}),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _discountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: l10n.discountPercent,
+                    border: const OutlineInputBorder(),
                   ),
+                  onChanged: (_) => setState(() {}),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _customPriceCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: l10n.priceOverride,
-                      border: const OutlineInputBorder(),
-                    ),
-                    onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: _customPriceCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: l10n.priceOverride,
+                    border: const OutlineInputBorder(),
                   ),
+                  onChanged: (_) => setState(() {}),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            AnimatedContainer(
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          SizedBox(
+            width: double.infinity,
+            child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                spacing: 12,
-                runSpacing: 6,
-                children: [
-                  Text(
-                    'TVA ${_productTvaRate().toStringAsFixed(0)}%',
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  Text('HT ${_money.format(lineTotals.ht)}'),
-                  Text('TVA ${_money.format(lineTotals.tva)}'),
-                  Text(
-                    'TTC ${_money.format(lineTotals.ttc)}',
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Text(
+                      'TVA ${_productTvaRate().toStringAsFixed(0)}%',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(width: 18),
+                    Text('HT ${_money.format(lineTotals.ht)}'),
+                    const SizedBox(width: 18),
+                    Text('TVA ${_money.format(lineTotals.tva)}'),
+                    const SizedBox(width: 18),
+                    Text(
+                      'TTC ${_money.format(lineTotals.ttc)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: FilledButton.icon(
-                onPressed: _products.isEmpty ? null : _addItem,
-                icon: const Icon(Icons.add),
-                label: Text(l10n.addToInvoice),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildItemsCard(ColorScheme cs) {
     final l10n = AppLocalizations.of(context)!;

@@ -571,4 +571,28 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get continueText => 'Continuer';
+
+  @override
+  String get invalidFiscalId => 'Matricule fiscal invalide';
+
+  @override
+  String get phoneNumberRequired => 'Le numéro de téléphone est requis';
+
+  @override
+  String get phoneNumberInvalid => 'Numéro de téléphone invalide';
+
+  @override
+  String get clients => 'Clients';
+
+  @override
+  String get items => 'Articles';
+
+  @override
+  String get searchProduct => 'Rechercher un produit';
+
+  @override
+  String get noProductsFound => 'Aucun produit trouvé';
+
+  @override
+  String get selectProduct => 'Sélectionner un produit';
 }

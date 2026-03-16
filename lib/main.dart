@@ -35,7 +35,14 @@ class _FacturationAppState extends State<FacturationApp> {
   @override
   void initState() {
     super.initState();
-    _initializeLanguage();
+    _initializeAppSettings();
+  }
+
+  Future<void> _initializeAppSettings() async {
+    await Future.wait([
+      _initializeLanguage(),
+      _loadSavedColor(),
+    ]);
   }
 
   Future<void> _initializeLanguage() async {
@@ -74,13 +81,28 @@ class _FacturationAppState extends State<FacturationApp> {
     }
   }
 
+  Future<void> _loadSavedColor() async {
+    final savedColorValue = await _settingsService.getAppColor();
+
+    if (savedColorValue == null) return;
+    if (!mounted) return;
+
+    setState(() {
+      _primaryColor = Color(savedColorValue);
+    });
+  }
+
   void _toggleTheme() {
     setState(() {
       _mode = _mode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
   }
 
-  void _changePrimaryColor(Color color) {
+  Future<void> _changePrimaryColor(Color color) async {
+    await _settingsService.setAppColor(color.value);
+
+    if (!mounted) return;
+
     setState(() {
       _primaryColor = color;
     });
@@ -200,6 +222,7 @@ class _AppStartGateState extends State<AppStartGate> {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
+      
     }
 
     if (!_loggedIn) {
@@ -236,34 +259,49 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  @override
-  Widget build(BuildContext context) {
-    final pages = [
-      DashboardScreen(onToggleTheme: widget.onToggleTheme),
-      const ClientsScreen(),
-      const ProductsScreen(),
-      const InvoicesScreen(),
-      ProfileScreen(
-        onToggleTheme: widget.onToggleTheme,
-        onChangePrimaryColor: widget.onChangePrimaryColor,
-        onChangeLanguage: widget.onChangeLanguage,
-        currentPrimaryColor: widget.currentPrimaryColor,
-      ),
-    ];
-
-    return Scaffold(
-      body: pages[_index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          NavigationDestination(icon: Icon(Icons.people), label: 'Clients'),
-          NavigationDestination(icon: Icon(Icons.list_alt), label: 'Items'),
-          NavigationDestination(icon: Icon(Icons.receipt_long), label: 'Invoices'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-      ),
-    );
-  }
+@override
+Widget build(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+  final pages = [
+    DashboardScreen(onToggleTheme: widget.onToggleTheme),
+    const ClientsScreen(),
+    const ProductsScreen(),
+    const InvoicesScreen(),
+    ProfileScreen(
+      onToggleTheme: widget.onToggleTheme,
+      onChangePrimaryColor: widget.onChangePrimaryColor,
+      onChangeLanguage: widget.onChangeLanguage,
+      currentPrimaryColor: widget.currentPrimaryColor,
+    ),
+  ];
+  return Scaffold(
+    body: pages[_index],
+    bottomNavigationBar: NavigationBar(
+      selectedIndex: _index,
+      onDestinationSelected: (i) => setState(() => _index = i),
+      destinations: [
+        NavigationDestination(
+          icon: const Icon(Icons.dashboard),
+          label: l10n.dashboard,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.people),
+          label: l10n.clients,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.list_alt),
+          label: l10n.items,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.receipt_long),
+          label: l10n.invoices,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.person_outline),
+          label: l10n.profile,
+        ),
+      ],
+    ),
+  );
+}
 }

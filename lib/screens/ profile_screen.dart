@@ -1,3 +1,8 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
@@ -26,6 +31,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final SettingsService _settingsService = SettingsService();
   final LocationService _locationService = LocationService();
+
+  final ImagePicker _imagePicker = ImagePicker();
+  String? _profileImagePath;
 
   bool _loading = true;
   String? _error;
@@ -62,6 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = await _authService.me();
       final currency = await _settingsService.getCurrency();
       final language = (await _settingsService.getLanguage()).toLowerCase();
+      final imagePath = await _getSavedProfileImagePath();
 
       String region;
       try {
@@ -77,6 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _currency = currency;
         _language = ['fr', 'en', 'ar'].contains(language) ? language : 'fr';
         _region = region;
+        _profileImagePath = imagePath;
         _loading = false;
       });
     } catch (e) {
@@ -87,6 +97,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _loading = false;
       });
     }
+  }
+
+  Future<String?> _getSavedProfileImagePath() async {
+    final prefs = await SharedPreferences.getInstance();
+    final path = prefs.getString('profile_image_path');
+
+    if (path == null || path.isEmpty) return null;
+
+    final file = File(path);
+    if (!await file.exists()) return null;
+
+    return path;
+  }
+
+  Future<void> _pickProfileImage() async {
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+
+    if (picked == null) return;
+
+    final appDir = await getApplicationDocumentsDirectory();
+
+    final fileName =
+        'profile_${DateTime.now().millisecondsSinceEpoch}${p.extension(picked.path)}';
+
+    final savedFile = await File(picked.path).copy(
+      p.join(appDir.path, fileName),
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profile_image_path', savedFile.path);
+
+    if (!mounted) return;
+
+    setState(() {
+      _profileImagePath = savedFile.path;
+    });
   }
 
   Future<void> _changeCurrency(String? value) async {
@@ -237,30 +286,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             padding: const EdgeInsets.all(20),
                             child: Column(
                               children: [
-                                CircleAvatar(
-                                  radius: 36,
-                                  backgroundColor: cs.primaryContainer,
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 36,
-                                    color: cs.onPrimaryContainer,
+                                GestureDetector(
+                                  onTap: _pickProfileImage,
+                                  child: CircleAvatar(
+                                    radius: 36,
+                                    backgroundColor: cs.primaryContainer,
+                                    backgroundImage: _profileImagePath != null
+                                        ? FileImage(File(_profileImagePath!))
+                                        : null,
+                                    child: _profileImagePath == null
+                                        ? Icon(
+                                            Icons.person,
+                                            size: 36,
+                                            color: cs.onPrimaryContainer,
+                                          )
+                                        : null,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  '${_user?['first_name'] ?? ''} ${_user?['last_name'] ?? ''}'
+                                  '${_user?['organization_name'] ?? ''} '
                                       .trim(),
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  (_user?['email'] ?? '').toString(),
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: cs.onSurfaceVariant,
-                                  ),
-                                ),
+                                
                               ],
                             ),
                           ),

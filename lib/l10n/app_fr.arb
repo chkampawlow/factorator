@@ -248,7 +248,15 @@
   "phone": "Téléphone",
   "createAccount": "Créer un compte",
   "back": "Retour",
-  "continueText": "Continuer"
+  "continueText": "Continuer",
+  "invalidFiscalId": "Matricule fiscal invalide",
+"phoneNumberRequired": "Le numéro de téléphone est requis",
+"phoneNumberInvalid": "Numéro de téléphone invalide",
+"clients": "Clients",
+"items": "Articles",
+"searchProduct": "Rechercher un produit",
+"noProductsFound": "Aucun produit trouvé",
+"selectProduct": "Sélectionner un produit"
 
 
 

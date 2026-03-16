@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
-import 'package:my_app/themes/app_theme.dart';
+import 'package:my_app/services/location_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -13,11 +13,10 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final PageController _pageController = PageController();
   final AuthService _authService = AuthService();
+  final LocationService _locationService = LocationService();
 
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _firstNameCtrl = TextEditingController();
-  final TextEditingController _lastNameCtrl = TextEditingController();
   final TextEditingController _organizationCtrl = TextEditingController();
   final TextEditingController _fiscalIdCtrl = TextEditingController();
   final TextEditingController _emailCtrl = TextEditingController();
@@ -31,13 +30,55 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscureConfirmPassword = true;
   String? _error;
 
-  final int _totalPages = 5;
+  String _phonePrefix = '+216';
+
+  final int _totalPages = 4;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPhonePrefixFromRegion();
+  }
+
+  Future<void> _loadPhonePrefixFromRegion() async {
+    try {
+      final address = await _locationService.getCurrentAddress();
+      final prefix = _detectPhonePrefix(address);
+
+      if (!mounted) return;
+
+      setState(() {
+        _phonePrefix = prefix;
+      });
+
+      if (_phoneCtrl.text.trim().isEmpty) {
+        _phoneCtrl.text = '$prefix ';
+      }
+    } catch (_) {
+      if (_phoneCtrl.text.trim().isEmpty) {
+        _phoneCtrl.text = '$_phonePrefix ';
+      }
+    }
+  }
+
+  String _detectPhonePrefix(String address) {
+    final lower = address.toLowerCase();
+
+    if (lower.contains('tunisia') || lower.contains('tunisie')) return '+216';
+    if (lower.contains('france')) return '+33';
+    if (lower.contains('algeria') || lower.contains('algérie')) return '+213';
+    if (lower.contains('morocco') || lower.contains('maroc')) return '+212';
+    if (lower.contains('libya') || lower.contains('libye')) return '+218';
+    if (lower.contains('egypt') || lower.contains('égypte')) return '+20';
+    if (lower.contains('saudi')) return '+966';
+    if (lower.contains('uae')) return '+971';
+
+    return '+216';
+  }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _firstNameCtrl.dispose();
-    _lastNameCtrl.dispose();
     _organizationCtrl.dispose();
     _fiscalIdCtrl.dispose();
     _emailCtrl.dispose();
@@ -88,30 +129,20 @@ class _SignupScreenState extends State<SignupScreen> {
 
     switch (_currentPage) {
       case 0:
-        if (_firstNameCtrl.text.trim().isEmpty) {
-          _setError(l10n.firstNameRequired);
+        final fiscalId = _fiscalIdCtrl.text.trim().toUpperCase();
+        if (fiscalId.isEmpty) {
+          _setError(l10n.fiscalIdRequired);
           return false;
         }
-        if (_lastNameCtrl.text.trim().isEmpty) {
-          _setError(l10n.lastNameRequired);
+        if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(fiscalId)) {
+          _setError('Invalid fiscal ID');
           return false;
         }
         break;
 
       case 1:
-        final fiscalId = _fiscalIdCtrl.text.trim().toUpperCase();
-        if (_fiscalIdCtrl.text.trim().isEmpty) {
-          _setError(l10n.fiscalIdRequired);
-          return false;
-        }
-        if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(fiscalId)) {
-          _setError(l10n.fiscalIdMustMatch);
-          return false;
-        }
-        break;
-
-      case 2:
         final email = _emailCtrl.text.trim();
+        final phone = _phoneCtrl.text.trim();
         if (email.isEmpty) {
           _setError(l10n.emailRequired);
           return false;
@@ -120,9 +151,17 @@ class _SignupScreenState extends State<SignupScreen> {
           _setError(l10n.enterValidEmail);
           return false;
         }
+        if (phone.isEmpty || phone == _phonePrefix || phone == '$_phonePrefix ') {
+          _setError(l10n.phoneNumberRequired);
+          return false;
+        }
+        if (!RegExp(r'^\+\d{1,3}\s\d{6,12}$').hasMatch(phone)) {
+          _setError(l10n.phoneNumberInvalid);
+          return false;
+        }
         break;
 
-      case 3:
+      case 2:
         final password = _passwordCtrl.text;
         final confirm = _confirmPasswordCtrl.text;
 
@@ -170,8 +209,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       await _authService.signup(
-        firstName: _firstNameCtrl.text.trim(),
-        lastName: _lastNameCtrl.text.trim(),
+
         organizationName: _organizationCtrl.text.trim(),
         fiscalId: _fiscalIdCtrl.text.trim().toUpperCase(),
         email: _emailCtrl.text.trim(),
@@ -203,7 +241,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _dot(int index, ThemeData theme) {
-    final bool active = index == _currentPage;
+    final active = index == _currentPage;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -211,7 +249,7 @@ class _SignupScreenState extends State<SignupScreen> {
       height: 8,
       width: active ? 20 : 8,
       decoration: BoxDecoration(
-        color: active ? AppTheme.mint : theme.colorScheme.outlineVariant,
+        color: active ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
         borderRadius: BorderRadius.circular(999),
       ),
     );
@@ -253,55 +291,6 @@ class _SignupScreenState extends State<SignupScreen> {
       children: [
         _stepHeader(
           theme: theme,
-          title: l10n.whoAreYou,
-          subtitle: l10n.startWithPersonalInformation,
-        ),
-        const SizedBox(height: 18),
-        _stepCard(
-          children: [
-            TextFormField(
-              controller: _firstNameCtrl,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(
-                label: l10n.firstName,
-                icon: Icons.person_outline,
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return l10n.firstNameRequired;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _lastNameCtrl,
-              textInputAction: TextInputAction.done,
-              decoration: _decoration(
-                label: l10n.lastName,
-                icon: Icons.badge_outlined,
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return l10n.lastNameRequired;
-                }
-                return null;
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStep1(ThemeData theme) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _stepHeader(
-          theme: theme,
           title: l10n.companyDetails,
           subtitle: l10n.addOrganizationAndFiscalInfo,
         ),
@@ -323,14 +312,14 @@ class _SignupScreenState extends State<SignupScreen> {
               textInputAction: TextInputAction.done,
               decoration: _decoration(
                 label: l10n.fiscalIdRequiredLabel,
-                hint: '1234567ABC123',
+                hint: '**************',
                 icon: Icons.confirmation_number_outlined,
               ),
               validator: (value) {
                 final v = value?.trim().toUpperCase() ?? '';
                 if (v.isEmpty) return l10n.fiscalIdRequired;
                 if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(v)) {
-                  return l10n.fiscalIdFormat;
+                  return l10n.invalidFiscalId;
                 }
                 return null;
               },
@@ -341,7 +330,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildStep2(ThemeData theme) {
+  Widget _buildStep1(ThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
@@ -380,9 +369,19 @@ class _SignupScreenState extends State<SignupScreen> {
               textInputAction: TextInputAction.done,
               decoration: _decoration(
                 label: l10n.phoneNumber,
-                hint: '+216 XX XXX XXX',
+                hint: _phonePrefix,
                 icon: Icons.phone_outlined,
               ),
+              validator: (value) {
+                final v = value?.trim() ?? '';
+                if (v.isEmpty || v == _phonePrefix || v == '$_phonePrefix ') {
+                  return l10n.phoneNumberRequired;
+                }
+                if (!RegExp(r'^\+\d{1,3}\s\d{6,12}$').hasMatch(v)) {
+                  return l10n.phoneNumberInvalid;
+                }
+                return null;
+              },
             ),
           ],
         ),
@@ -390,7 +389,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildStep3(ThemeData theme) {
+  Widget _buildStep2(ThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
@@ -465,7 +464,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildStep4(ThemeData theme) {
+  Widget _buildStep3(ThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
@@ -479,8 +478,6 @@ class _SignupScreenState extends State<SignupScreen> {
         const SizedBox(height: 18),
         _stepCard(
           children: [
-            _reviewRow(l10n.firstName, _firstNameCtrl.text),
-            _reviewRow(l10n.lastName, _lastNameCtrl.text),
             _reviewRow(
               l10n.organization,
               _organizationCtrl.text.isEmpty ? '-' : _organizationCtrl.text,
@@ -530,7 +527,6 @@ class _SignupScreenState extends State<SignupScreen> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -544,12 +540,12 @@ class _SignupScreenState extends State<SignupScreen> {
               height: 72,
               width: 72,
               decoration: BoxDecoration(
-                color: AppTheme.mintSoft.withOpacity(isDark ? 0.15 : 1),
+                color: cs.primaryContainer,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.person_add_alt_1_outlined,
-                color: AppTheme.mint,
+                color: cs.onPrimaryContainer,
                 size: 34,
               ),
             ),
@@ -582,10 +578,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
                       child: _buildStep3(theme),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
-                      child: _buildStep4(theme),
                     ),
                   ],
                 ),

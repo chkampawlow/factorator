@@ -110,7 +110,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
     final saved = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AddClientScreen(client: client),
+        builder: (_) => AddClientScreen(
+          client: client,
+        ),
       ),
     );
 

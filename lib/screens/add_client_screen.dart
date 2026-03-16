@@ -5,7 +5,13 @@ import '../widgets/primary_button.dart';
 
 class AddClientScreen extends StatefulWidget {
   final Map<String, dynamic>? client;
-  const AddClientScreen({super.key, this.client});
+  final String? prefilledId;
+
+  const AddClientScreen({
+    super.key,
+    this.client,
+    this.prefilledId,
+  });
 
   @override
   State<AddClientScreen> createState() => _AddClientScreenState();
@@ -13,8 +19,9 @@ class AddClientScreen extends StatefulWidget {
 
 class _AddClientScreenState extends State<AddClientScreen> {
   final _formKey = GlobalKey<FormState>();
-final _repo = ClientsRepo();
-  late String _type; // 'company' | 'individual'
+  final _repo = ClientsRepo();
+
+  late String _type; // company | individual
 
   final _name = TextEditingController();
   final _email = TextEditingController();
@@ -25,6 +32,20 @@ final _repo = ClientsRepo();
 
   bool _loading = false;
   bool get isEdit => widget.client != null;
+
+  bool _looksLikeFiscalId(String value) {
+    final v = value.trim().toUpperCase();
+
+    if (v.startsWith('TN')) return true;
+    if (RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(v)) return true;
+
+    return false;
+  }
+
+  bool _looksLikeCin(String value) {
+    final v = value.trim();
+    return RegExp(r'^[0-9]{6,12}$').hasMatch(v);
+  }
 
   @override
   void initState() {
@@ -37,8 +58,20 @@ final _repo = ClientsRepo();
     _email.text = (c?['email'] ?? '').toString();
     _phone.text = (c?['phone'] ?? '').toString();
     _address.text = (c?['address'] ?? '').toString();
-    _fiscalId.text = (c?['fiscalId'] ?? '').toString();
+    _fiscalId.text = (c?['fiscalId'] ?? c?['fiscal_id'] ?? '').toString();
     _cin.text = (c?['cin'] ?? '').toString();
+
+    if (widget.prefilledId != null && widget.client == null) {
+      final value = widget.prefilledId!.trim();
+
+      if (_looksLikeFiscalId(value)) {
+        _type = 'company';
+        _fiscalId.text = value;
+      } else if (_looksLikeCin(value)) {
+        _type = 'individual';
+        _cin.text = value;
+      }
+    }
   }
 
   @override
@@ -54,7 +87,10 @@ final _repo = ClientsRepo();
 
   void _setType(String t) {
     if (_type == t) return;
-    setState(() => _type = t);
+
+    setState(() {
+      _type = t;
+    });
 
     if (t == 'company') {
       _cin.clear();
@@ -62,121 +98,75 @@ final _repo = ClientsRepo();
       _fiscalId.clear();
     }
   }
-Future<void> _save() async {
-  FocusScope.of(context).unfocus();
 
-  if (!_formKey.currentState!.validate()) return;
-  setState(() => _loading = true);
-
-  final name = _name.text.trim();
-  final email = _email.text.trim().isEmpty ? null : _email.text.trim();
-  final phone = _phone.text.trim().isEmpty ? null : _phone.text.trim();
-  final address = _address.text.trim().isEmpty ? null : _address.text.trim();
-
-  final fiscalId = _type == 'company'
-      ? (_fiscalId.text.trim().isEmpty ? null : _fiscalId.text.trim())
-      : null;
-
-  final cin = _type == 'individual'
-      ? (_cin.text.trim().isEmpty ? null : _cin.text.trim())
-      : null;
-
-  try {
-    if (isEdit) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.clientUpdateApiNotAddedYet)),
-      );
-    } else {
-      final result = await _repo.addClient(
-        type: _type,
-        name: name,
-        email: email,
-        phone: phone,
-        address: address,
-        fiscalId: fiscalId,
-        cin: cin,
-      );
-
-      print("API RESULT => $result");
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result > 0
-                ? AppLocalizations.of(context)!.clientAddedSuccessfullyWithId(result.toString())
-                : AppLocalizations.of(context)!.clientAddedSuccessfully,
-          ),
-        ),
-      );
-      Navigator.pop(context, true);
-    }
-  } catch (e) {
-    print("SAVE CLIENT ERROR => $e");
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${AppLocalizations.of(context)!.saveFailed}: $e')),
-    );
-  } finally {
-    if (mounted) {
-      setState(() => _loading = false);
-    }
-  }
-}
-  Widget _pill(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
+  Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
 
-    final isCompany = _type == 'company';
+    FocusScope.of(context).unfocus();
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 260),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      transitionBuilder: (child, anim) {
-        final slide = Tween<Offset>(
-          begin: isCompany ? const Offset(0.22, 0) : const Offset(-0.22, 0),
-          end: Offset.zero,
-        ).animate(anim);
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
 
-        return FadeTransition(
-          opacity: anim,
-          child: SlideTransition(position: slide, child: child),
+    final rawName = _name.text.trim();
+    final email = _email.text.trim().isEmpty ? null : _email.text.trim();
+    final phone = _phone.text.trim().isEmpty ? null : _phone.text.trim();
+    final address = _address.text.trim().isEmpty ? null : _address.text.trim();
+
+    final fiscalId = _type == 'company'
+        ? (_fiscalId.text.trim().isEmpty ? null : _fiscalId.text.trim())
+        : null;
+
+    final cin = _type == 'individual'
+        ? (_cin.text.trim().isEmpty ? null : _cin.text.trim())
+        : null;
+
+    final generatedName = _type == 'company'
+        ? (fiscalId?.isNotEmpty == true ? 'Company $fiscalId' : 'Company')
+        : (cin?.isNotEmpty == true ? 'Client $cin' : 'Client');
+
+    final name = rawName.isEmpty ? generatedName : rawName;
+
+    try {
+      if (isEdit) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.clientUpdateApiNotAddedYet)),
         );
-      },
-      child: Container(
-        key: ValueKey(_type),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withOpacity(.55),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: cs.outlineVariant.withOpacity(.25)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isCompany ? Icons.business_outlined : Icons.person_outline,
-              size: 18,
-              color: cs.primary,
+      } else {
+        final result = await _repo.addClient(
+          type: _type,
+          name: name,
+          email: email,
+          phone: phone,
+          address: address,
+          fiscalId: fiscalId,
+          cin: cin,
+        );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result > 0
+                  ? l10n.clientAddedSuccessfullyWithId(result.toString())
+                  : l10n.clientAddedSuccessfully,
             ),
-            const SizedBox(width: 10),
-            Text(
-              isCompany ? l10n.fiscalIdMf : l10n.cin,
-              style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(width: 10),
-            Icon(
-              Icons.swap_horiz,
-              size: 18,
-              color: cs.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
+
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${l10n.saveFailed}: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
   Widget _premiumCard(BuildContext context, {required Widget child}) {
@@ -211,6 +201,44 @@ Future<void> _save() async {
     );
   }
 
+  Widget _buildSwipeHeader(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final isCompany = _type == 'company';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withOpacity(.45),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withOpacity(.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isCompany ? Icons.business_outlined : Icons.person_outline,
+            color: cs.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              isCompany ? l10n.fiscalIdMf : l10n.cin,
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          Icon(
+            Icons.swipe,
+            size: 18,
+            color: cs.onSurfaceVariant,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -223,26 +251,23 @@ Future<void> _save() async {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onHorizontalDragEnd: (details) {
-            final v = details.primaryVelocity ?? 0;
-            if (v < -150) _setType('individual');
-            if (v > 150) _setType('company');
-          },
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: _pill(context),
-                ),
-                const SizedBox(height: 14),
-                _premiumCard(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragEnd: (details) {
+                  final v = details.primaryVelocity ?? 0;
+                  if (v < -150) _setType('individual');
+                  if (v > 150) _setType('company');
+                },
+                child: _premiumCard(
                   context,
                   child: Column(
                     children: [
+                      _buildSwipeHeader(context),
+                      const SizedBox(height: 14),
                       TextFormField(
                         controller: _name,
                         decoration: _dec(
@@ -252,8 +277,6 @@ Future<void> _save() async {
                               ? Icons.business_outlined
                               : Icons.person_outline,
                         ),
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? l10n.requiredField : null,
                       ),
                       const SizedBox(height: 12),
                       AnimatedSwitcher(
@@ -275,7 +298,7 @@ Future<void> _save() async {
                         },
                         child: isCompany
                             ? TextFormField(
-                                key: const ValueKey("MF"),
+                                key: const ValueKey('MF'),
                                 controller: _fiscalId,
                                 decoration: _dec(
                                   context,
@@ -291,7 +314,7 @@ Future<void> _save() async {
                                 },
                               )
                             : TextFormField(
-                                key: const ValueKey("CIN"),
+                                key: const ValueKey('CIN'),
                                 controller: _cin,
                                 decoration: _dec(
                                   context,
@@ -342,9 +365,9 @@ Future<void> _save() async {
                     ],
                   ),
                 ),
-                const SizedBox(height: 90),
-              ],
-            ),
+              ),
+              const SizedBox(height: 90),
+            ],
           ),
         ),
       ),

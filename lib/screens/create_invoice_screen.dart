@@ -99,10 +99,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     try {
       final clientId = _toInt(_selectedClient!['id']);
 
-      if (clientId <= 0) {
-        throw Exception('${l10n.invalidClientId}: ${_selectedClient!['id']}');
-      }
-
       final invoiceId = await _invoicesRepo.createInvoiceHeader(
         clientId: clientId,
         issueDate: _issueDate,
@@ -140,9 +136,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.newInvoice),
-      ),
+      appBar: AppBar(title: Text(l10n.newInvoice)),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -188,28 +182,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 onTap: _pickDueDate,
               ),
             ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest.withOpacity(.35),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: cs.outlineVariant.withOpacity(.22)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.nextStep,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.issueDateAutoToday(_fmtDate(_issueDate)),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -232,10 +204,23 @@ class _ClientPickerSheet extends StatefulWidget {
 
 class _ClientPickerSheetState extends State<_ClientPickerSheet> {
   final _searchCtrl = TextEditingController();
+
   List<Map<String, dynamic>> _clients = [];
   List<Map<String, dynamic>> _filtered = [];
+
   bool _loading = true;
   String? _error;
+
+  bool _clientExists(String value) {
+    final v = value.toLowerCase();
+
+    return _clients.any((c) {
+      final mf =
+          (c['fiscalId'] ?? c['fiscal_id'] ?? '').toString().toLowerCase();
+      final cin = (c['cin'] ?? '').toString().toLowerCase();
+      return mf == v || cin == v;
+    });
+  }
 
   @override
   void initState() {
@@ -244,6 +229,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
 
     _searchCtrl.addListener(() {
       final q = _searchCtrl.text.trim().toLowerCase();
+
       setState(() {
         _filtered = q.isEmpty
             ? _clients
@@ -253,7 +239,10 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                     .toString()
                     .toLowerCase();
                 final cin = (c['cin'] ?? '').toString().toLowerCase();
-                return name.contains(q) || mf.contains(q) || cin.contains(q);
+
+                return name.contains(q) ||
+                    mf.contains(q) ||
+                    cin.contains(q);
               }).toList();
       });
     });
@@ -296,6 +285,13 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     final l10n = AppLocalizations.of(context)!;
 
+    final searchValue = _searchCtrl.text.trim();
+
+    final showAddButton =
+        searchValue.isNotEmpty &&
+        !_clientExists(searchValue) &&
+        _filtered.isEmpty;
+
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(bottom: bottom),
@@ -306,7 +302,8 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
               const SizedBox(height: 10),
               Text(
                 l10n.chooseClient,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
               Padding(
@@ -320,28 +317,32 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                 ),
               ),
               const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton.icon(
-                    onPressed: () async {
-                      final saved = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AddClientScreen(),
-                        ),
-                      );
-                      if (saved == true) {
-                        await _load();
-                      }
-                    },
-                    icon: const Icon(Icons.person_add),
-                    label: Text(l10n.addNewClient),
+              if (showAddButton)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.person_add),
+                      label: Text('${l10n.addNewClient}: $searchValue'),
+                      onPressed: () async {
+                        final saved = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddClientScreen(
+                              prefilledId: searchValue,
+                            ),
+                          ),
+                        );
+
+                        if (saved == true) {
+                          await _load();
+                        }
+                      },
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(height: 10),
               Expanded(
                 child: _loading
@@ -352,6 +353,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) {
                               final c = _filtered[i];
+
                               return ListTile(
                                 title: Text((c['name'] ?? '').toString()),
                                 subtitle: Text(widget.clientLabel(c)),
