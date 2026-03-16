@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
+import 'package:my_app/services/location_service.dart';
 import 'package:my_app/services/settings_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final SettingsService _settingsService = SettingsService();
+  final LocationService _locationService = LocationService();
 
   bool _loading = true;
   String? _error;
@@ -31,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _currency = 'TND';
   String _language = 'fr';
+  String _region = '';
 
   final List<Color> _colors = const [
     Color(0xFF16B39A),
@@ -60,12 +63,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final currency = await _settingsService.getCurrency();
       final language = (await _settingsService.getLanguage()).toLowerCase();
 
+      String region;
+      try {
+        region = await _locationService.getCurrentAddress();
+      } catch (e) {
+        region = e.toString().replaceFirst('Exception: ', '');
+      }
+
       if (!mounted) return;
 
       setState(() {
         _user = user;
         _currency = currency;
         _language = ['fr', 'en', 'ar'].contains(language) ? language : 'fr';
+        _region = region;
         _loading = false;
       });
     } catch (e) {
@@ -189,6 +200,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final cs = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
+    final activeLocaleCode = Localizations.localeOf(context).languageCode;
+    final dropdownLanguage =
+        ['fr', 'en', 'ar'].contains(activeLocaleCode) ? activeLocaleCode : 'fr';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.profile),
@@ -265,6 +280,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 label: l10n.email,
                                 value: (_user?['email'] ?? '').toString(),
                               ),
+                              const Divider(height: 1),
+                              _infoTile(
+                                icon: Icons.location_on_outlined,
+                                label: 'Region',
+                                value: _region,
+                              ),
                             ],
                           ),
                         ),
@@ -324,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 14),
                                 DropdownButtonFormField<String>(
-                                  value: _language,
+                                  value: dropdownLanguage,
                                   decoration: InputDecoration(
                                     labelText: l10n.selectLanguage,
                                     prefixIcon: const Icon(Icons.language),

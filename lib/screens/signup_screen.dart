@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/themes/app_theme.dart';
 
@@ -83,14 +84,16 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   bool _validateCurrentStep() {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (_currentPage) {
       case 0:
         if (_firstNameCtrl.text.trim().isEmpty) {
-          _setError('First name is required');
+          _setError(l10n.firstNameRequired);
           return false;
         }
         if (_lastNameCtrl.text.trim().isEmpty) {
-          _setError('Last name is required');
+          _setError(l10n.lastNameRequired);
           return false;
         }
         break;
@@ -98,11 +101,11 @@ class _SignupScreenState extends State<SignupScreen> {
       case 1:
         final fiscalId = _fiscalIdCtrl.text.trim().toUpperCase();
         if (_fiscalIdCtrl.text.trim().isEmpty) {
-          _setError('Fiscal ID is required');
+          _setError(l10n.fiscalIdRequired);
           return false;
         }
         if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(fiscalId)) {
-          _setError('Fiscal ID must match 1234567ABC123');
+          _setError(l10n.fiscalIdMustMatch);
           return false;
         }
         break;
@@ -110,11 +113,11 @@ class _SignupScreenState extends State<SignupScreen> {
       case 2:
         final email = _emailCtrl.text.trim();
         if (email.isEmpty) {
-          _setError('Email is required');
+          _setError(l10n.emailRequired);
           return false;
         }
         if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
-          _setError('Enter a valid email');
+          _setError(l10n.enterValidEmail);
           return false;
         }
         break;
@@ -124,19 +127,19 @@ class _SignupScreenState extends State<SignupScreen> {
         final confirm = _confirmPasswordCtrl.text;
 
         if (password.isEmpty) {
-          _setError('Password is required');
+          _setError(l10n.passwordRequired);
           return false;
         }
         if (password.length < 6) {
-          _setError('Password must be at least 6 characters');
+          _setError(l10n.passwordMinLength);
           return false;
         }
         if (confirm.isEmpty) {
-          _setError('Please confirm your password');
+          _setError(l10n.pleaseConfirmPassword);
           return false;
         }
         if (password != confirm) {
-          _setError('Passwords do not match');
+          _setError(l10n.passwordsDoNotMatch);
           return false;
         }
         break;
@@ -153,10 +156,11 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
+
     FocusScope.of(context).unfocus();
 
     if (!_validateCurrentStep()) return;
-
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -179,8 +183,8 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully'),
+        SnackBar(
+          content: Text(l10n.accountCreatedSuccessfully),
         ),
       );
 
@@ -242,13 +246,15 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildStep0(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
           theme: theme,
-          title: 'Who are you?',
-          subtitle: 'Start with your personal information.',
+          title: l10n.whoAreYou,
+          subtitle: l10n.startWithPersonalInformation,
         ),
         const SizedBox(height: 18),
         _stepCard(
@@ -257,12 +263,12 @@ class _SignupScreenState extends State<SignupScreen> {
               controller: _firstNameCtrl,
               textInputAction: TextInputAction.next,
               decoration: _decoration(
-                label: 'Prénom',
+                label: l10n.firstName,
                 icon: Icons.person_outline,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Prénom is required';
+                  return l10n.firstNameRequired;
                 }
                 return null;
               },
@@ -272,12 +278,12 @@ class _SignupScreenState extends State<SignupScreen> {
               controller: _lastNameCtrl,
               textInputAction: TextInputAction.done,
               decoration: _decoration(
-                label: 'Nom',
+                label: l10n.lastName,
                 icon: Icons.badge_outlined,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Nom is required';
+                  return l10n.lastNameRequired;
                 }
                 return null;
               },
@@ -289,13 +295,15 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildStep1(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
           theme: theme,
-          title: 'Company details',
-          subtitle: 'Add your organization and fiscal information.',
+          title: l10n.companyDetails,
+          subtitle: l10n.addOrganizationAndFiscalInfo,
         ),
         const SizedBox(height: 18),
         _stepCard(
@@ -304,7 +312,7 @@ class _SignupScreenState extends State<SignupScreen> {
               controller: _organizationCtrl,
               textInputAction: TextInputAction.next,
               decoration: _decoration(
-                label: "Nom de l'Organisation",
+                label: l10n.organizationName,
                 icon: Icons.business_outlined,
               ),
             ),
@@ -314,15 +322,15 @@ class _SignupScreenState extends State<SignupScreen> {
               textCapitalization: TextCapitalization.characters,
               textInputAction: TextInputAction.done,
               decoration: _decoration(
-                label: 'Matricule Fiscale*',
+                label: l10n.fiscalIdRequiredLabel,
                 hint: '1234567ABC123',
                 icon: Icons.confirmation_number_outlined,
               ),
               validator: (value) {
                 final v = value?.trim().toUpperCase() ?? '';
-                if (v.isEmpty) return 'Fiscal ID is required';
+                if (v.isEmpty) return l10n.fiscalIdRequired;
                 if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(v)) {
-                  return 'Format: 1234567ABC123';
+                  return l10n.fiscalIdFormat;
                 }
                 return null;
               },
@@ -334,13 +342,15 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildStep2(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
           theme: theme,
-          title: 'Contact information',
-          subtitle: 'How can we reach you?',
+          title: l10n.contactInformation,
+          subtitle: l10n.howCanWeReachYou,
         ),
         const SizedBox(height: 18),
         _stepCard(
@@ -350,15 +360,15 @@ class _SignupScreenState extends State<SignupScreen> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               decoration: _decoration(
-                label: 'Adresse Email',
+                label: l10n.emailAddressLabel,
                 hint: 'name@example.com',
                 icon: Icons.mail_outline_rounded,
               ),
               validator: (value) {
                 final v = value?.trim() ?? '';
-                if (v.isEmpty) return 'Email is required';
+                if (v.isEmpty) return l10n.emailRequired;
                 if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) {
-                  return 'Enter a valid email';
+                  return l10n.enterValidEmail;
                 }
                 return null;
               },
@@ -369,7 +379,7 @@ class _SignupScreenState extends State<SignupScreen> {
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.done,
               decoration: _decoration(
-                label: 'Numéro de Téléphone',
+                label: l10n.phoneNumber,
                 hint: '+216 XX XXX XXX',
                 icon: Icons.phone_outlined,
               ),
@@ -381,13 +391,15 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildStep3(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
           theme: theme,
-          title: 'Secure your account',
-          subtitle: 'Choose a strong password.',
+          title: l10n.secureYourAccount,
+          subtitle: l10n.chooseStrongPassword,
         ),
         const SizedBox(height: 18),
         _stepCard(
@@ -397,7 +409,7 @@ class _SignupScreenState extends State<SignupScreen> {
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.next,
               decoration: _decoration(
-                label: 'Mot de Passe',
+                label: l10n.passwordLabel,
                 icon: Icons.lock_outline_rounded,
                 suffixIcon: IconButton(
                   onPressed: () {
@@ -414,8 +426,8 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               validator: (value) {
                 final v = value ?? '';
-                if (v.isEmpty) return 'Password is required';
-                if (v.length < 6) return 'Minimum 6 characters';
+                if (v.isEmpty) return l10n.passwordRequired;
+                if (v.length < 6) return l10n.minimum6Characters;
                 return null;
               },
             ),
@@ -425,7 +437,7 @@ class _SignupScreenState extends State<SignupScreen> {
               obscureText: _obscureConfirmPassword,
               textInputAction: TextInputAction.done,
               decoration: _decoration(
-                label: 'Confirmer le Mot de Passe',
+                label: l10n.confirmPassword,
                 icon: Icons.lock_reset_outlined,
                 suffixIcon: IconButton(
                   onPressed: () {
@@ -442,8 +454,8 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               validator: (value) {
                 final v = value ?? '';
-                if (v.isEmpty) return 'Please confirm password';
-                if (v != _passwordCtrl.text) return 'Passwords do not match';
+                if (v.isEmpty) return l10n.pleaseConfirmPassword;
+                if (v != _passwordCtrl.text) return l10n.passwordsDoNotMatch;
                 return null;
               },
             ),
@@ -454,23 +466,31 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildStep4(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepHeader(
           theme: theme,
-          title: 'Review & create',
-          subtitle: 'Make sure everything looks good before creating the account.',
+          title: l10n.reviewAndCreate,
+          subtitle: l10n.reviewBeforeCreate,
         ),
         const SizedBox(height: 18),
         _stepCard(
           children: [
-            _reviewRow('Prénom', _firstNameCtrl.text),
-            _reviewRow('Nom', _lastNameCtrl.text),
-            _reviewRow("Organisation", _organizationCtrl.text.isEmpty ? '-' : _organizationCtrl.text),
-            _reviewRow('Matricule Fiscale', _fiscalIdCtrl.text.toUpperCase()),
-            _reviewRow('Email', _emailCtrl.text),
-            _reviewRow('Téléphone', _phoneCtrl.text.isEmpty ? '-' : _phoneCtrl.text),
+            _reviewRow(l10n.firstName, _firstNameCtrl.text),
+            _reviewRow(l10n.lastName, _lastNameCtrl.text),
+            _reviewRow(
+              l10n.organization,
+              _organizationCtrl.text.isEmpty ? '-' : _organizationCtrl.text,
+            ),
+            _reviewRow(l10n.fiscalIdLabel, _fiscalIdCtrl.text.toUpperCase()),
+            _reviewRow(l10n.email, _emailCtrl.text),
+            _reviewRow(
+              l10n.phone,
+              _phoneCtrl.text.isEmpty ? '-' : _phoneCtrl.text,
+            ),
           ],
         ),
       ],
@@ -507,13 +527,14 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create account'),
+        title: Text(l10n.createAccount),
       ),
       body: SafeArea(
         child: Column(
@@ -533,7 +554,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
             Expanded(
               child: Form(
                 key: _formKey,
@@ -571,7 +591,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
             ),
-
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(22, 0, 22, 10),
@@ -591,7 +610,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
               ),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -599,9 +617,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 (index) => _dot(index, theme),
               ),
             ),
-
             const SizedBox(height: 16),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
               child: Row(
@@ -616,7 +632,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text('Back'),
+                        child: Text(l10n.back),
                       ),
                     ),
                   if (_currentPage > 0) const SizedBox(width: 12),
@@ -638,8 +654,8 @@ class _SignupScreenState extends State<SignupScreen> {
                             )
                           : Text(
                               _currentPage == _totalPages - 1
-                                  ? 'Create account'
-                                  : 'Continue',
+                                  ? l10n.createAccount
+                                  : l10n.continueText,
                             ),
                     ),
                   ),

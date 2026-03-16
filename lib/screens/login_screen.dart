@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/themes/app_theme.dart';
 
@@ -28,70 +29,54 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-Future<void> _login() async {
-  FocusScope.of(context).unfocus();
+  Future<void> _login() async {
+    final l10n = AppLocalizations.of(context)!;
 
-  if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
-  setState(() {
-    _loading = true;
-    _error = null;
-  });
-
-  debugPrint('===== LOGIN START =====');
-  debugPrint('Email: ${_emailCtrl.text.trim()}');
-  debugPrint('Remember me: $_rememberMe');
-
-  try {
-    debugPrint('Calling AuthService.login() ...');
-
-    final response = await _authService.login(
-      email: _emailCtrl.text.trim(),
-      password: _passwordCtrl.text,
-      rememberMe: _rememberMe,
-    );
-
-    debugPrint('Login response received: $response');
-
-    if (!mounted) {
-      debugPrint('Widget not mounted anymore, stopping.');
-      return;
-    }
-
-    final user = response['user'] as Map<String, dynamic>?;
-    final firstName = (user?['first_name'] ?? '').toString();
-
-    debugPrint('Parsed user: $user');
-    debugPrint('First name: $firstName');
-    debugPrint('Navigating to /home ...');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          firstName.isNotEmpty ? 'Welcome $firstName' : 'Login success',
-        ),
-      ),
-    );
-
-    Navigator.pushReplacementNamed(context, '/dashboard');
-  } catch (e, stackTrace) {
-    debugPrint('===== LOGIN ERROR =====');
-    debugPrint('Error: $e');
-    debugPrint('StackTrace: $stackTrace');
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _loading = true;
+      _error = null;
     });
-  } finally {
-    debugPrint('===== LOGIN END =====');
 
-    if (mounted) {
+    try {
+      final response = await _authService.login(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+        rememberMe: _rememberMe,
+      );
+
+      if (!mounted) return;
+
+      final user = response['user'] as Map<String, dynamic>?;
+      final firstName = (user?['first_name'] ?? '').toString();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            firstName.isNotEmpty
+                ? l10n.welcomeUser(firstName)
+                : l10n.loginSuccess,
+          ),
+        ),
+      );
+
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } catch (e) {
       setState(() {
-        _loading = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
-}
+
   InputDecoration _decoration({
     required String label,
     required IconData icon,
@@ -109,6 +94,7 @@ Future<void> _login() async {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
@@ -138,12 +124,12 @@ Future<void> _login() async {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Welcome back',
+                    l10n.welcomeBack,
                     style: theme.textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Login to manage your clients, products and invoices.',
+                    l10n.loginToManageApp,
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 22),
@@ -159,14 +145,14 @@ Future<void> _login() async {
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               decoration: _decoration(
-                                label: 'Email address',
+                                label: l10n.emailAddress,
                                 icon: Icons.mail_outline_rounded,
                               ),
                               validator: (value) {
                                 final v = value?.trim() ?? '';
-                                if (v.isEmpty) return 'Email is required';
+                                if (v.isEmpty) return l10n.emailRequired;
                                 if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) {
-                                  return 'Enter a valid email';
+                                  return l10n.enterValidEmail;
                                 }
                                 return null;
                               },
@@ -178,7 +164,7 @@ Future<void> _login() async {
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _login(),
                               decoration: _decoration(
-                                label: 'Password',
+                                label: l10n.password,
                                 icon: Icons.lock_outline_rounded,
                                 suffixIcon: IconButton(
                                   onPressed: () {
@@ -195,8 +181,8 @@ Future<void> _login() async {
                               ),
                               validator: (value) {
                                 final v = value ?? '';
-                                if (v.isEmpty) return 'Password is required';
-                                if (v.length < 6) return 'Minimum 6 characters';
+                                if (v.isEmpty) return l10n.passwordRequired;
+                                if (v.length < 6) return l10n.minimum6Characters;
                                 return null;
                               },
                             ),
@@ -215,13 +201,13 @@ Future<void> _login() async {
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    'Remember me',
+                                    l10n.rememberMe,
                                     style: theme.textTheme.bodyMedium,
                                   ),
                                 ),
                                 TextButton(
                                   onPressed: () {},
-                                  child: const Text('Forgot password?'),
+                                  child: Text(l10n.forgotPassword),
                                 ),
                               ],
                             ),
@@ -257,7 +243,7 @@ Future<void> _login() async {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text('Login'),
+                                    : Text(l10n.login),
                               ),
                             ),
                           ],
@@ -271,13 +257,14 @@ Future<void> _login() async {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
-                          "Don't have an account? ",
+                          l10n.dontHaveAccount,
                           style: theme.textTheme.bodySmall,
                         ),
                         TextButton(
                           onPressed: () {
-Navigator.pushNamed(context, '/signup');                          },
-                          child: const Text('Create one'),
+                            Navigator.pushNamed(context, '/signup');
+                          },
+                          child: Text(l10n.createOne),
                         ),
                       ],
                     ),

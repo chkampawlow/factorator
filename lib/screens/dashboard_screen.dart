@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 
 import '../services/auth_service.dart';
 import '../storage/clients_repo.dart';
@@ -27,123 +28,110 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _customersCount = 0;
   List<Map<String, dynamic>> _recent = [];
 
-  @override
-  void initState() {
-    super.initState();
+bool _didLoadOnce = false;
+
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  if (!_didLoadOnce) {
+    _didLoadOnce = true;
     _load();
   }
+}
 
   Future<int> _countCustomers() async {
     final clients = await _clientsRepo.getAllClients();
     return clients.length;
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
+Future<void> _load() async {
+  setState(() => _loading = true);
 
-    try {
-      final recent = await _repo.getRecentInvoices(limit: 6);
-      final customers = await _countCustomers();
+  try {
+    final recent = await _repo.getRecentInvoices(limit: 6);
+    final customers = await _countCustomers();
+    setState(() {
+      _recent = recent;
+      _customersCount = customers;
+      _loading = false;
+    });
+  } catch (e) {
+    setState(() {
+      _loading = false;
+    });
+    // Optionally, handle the error (e.g., show a snackbar)
+  }
+}
 
-      if (!mounted) return;
+DateTime _parseDate(String s) => DateTime.tryParse(s) ?? DateTime.now();
 
-      setState(() {
-        _customersCount = customers;
-        _recent = recent;
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
+String _dateOnly(DateTime d) => d.toLocal().toString().split(' ')[0];
 
-      setState(() {
-        _customersCount = 0;
-        _recent = [];
-        _loading = false;
-      });
+Future<void> _go(Widget page) async {
+  final res = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => page),
+  );
+  if (res == true) await _load();
+}
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Load failed: ${e.toString().replaceFirst('Exception: ', '')}'),
+Future<void> _logout() async {
+  final l10n = AppLocalizations.of(context)!;
+
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text(l10n.logout),
+      content: Text(l10n.logoutQuestion),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(l10n.cancel),
         ),
-      );
-    }
-  }
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(l10n.logout),
+        ),
+      ],
+    ),
+  );
 
-  DateTime _parseDate(String s) => DateTime.tryParse(s) ?? DateTime.now();
-  String _dateOnly(DateTime d) => d.toLocal().toString().split(' ')[0];
+  if (confirm != true) return;
 
-  Future<void> _go(Widget page) async {
-    final res = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-    );
-    if (res == true) await _load();
-  }
+  await _authService.logout();
 
-  Future<void> _logout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Do you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-FilledButton(
-  onPressed: () async {
-    await _authService.logout();
+  if (!mounted) return;
 
-    if (!mounted) return;
-
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login',
-      (route) => false,
-    );
-  },
-  child: const Text('Logout'),
-)
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    await _authService.logout();
-
-    if (!mounted) return;
-
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login',
-      (route) => false,
-    );
-  }
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/login',
+    (route) => false,
+  );
+}
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Dashboard',
+          l10n.dashboard,
           style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
             onPressed: widget.onToggleTheme,
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            tooltip: 'Toggle theme',
+            tooltip: l10n.toggleTheme,
           ),
           IconButton(
             onPressed: _logout,
             icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
+            tooltip: l10n.logout,
           ),
           const SizedBox(width: 6),
         ],
@@ -157,9 +145,8 @@ FilledButton(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   const SizedBox(height: 18),
-                  Text('Quick actions', style: t.headlineSmall),
+                  Text(l10n.quickActions, style: t.headlineSmall),
                   const SizedBox(height: 12),
-
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -169,57 +156,53 @@ FilledButton(
                     childAspectRatio: 1.05,
                     children: [
                       ActionTile(
-                        label: 'Create invoice',
+                        label: l10n.createInvoice,
                         icon: Icons.add_circle_outline,
                         bg: cs.primaryContainer.withOpacity(.40),
                         onTap: () => _go(const CreateInvoiceScreen()),
                       ),
                       ActionTile(
-                        label: 'Advance invoice',
+                        label: l10n.advanceInvoice,
                         icon: Icons.request_quote_outlined,
                         bg: const Color(0xFFFFF3CD),
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Advance invoice: coming soon'),
+                            SnackBar(
+                              content: Text(l10n.advanceInvoiceComingSoon),
                             ),
                           );
                         },
                       ),
                       ActionTile(
-                        label: 'Customers (${_customersCount})',
+                        label: '${l10n.customers} ($_customersCount)',
                         icon: Icons.people_alt_outlined,
                         bg: const Color(0xFFEAF2FF),
                         onTap: () => _go(const ClientsScreen()),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
                   Row(
                     children: [
                       Expanded(
                         child: Text(
-                          'Recent transactions',
+                          l10n.recentTransactions,
                           style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
                         ),
                       ),
                       TextButton(
                         onPressed: () {},
-                        child: const Text('All'),
+                        child: Text(l10n.all),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 10),
-
                   if (_recent.isEmpty)
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Text(
-                          'No invoices yet.',
+                          l10n.noInvoicesYet,
                           style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -228,89 +211,98 @@ FilledButton(
                     Card(
                       child: Column(
                         children: _recent.map((inv) {
-  final name = (inv['custom_email'] ?? 'Client').toString();
-  final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase();
-final total = double.tryParse(inv['total'].toString()) ?? 0.0;
-  final issue = _parseDate((inv['invoice_date'] ?? '').toString());
+                          final name = (inv['custom_email'] ?? l10n.client).toString();
+                          final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase();
+                          final total = double.tryParse(inv['total'].toString()) ?? 0.0;
+                          final issue = _parseDate((inv['invoice_date'] ?? '').toString());
 
-  final isPaid = status == 'PAID';
-  final tagBg = isPaid ? cs.primaryContainer : cs.tertiaryContainer;
-  final tagFg = isPaid ? cs.onPrimaryContainer : cs.onTertiaryContainer;
+                          final isPaid = status == 'PAID';
+                          final tagBg = isPaid ? cs.primaryContainer : cs.tertiaryContainer;
+                          final tagFg = isPaid ? cs.onPrimaryContainer : cs.onTertiaryContainer;
 
-  return Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: t.bodyLarge?.copyWith(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${inv['invoice']} • ${_dateOnly(issue)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: t.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 90, maxWidth: 140),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: tagBg,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      status,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        color: tagFg,
-                        fontSize: 12,
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: t.bodyLarge?.copyWith(
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            '${inv['invoice']} • ${_dateOnly(issue)}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: t.bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 90,
+                                        maxWidth: 140,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: tagBg,
+                                              borderRadius: BorderRadius.circular(999),
+                                            ),
+                                            child: Text(
+                                              status,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w900,
+                                                color: tagFg,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment: Alignment.centerRight,
+                                            child: Text(
+                                              '+${total.toStringAsFixed(2)}',
+                                              style: t.bodyLarge?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (inv != _recent.last) const Divider(height: 1),
+                            ],
+                          );
+                        }).toList(),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '+${total.toStringAsFixed(2)}',
-                      style: t.bodyLarge?.copyWith(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      if (inv != _recent.last) const Divider(height: 1),
-    ],
-  );
-}).toList(),
-                      ),
-                    ),
-
                   const SizedBox(height: 20),
                 ],
               ),

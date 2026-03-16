@@ -218,6 +218,27 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unitExample => 'ساعة / قطعة / كغ...';
 
   @override
+  String get dashboard => 'لوحة التحكم';
+
+  @override
+  String get quickActions => 'الإجراءات السريعة';
+
+  @override
+  String get advanceInvoice => 'فاتورة مسبقة';
+
+  @override
+  String get advanceInvoiceComingSoon => 'الفاتورة المسبقة: قريباً';
+
+  @override
+  String get recentTransactions => 'المعاملات الأخيرة';
+
+  @override
+  String get all => 'الكل';
+
+  @override
+  String get noInvoicesYet => 'لا توجد فواتير بعد.';
+
+  @override
   String get failedToLoadCustomers => 'فشل تحميل العملاء';
 
   @override
@@ -269,4 +290,285 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get edit => 'تعديل';
+
+  @override
+  String get invoice => 'الفاتورة';
+
+  @override
+  String get status => 'الحالة';
+
+  @override
+  String get issue => 'الإصدار';
+
+  @override
+  String get due => 'الاستحقاق';
+
+  @override
+  String get fill => 'تعبئة';
+
+  @override
+  String get previewPdf => 'معاينة PDF';
+
+  @override
+  String get retry => 'إعادة المحاولة';
+
+  @override
+  String get error => 'خطأ';
+
+  @override
+  String get invoiceNotFound => 'الفاتورة غير موجودة.';
+
+  @override
+  String get addAtLeastOneItemBeforePreviewPdf => 'أضف عنصرًا واحدًا على الأقل قبل معاينة ملف PDF.';
+
+  @override
+  String get qtyMustBeGreaterThanZero => 'يجب أن تكون الكمية أكبر من 0';
+
+  @override
+  String get itemAdded => 'تمت إضافة العنصر';
+
+  @override
+  String get itemDeleted => 'تم حذف العنصر';
+
+  @override
+  String get itemUpdated => 'تم تحديث العنصر';
+
+  @override
+  String get deleteItem => 'حذف العنصر';
+
+  @override
+  String get removeThisItemFromInvoice => 'إزالة هذا العنصر من الفاتورة؟';
+
+  @override
+  String get editItem => 'تعديل العنصر';
+
+  @override
+  String get qty => 'الكمية';
+
+  @override
+  String get discountPercent => 'الخصم (%)';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get addItem => 'إضافة عنصر';
+
+  @override
+  String get product => 'المنتج';
+
+  @override
+  String get priceOverride => 'استبدال السعر';
+
+  @override
+  String get addToInvoice => 'إضافة إلى الفاتورة';
+
+  @override
+  String get noItemsYet => 'لا توجد عناصر بعد.';
+
+  @override
+  String get invoices => 'الفواتير';
+
+  @override
+  String get overdue => 'متأخرة';
+
+  @override
+  String get code => 'الرمز';
+
+  @override
+  String get type => 'النوع';
+
+  @override
+  String get doc => 'الوثيقة';
+
+  @override
+  String get issued => 'أُصدرت في';
+
+  @override
+  String get dueToday => 'الاستحقاق اليوم';
+
+  @override
+  String dueInDays(String days, String suffix) {
+    return 'الاستحقاق خلال $days يوم$suffix';
+  }
+
+  @override
+  String overdueByDays(String days, String suffix) {
+    return 'متأخرة بمقدار $days يوم$suffix';
+  }
+
+  @override
+  String get createYourFirstInvoiceToSeeItHere => 'أنشئ فاتورتك الأولى لتظهر هنا.';
+
+  @override
+  String get welcomeBack => 'مرحباً بعودتك';
+
+  @override
+  String get loginToManageApp => 'سجّل الدخول لإدارة العملاء والمنتجات والفواتير.';
+
+  @override
+  String get emailAddress => 'عنوان البريد الإلكتروني';
+
+  @override
+  String get emailRequired => 'البريد الإلكتروني مطلوب';
+
+  @override
+  String get enterValidEmail => 'أدخل بريداً إلكترونياً صالحاً';
+
+  @override
+  String get password => 'كلمة المرور';
+
+  @override
+  String get passwordRequired => 'كلمة المرور مطلوبة';
+
+  @override
+  String get minimum6Characters => 'الحد الأدنى 6 أحرف';
+
+  @override
+  String get rememberMe => 'تذكرني';
+
+  @override
+  String get forgotPassword => 'هل نسيت كلمة المرور؟';
+
+  @override
+  String get login => 'تسجيل الدخول';
+
+  @override
+  String get dontHaveAccount => 'ليس لديك حساب؟ ';
+
+  @override
+  String get createOne => 'أنشئ واحداً';
+
+  @override
+  String get loginSuccess => 'تم تسجيل الدخول بنجاح';
+
+  @override
+  String welcomeUser(String name) {
+    return 'مرحباً $name';
+  }
+
+  @override
+  String get productsServices => 'المنتجات / الخدمات';
+
+  @override
+  String get searchProductsHint => 'بحث (الاسم / الرمز / الوحدة / TVA)...';
+
+  @override
+  String get noProductsYet => 'لا توجد منتجات بعد';
+
+  @override
+  String get deleteProductQuestion => 'حذف المنتج؟';
+
+  @override
+  String areYouSureDeleteProduct(String name) {
+    return 'هل أنت متأكد أنك تريد حذف \"$name\"؟';
+  }
+
+  @override
+  String get productDeleted => 'تم حذف المنتج ✅';
+
+  @override
+  String get unnamedProduct => 'منتج بدون اسم';
+
+  @override
+  String get unit => 'الوحدة';
+
+  @override
+  String get firstNameRequired => 'الاسم الأول مطلوب';
+
+  @override
+  String get lastNameRequired => 'اسم العائلة مطلوب';
+
+  @override
+  String get fiscalIdRequired => 'المعرف الجبائي مطلوب';
+
+  @override
+  String get fiscalIdMustMatch => 'يجب أن يطابق المعرف الجبائي 1234567ABC123';
+
+  @override
+  String get passwordMinLength => 'يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل';
+
+  @override
+  String get pleaseConfirmPassword => 'يرجى تأكيد كلمة المرور';
+
+  @override
+  String get passwordsDoNotMatch => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get accountCreatedSuccessfully => 'تم إنشاء الحساب بنجاح';
+
+  @override
+  String get whoAreYou => 'من أنت؟';
+
+  @override
+  String get startWithPersonalInformation => 'ابدأ بمعلوماتك الشخصية.';
+
+  @override
+  String get firstName => 'الاسم الأول';
+
+  @override
+  String get lastName => 'اسم العائلة';
+
+  @override
+  String get companyDetails => 'تفاصيل الشركة';
+
+  @override
+  String get addOrganizationAndFiscalInfo => 'أضف مؤسستك ومعلوماتك الجبائية.';
+
+  @override
+  String get organizationName => 'اسم المؤسسة';
+
+  @override
+  String get fiscalIdRequiredLabel => 'المعرف الجبائي*';
+
+  @override
+  String get fiscalIdFormat => 'الصيغة: 1234567ABC123';
+
+  @override
+  String get contactInformation => 'معلومات الاتصال';
+
+  @override
+  String get howCanWeReachYou => 'كيف يمكننا التواصل معك؟';
+
+  @override
+  String get emailAddressLabel => 'عنوان البريد الإلكتروني';
+
+  @override
+  String get phoneNumber => 'رقم الهاتف';
+
+  @override
+  String get secureYourAccount => 'أمّن حسابك';
+
+  @override
+  String get chooseStrongPassword => 'اختر كلمة مرور قوية.';
+
+  @override
+  String get passwordLabel => 'كلمة المرور';
+
+  @override
+  String get confirmPassword => 'تأكيد كلمة المرور';
+
+  @override
+  String get reviewAndCreate => 'مراجعة وإنشاء';
+
+  @override
+  String get reviewBeforeCreate => 'تأكد من صحة كل شيء قبل إنشاء الحساب.';
+
+  @override
+  String get organization => 'المؤسسة';
+
+  @override
+  String get fiscalIdLabel => 'المعرف الجبائي';
+
+  @override
+  String get phone => 'الهاتف';
+
+  @override
+  String get createAccount => 'إنشاء حساب';
+
+  @override
+  String get back => 'رجوع';
+
+  @override
+  String get continueText => 'متابعة';
 }

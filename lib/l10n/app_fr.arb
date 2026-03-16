@@ -82,6 +82,14 @@
   "addNewClient": "Ajouter un nouveau client",
   "loadFailed": "Échec du chargement",
 
+  "dashboard": "Tableau de bord",
+  "quickActions": "Actions rapides",
+  "advanceInvoice": "Facture d'avance",
+  "advanceInvoiceComingSoon": "Facture d'avance : bientôt disponible",
+  "recentTransactions": "Transactions récentes",
+  "all": "Tout",
+  "noInvoicesYet": "Aucune facture pour le moment.",
+
   "invalidNumber": "Nombre invalide",
   "priceAndTvaMustBeValidNumbers": "Le prix et la TVA doivent être des nombres valides.",
   "invalidProductId": "Identifiant produit invalide",
@@ -124,6 +132,126 @@
   "searchNameMfCin": "Rechercher (nom / MF / CIN)...",
   "allCustomers": "Tous les clients",
   "noCustomersYet": "Aucun client pour le moment",
-  "edit": "Modifier"
+    "invoice": "Facture",
+  "status": "Statut",
+  "issue": "Date d'émission",
+  "due": "Échéance",
+  "fill": "Remplir",
+  "previewPdf": "Aperçu PDF",
+  "retry": "Réessayer",
+  "error": "Erreur",
+  "invoiceNotFound": "Facture introuvable.",
+  "addAtLeastOneItemBeforePreviewPdf": "Ajoutez au moins un article avant d'afficher l'aperçu PDF.",
+  "qtyMustBeGreaterThanZero": "La quantité doit être > 0",
+  "itemAdded": "Article ajouté",
+  "itemDeleted": "Article supprimé",
+  "itemUpdated": "Article mis à jour",
+  "deleteItem": "Supprimer l'article",
+  "removeThisItemFromInvoice": "Supprimer cet article de la facture ?",
+  "editItem": "Modifier l'article",
+  "qty": "Qté",
+  "discountPercent": "Remise (%)",
+  "save": "Enregistrer",
+  "addItem": "Ajouter un article",
+  "product": "Produit",
+  "priceOverride": "Remplacer le prix",
+  "addToInvoice": "Ajouter à la facture",
+  "noItemsYet": "Aucun article pour le moment.",
+  "edit": "Modifier",
+  "invoices": "Factures",
+  "overdue": "En retard",
+  "code": "Code",
+  "type": "Type",
+  "doc": "Doc",
+  "issued": "Émise le",
+  "dueToday": "Échéance aujourd'hui",
+  "dueInDays": "Échéance dans {days} jour{suffix}",
+  "@dueInDays": {
+    "placeholders": {
+      "days": { "type": "String" },
+      "suffix": { "type": "String" }
+    }
+  },
+  "overdueByDays": "En retard de {days} jour{suffix}",
+  "@overdueByDays": {
+    "placeholders": {
+      "days": { "type": "String" },
+      "suffix": { "type": "String" }
+    }
+  },
+  "createYourFirstInvoiceToSeeItHere": "Créez votre première facture pour l'afficher ici.",
+  
+  "welcomeBack": "Bon retour",
+  "loginToManageApp": "Connectez-vous pour gérer vos clients, produits et factures.",
+  "emailAddress": "Adresse e-mail",
+  "emailRequired": "L'email est requis",
+  "enterValidEmail": "Entrez un email valide",
+  "password": "Mot de passe",
+  "passwordRequired": "Le mot de passe est requis",
+  "minimum6Characters": "Minimum 6 caractères",
+  "rememberMe": "Se souvenir de moi",
+  "forgotPassword": "Mot de passe oublié ?",
+  "login": "Connexion",
+  "dontHaveAccount": "Vous n'avez pas de compte ? ",
+  "createOne": "Créer un compte",
+  "loginSuccess": "Connexion réussie",
+  "welcomeUser": "Bienvenue {name}",
+  "@welcomeUser": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  
+  "productsServices": "Produits / Services",
+  "searchProductsHint": "Rechercher (nom / code / unité / TVA)...",
+  "noProductsYet": "Aucun produit pour le moment",
+  "deleteProductQuestion": "Supprimer le produit ?",
+  "areYouSureDeleteProduct": "Voulez-vous vraiment supprimer \"{name}\" ?",
+  "@areYouSureDeleteProduct": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "productDeleted": "Produit supprimé ✅",
+  "unnamedProduct": "Produit sans nom",
+  "unit": "Unité",
+  
+  "firstNameRequired": "Le prénom est requis",
+  "lastNameRequired": "Le nom est requis",
+  "fiscalIdRequired": "Le matricule fiscal est requis",
+  "fiscalIdMustMatch": "Le matricule fiscal doit correspondre à 1234567ABC123",
+  "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères",
+  "pleaseConfirmPassword": "Veuillez confirmer votre mot de passe",
+  "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+  "accountCreatedSuccessfully": "Compte créé avec succès",
+  "whoAreYou": "Qui êtes-vous ?",
+  "startWithPersonalInformation": "Commencez par vos informations personnelles.",
+  "firstName": "Prénom",
+  "lastName": "Nom",
+  "companyDetails": "Détails de l'entreprise",
+  "addOrganizationAndFiscalInfo": "Ajoutez votre organisation et vos informations fiscales.",
+  "organizationName": "Nom de l'organisation",
+  "fiscalIdRequiredLabel": "Matricule Fiscal*",
+  "fiscalIdFormat": "Format : 1234567ABC123",
+  "contactInformation": "Informations de contact",
+  "howCanWeReachYou": "Comment pouvons-nous vous joindre ?",
+  "emailAddressLabel": "Adresse email",
+  "phoneNumber": "Numéro de téléphone",
+  "secureYourAccount": "Sécurisez votre compte",
+  "chooseStrongPassword": "Choisissez un mot de passe fort.",
+  "passwordLabel": "Mot de passe",
+  "confirmPassword": "Confirmer le mot de passe",
+  "reviewAndCreate": "Vérifier et créer",
+  "reviewBeforeCreate": "Assurez-vous que tout est correct avant de créer le compte.",
+  "organization": "Organisation",
+  "fiscalIdLabel": "Matricule Fiscal",
+  "phone": "Téléphone",
+  "createAccount": "Créer un compte",
+  "back": "Retour",
+  "continueText": "Continuer"
+
+
+
+
 
 }

@@ -11,6 +11,8 @@ import 'screens/login_screen.dart';
 import 'screens/products_screen.dart';
 import 'screens/signup_screen.dart';
 import 'services/auth_service.dart';
+import 'services/location_language_service.dart';
+import 'services/settings_service.dart';
 
 void main() => runApp(const FacturationApp());
 
@@ -22,9 +24,55 @@ class FacturationApp extends StatefulWidget {
 }
 
 class _FacturationAppState extends State<FacturationApp> {
+  final SettingsService _settingsService = SettingsService();
+  final LocationLanguageService _locationLanguageService =
+      LocationLanguageService();
+
   ThemeMode _mode = ThemeMode.light;
   Color _primaryColor = AppTheme.mint;
   Locale _locale = const Locale('fr');
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLanguage();
+  }
+
+  Future<void> _initializeLanguage() async {
+    try {
+      final savedLanguage = (await _settingsService.getLanguage()).toLowerCase();
+
+      if (savedLanguage.isNotEmpty &&
+          ['fr', 'en', 'ar'].contains(savedLanguage)) {
+        if (!mounted) return;
+        setState(() {
+          _locale = Locale(savedLanguage);
+        });
+        return;
+      }
+
+      final detectedLanguage =
+          (await _locationLanguageService.detectLanguageCodeFromLocation())
+              .toLowerCase();
+
+      final finalLanguage =
+          ['fr', 'en', 'ar'].contains(detectedLanguage)
+              ? detectedLanguage
+              : 'fr';
+
+      await _settingsService.setLanguage(finalLanguage);
+
+      if (!mounted) return;
+      setState(() {
+        _locale = Locale(finalLanguage);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _locale = const Locale('fr');
+      });
+    }
+  }
 
   void _toggleTheme() {
     setState(() {
@@ -38,9 +86,15 @@ class _FacturationAppState extends State<FacturationApp> {
     });
   }
 
-  void _changeLanguage(String code) {
+  Future<void> _changeLanguage(String code) async {
+    final normalized = code.toLowerCase();
+
+    await _settingsService.setLanguage(normalized);
+
+    if (!mounted) return;
+
     setState(() {
-      _locale = Locale(code.toLowerCase());
+      _locale = Locale(normalized);
     });
   }
 

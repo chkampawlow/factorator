@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import '../storage/products_repo.dart';
 import 'add_product_screen.dart';
 
@@ -64,8 +65,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
       });
 
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Load failed: $e")),
+        SnackBar(content: Text('${l10n.loadFailed}: $e')),
       );
     }
   }
@@ -84,21 +86,22 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<bool> _confirmDelete(Map<String, dynamic> product) async {
+    final l10n = AppLocalizations.of(context)!;
     final name = (product['name'] ?? '').toString();
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Delete product?"),
-        content: Text('Are you sure you want to delete "$name"?'),
+        title: Text(l10n.deleteProductQuestion),
+        content: Text(l10n.areYouSureDeleteProduct(name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete"),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -110,7 +113,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       if (!mounted) return false;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Product deleted ✅")),
+        SnackBar(content: Text(l10n.productDeleted)),
       );
 
       await _loadProducts();
@@ -181,6 +184,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Widget _premiumProductCard(BuildContext context, Map<String, dynamic> p) {
+    final l10n = AppLocalizations.of(context)!;
     final t = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
 
@@ -225,7 +229,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name.isEmpty ? "Unnamed product" : name,
+                  name.isEmpty ? l10n.unnamedProduct : name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: t.titleMedium?.copyWith(
@@ -236,10 +240,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 const SizedBox(height: 6),
                 Text(
                   [
-                    if (code.isNotEmpty) "Code: $code",
-                    "Unit: $unit",
-                    "TVA $tvaRate%",
-                  ].join(" • "),
+                    if (code.isNotEmpty) '${l10n.code}: $code',
+                    '${l10n.unit}: $unit',
+                    'TVA $tvaRate%',
+                  ].join(' • '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: t.bodyMedium?.copyWith(
@@ -256,11 +260,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "$price TND",
+                '$price TND',
                 style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 8),
-              _pill(context, text: "TVA $tvaRate%"),
+              _pill(context, text: 'TVA $tvaRate%'),
             ],
           ),
           const SizedBox(width: 8),
@@ -276,20 +280,21 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Products / Services",
+          l10n.productsServices,
           style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
             onPressed: _loadProducts,
             icon: const Icon(Icons.refresh),
-            tooltip: "Refresh",
+            tooltip: l10n.refresh,
           ),
           const SizedBox(width: 6),
         ],
@@ -305,7 +310,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
           }
         },
         icon: const Icon(Icons.add),
-        label: const Text("Add"),
+        label: Text(l10n.add),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -325,11 +330,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     ),
                     child: TextField(
                       controller: _searchCtrl,
-                      decoration: const InputDecoration(
-                        hintText: "Search (name / code / unit / TVA)...",
-                        prefixIcon: Icon(Icons.search),
+                      decoration: InputDecoration(
+                        hintText: l10n.searchProductsHint,
+                        prefixIcon: const Icon(Icons.search),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 14,
                         ),
@@ -342,7 +347,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       padding: const EdgeInsets.only(top: 30),
                       child: Center(
                         child: Text(
-                          "No products yet",
+                          l10n.noProductsYet,
                           style: t.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -351,11 +356,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     )
                   else
                     ..._filtered.map((p) {
-final id = int.tryParse(p['id'].toString()) ?? 0;
+                      final id = int.tryParse(p['id'].toString()) ?? 0;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Dismissible(
-                          key: ValueKey("product_$id"),
+                          key: ValueKey('product_$id'),
                           confirmDismiss: (direction) async {
                             if (direction == DismissDirection.startToEnd) {
                               await _editProduct(p);
@@ -370,7 +375,7 @@ final id = int.tryParse(p['id'].toString()) ?? 0;
                           background: _swipeBg(
                             context,
                             icon: Icons.edit,
-                            label: "Edit",
+                            label: l10n.edit,
                             alignLeft: true,
                             color: cs.primaryContainer,
                             fg: cs.onPrimaryContainer,
@@ -378,7 +383,7 @@ final id = int.tryParse(p['id'].toString()) ?? 0;
                           secondaryBackground: _swipeBg(
                             context,
                             icon: Icons.delete_outline,
-                            label: "Delete",
+                            label: l10n.delete,
                             alignLeft: false,
                             color: cs.errorContainer,
                             fg: cs.onErrorContainer,

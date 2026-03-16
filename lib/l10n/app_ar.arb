@@ -100,7 +100,13 @@
   "tvaExample": "مثال: 19",
   "unitOptional": "الوحدة (اختيارية)",
   "unitExample": "ساعة / قطعة / كغ...",
-
+  "dashboard": "لوحة التحكم",
+  "quickActions": "الإجراءات السريعة",
+  "advanceInvoice": "فاتورة مسبقة",
+  "advanceInvoiceComingSoon": "الفاتورة المسبقة: قريباً",
+  "recentTransactions": "المعاملات الأخيرة",
+  "all": "الكل",
+  "noInvoicesYet": "لا توجد فواتير بعد.",
 
 
   "failedToLoadCustomers": "فشل تحميل العملاء",
@@ -124,5 +130,125 @@
   "searchNameMfCin": "بحث (الاسم / MF / CIN)...",
   "allCustomers": "كل العملاء",
   "noCustomersYet": "لا يوجد عملاء بعد",
-  "edit": "تعديل"
+  "edit": "تعديل",
+    "invoice": "الفاتورة",
+  "status": "الحالة",
+  "issue": "الإصدار",
+  "due": "الاستحقاق",
+  "fill": "تعبئة",
+  "previewPdf": "معاينة PDF",
+  "retry": "إعادة المحاولة",
+  "error": "خطأ",
+  "invoiceNotFound": "الفاتورة غير موجودة.",
+  "addAtLeastOneItemBeforePreviewPdf": "أضف عنصرًا واحدًا على الأقل قبل معاينة ملف PDF.",
+  "qtyMustBeGreaterThanZero": "يجب أن تكون الكمية أكبر من 0",
+  "itemAdded": "تمت إضافة العنصر",
+  "itemDeleted": "تم حذف العنصر",
+  "itemUpdated": "تم تحديث العنصر",
+  "deleteItem": "حذف العنصر",
+  "removeThisItemFromInvoice": "إزالة هذا العنصر من الفاتورة؟",
+  "editItem": "تعديل العنصر",
+  "qty": "الكمية",
+  "discountPercent": "الخصم (%)",
+  "save": "حفظ",
+  "addItem": "إضافة عنصر",
+  "product": "المنتج",
+  "priceOverride": "استبدال السعر",
+  "addToInvoice": "إضافة إلى الفاتورة",
+  "noItemsYet": "لا توجد عناصر بعد.",
+  "invoices": "الفواتير",
+  "overdue": "متأخرة",
+  "code": "الرمز",
+  "type": "النوع",
+  "doc": "الوثيقة",
+  "issued": "أُصدرت في",
+  "dueToday": "الاستحقاق اليوم",
+  "dueInDays": "الاستحقاق خلال {days} يوم{suffix}",
+  "@dueInDays": {
+    "placeholders": {
+      "days": { "type": "String" },
+      "suffix": { "type": "String" }
+    }
+  },
+  "overdueByDays": "متأخرة بمقدار {days} يوم{suffix}",
+  "@overdueByDays": {
+    "placeholders": {
+      "days": { "type": "String" },
+      "suffix": { "type": "String" }
+    }
+  },
+  "createYourFirstInvoiceToSeeItHere": "أنشئ فاتورتك الأولى لتظهر هنا.",
+  
+  "welcomeBack": "مرحباً بعودتك",
+  "loginToManageApp": "سجّل الدخول لإدارة العملاء والمنتجات والفواتير.",
+  "emailAddress": "عنوان البريد الإلكتروني",
+  "emailRequired": "البريد الإلكتروني مطلوب",
+  "enterValidEmail": "أدخل بريداً إلكترونياً صالحاً",
+  "password": "كلمة المرور",
+  "passwordRequired": "كلمة المرور مطلوبة",
+  "minimum6Characters": "الحد الأدنى 6 أحرف",
+  "rememberMe": "تذكرني",
+  "forgotPassword": "هل نسيت كلمة المرور؟",
+  "login": "تسجيل الدخول",
+  "dontHaveAccount": "ليس لديك حساب؟ ",
+  "createOne": "أنشئ واحداً",
+  "loginSuccess": "تم تسجيل الدخول بنجاح",
+  "welcomeUser": "مرحباً {name}",
+  "@welcomeUser": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  
+  "productsServices": "المنتجات / الخدمات",
+  "searchProductsHint": "بحث (الاسم / الرمز / الوحدة / TVA)...",
+  "noProductsYet": "لا توجد منتجات بعد",
+  "deleteProductQuestion": "حذف المنتج؟",
+  "areYouSureDeleteProduct": "هل أنت متأكد أنك تريد حذف \"{name}\"؟",
+  "@areYouSureDeleteProduct": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "productDeleted": "تم حذف المنتج ✅",
+  "unnamedProduct": "منتج بدون اسم",
+  "unit": "الوحدة",
+  
+  "firstNameRequired": "الاسم الأول مطلوب",
+  "lastNameRequired": "اسم العائلة مطلوب",
+  "fiscalIdRequired": "المعرف الجبائي مطلوب",
+  "fiscalIdMustMatch": "يجب أن يطابق المعرف الجبائي 1234567ABC123",
+  "passwordMinLength": "يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل",
+  "pleaseConfirmPassword": "يرجى تأكيد كلمة المرور",
+  "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين",
+  "accountCreatedSuccessfully": "تم إنشاء الحساب بنجاح",
+  "whoAreYou": "من أنت؟",
+  "startWithPersonalInformation": "ابدأ بمعلوماتك الشخصية.",
+  "firstName": "الاسم الأول",
+  "lastName": "اسم العائلة",
+  "companyDetails": "تفاصيل الشركة",
+  "addOrganizationAndFiscalInfo": "أضف مؤسستك ومعلوماتك الجبائية.",
+  "organizationName": "اسم المؤسسة",
+  "fiscalIdRequiredLabel": "المعرف الجبائي*",
+  "fiscalIdFormat": "الصيغة: 1234567ABC123",
+  "contactInformation": "معلومات الاتصال",
+  "howCanWeReachYou": "كيف يمكننا التواصل معك؟",
+  "emailAddressLabel": "عنوان البريد الإلكتروني",
+  "phoneNumber": "رقم الهاتف",
+  "secureYourAccount": "أمّن حسابك",
+  "chooseStrongPassword": "اختر كلمة مرور قوية.",
+  "passwordLabel": "كلمة المرور",
+  "confirmPassword": "تأكيد كلمة المرور",
+  "reviewAndCreate": "مراجعة وإنشاء",
+  "reviewBeforeCreate": "تأكد من صحة كل شيء قبل إنشاء الحساب.",
+  "organization": "المؤسسة",
+  "fiscalIdLabel": "المعرف الجبائي",
+  "phone": "الهاتف",
+  "createAccount": "إنشاء حساب",
+  "back": "رجوع",
+  "continueText": "متابعة"
+
+
+
+
 }

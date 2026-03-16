@@ -101,6 +101,14 @@
   "unitOptional": "Unit (optional)",
   "unitExample": "hour / piece / kg...",
 
+  "dashboard": "Dashboard",
+  "quickActions": "Quick actions",
+  "advanceInvoice": "Advance invoice",
+  "advanceInvoiceComingSoon": "Advance invoice: coming soon",
+  "recentTransactions": "Recent transactions",
+  "all": "All",
+  "noInvoicesYet": "No invoices yet.",
+
   "failedToLoadCustomers": "Failed to load customers",
   "mfLabel": "MF",
   "missingClientId": "Missing client id",
@@ -122,5 +130,123 @@
   "searchNameMfCin": "Search (name / MF / CIN)...",
   "allCustomers": "All customers",
   "noCustomersYet": "No customers yet",
-  "edit": "Edit"
+  "edit": "Edit",
+    "invoice": "Invoice",
+  "status": "Status",
+  "issue": "Issue",
+  "due": "Due",
+  "fill": "Fill",
+  "previewPdf": "Preview PDF",
+  "retry": "Retry",
+  "error": "Error",
+  "invoiceNotFound": "Invoice not found.",
+  "addAtLeastOneItemBeforePreviewPdf": "Add at least one item before previewing the PDF.",
+  "qtyMustBeGreaterThanZero": "Qty must be > 0",
+  "itemAdded": "Item added",
+  "itemDeleted": "Item deleted",
+  "itemUpdated": "Item updated",
+  "deleteItem": "Delete item",
+  "removeThisItemFromInvoice": "Remove this item from the invoice?",
+  "editItem": "Edit item",
+  "qty": "Qty",
+  "discountPercent": "Discount (%)",
+  "save": "Save",
+  "addItem": "Add item",
+  "product": "Product",
+  "priceOverride": "Price override",
+  "addToInvoice": "Add to invoice",
+  "noItemsYet": "No items yet.",
+  "invoices": "Invoices",
+  "overdue": "Overdue",
+  "code": "Code",
+  "type": "Type",
+  "doc": "Doc",
+  "issued": "Issued",
+  "dueToday": "Due today",
+  "dueInDays": "Due in {days} day{suffix}",
+  "@dueInDays": {
+    "placeholders": {
+      "days": { "type": "String" },
+      "suffix": { "type": "String" }
+    }
+  },
+  "overdueByDays": "Overdue by {days} day{suffix}",
+  "@overdueByDays": {
+    "placeholders": {
+      "days": { "type": "String" },
+      "suffix": { "type": "String" }
+    }
+  },
+  "createYourFirstInvoiceToSeeItHere": "Create your first invoice to see it here.",
+  
+
+  "welcomeBack": "Welcome back",
+  "loginToManageApp": "Login to manage your clients, products and invoices.",
+  "emailAddress": "Email address",
+  "emailRequired": "Email is required",
+  "enterValidEmail": "Enter a valid email",
+  "password": "Password",
+  "passwordRequired": "Password is required",
+  "minimum6Characters": "Minimum 6 characters",
+  "rememberMe": "Remember me",
+  "forgotPassword": "Forgot password?",
+  "login": "Login",
+  "dontHaveAccount": "Don't have an account? ",
+  "createOne": "Create one",
+  "loginSuccess": "Login success",
+  "welcomeUser": "Welcome {name}",
+  "@welcomeUser": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "productsServices": "Products / Services",
+  "searchProductsHint": "Search (name / code / unit / TVA)...",
+  "noProductsYet": "No products yet",
+  "deleteProductQuestion": "Delete product?",
+  "areYouSureDeleteProduct": "Are you sure you want to delete \"{name}\"?",
+  "@areYouSureDeleteProduct": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "productDeleted": "Product deleted ✅",
+  "unnamedProduct": "Unnamed product",
+  "unit": "Unit",
+
+  "firstNameRequired": "First name is required",
+  "lastNameRequired": "Last name is required",
+  "fiscalIdRequired": "Fiscal ID is required",
+  "fiscalIdMustMatch": "Fiscal ID must match 1234567ABC123",
+  "passwordMinLength": "Password must be at least 6 characters",
+  "pleaseConfirmPassword": "Please confirm your password",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "accountCreatedSuccessfully": "Account created successfully",
+  "whoAreYou": "Who are you?",
+  "startWithPersonalInformation": "Start with your personal information.",
+  "firstName": "First name",
+  "lastName": "Last name",
+  "companyDetails": "Company details",
+  "addOrganizationAndFiscalInfo": "Add your organization and fiscal information.",
+  "organizationName": "Organization Name",
+  "fiscalIdRequiredLabel": "Fiscal ID*",
+  "fiscalIdFormat": "Format: 1234567ABC123",
+  "contactInformation": "Contact information",
+  "howCanWeReachYou": "How can we reach you?",
+  "emailAddressLabel": "Email address",
+  "phoneNumber": "Phone number",
+  "secureYourAccount": "Secure your account",
+  "chooseStrongPassword": "Choose a strong password.",
+  "passwordLabel": "Password",
+  "confirmPassword": "Confirm password",
+  "reviewAndCreate": "Review & create",
+  "reviewBeforeCreate": "Make sure everything looks good before creating the account.",
+  "organization": "Organization",
+  "fiscalIdLabel": "Fiscal ID",
+  "phone": "Phone",
+  "createAccount": "Create account",
+  "back": "Back",
+  "continueText": "Continue"
+
 }

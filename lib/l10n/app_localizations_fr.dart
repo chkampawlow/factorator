@@ -218,6 +218,27 @@ class AppLocalizationsFr extends AppLocalizations {
   String get unitExample => 'heure / pièce / kg...';
 
   @override
+  String get dashboard => 'Tableau de bord';
+
+  @override
+  String get quickActions => 'Actions rapides';
+
+  @override
+  String get advanceInvoice => 'Facture d\'avance';
+
+  @override
+  String get advanceInvoiceComingSoon => 'Facture d\'avance : bientôt disponible';
+
+  @override
+  String get recentTransactions => 'Transactions récentes';
+
+  @override
+  String get all => 'Tout';
+
+  @override
+  String get noInvoicesYet => 'Aucune facture pour le moment.';
+
+  @override
   String get failedToLoadCustomers => 'Échec du chargement des clients';
 
   @override
@@ -269,4 +290,285 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get edit => 'Modifier';
+
+  @override
+  String get invoice => 'Facture';
+
+  @override
+  String get status => 'Statut';
+
+  @override
+  String get issue => 'Date d\'émission';
+
+  @override
+  String get due => 'Échéance';
+
+  @override
+  String get fill => 'Remplir';
+
+  @override
+  String get previewPdf => 'Aperçu PDF';
+
+  @override
+  String get retry => 'Réessayer';
+
+  @override
+  String get error => 'Erreur';
+
+  @override
+  String get invoiceNotFound => 'Facture introuvable.';
+
+  @override
+  String get addAtLeastOneItemBeforePreviewPdf => 'Ajoutez au moins un article avant d\'afficher l\'aperçu PDF.';
+
+  @override
+  String get qtyMustBeGreaterThanZero => 'La quantité doit être > 0';
+
+  @override
+  String get itemAdded => 'Article ajouté';
+
+  @override
+  String get itemDeleted => 'Article supprimé';
+
+  @override
+  String get itemUpdated => 'Article mis à jour';
+
+  @override
+  String get deleteItem => 'Supprimer l\'article';
+
+  @override
+  String get removeThisItemFromInvoice => 'Supprimer cet article de la facture ?';
+
+  @override
+  String get editItem => 'Modifier l\'article';
+
+  @override
+  String get qty => 'Qté';
+
+  @override
+  String get discountPercent => 'Remise (%)';
+
+  @override
+  String get save => 'Enregistrer';
+
+  @override
+  String get addItem => 'Ajouter un article';
+
+  @override
+  String get product => 'Produit';
+
+  @override
+  String get priceOverride => 'Remplacer le prix';
+
+  @override
+  String get addToInvoice => 'Ajouter à la facture';
+
+  @override
+  String get noItemsYet => 'Aucun article pour le moment.';
+
+  @override
+  String get invoices => 'Factures';
+
+  @override
+  String get overdue => 'En retard';
+
+  @override
+  String get code => 'Code';
+
+  @override
+  String get type => 'Type';
+
+  @override
+  String get doc => 'Doc';
+
+  @override
+  String get issued => 'Émise le';
+
+  @override
+  String get dueToday => 'Échéance aujourd\'hui';
+
+  @override
+  String dueInDays(String days, String suffix) {
+    return 'Échéance dans $days jour$suffix';
+  }
+
+  @override
+  String overdueByDays(String days, String suffix) {
+    return 'En retard de $days jour$suffix';
+  }
+
+  @override
+  String get createYourFirstInvoiceToSeeItHere => 'Créez votre première facture pour l\'afficher ici.';
+
+  @override
+  String get welcomeBack => 'Bon retour';
+
+  @override
+  String get loginToManageApp => 'Connectez-vous pour gérer vos clients, produits et factures.';
+
+  @override
+  String get emailAddress => 'Adresse e-mail';
+
+  @override
+  String get emailRequired => 'L\'email est requis';
+
+  @override
+  String get enterValidEmail => 'Entrez un email valide';
+
+  @override
+  String get password => 'Mot de passe';
+
+  @override
+  String get passwordRequired => 'Le mot de passe est requis';
+
+  @override
+  String get minimum6Characters => 'Minimum 6 caractères';
+
+  @override
+  String get rememberMe => 'Se souvenir de moi';
+
+  @override
+  String get forgotPassword => 'Mot de passe oublié ?';
+
+  @override
+  String get login => 'Connexion';
+
+  @override
+  String get dontHaveAccount => 'Vous n\'avez pas de compte ? ';
+
+  @override
+  String get createOne => 'Créer un compte';
+
+  @override
+  String get loginSuccess => 'Connexion réussie';
+
+  @override
+  String welcomeUser(String name) {
+    return 'Bienvenue $name';
+  }
+
+  @override
+  String get productsServices => 'Produits / Services';
+
+  @override
+  String get searchProductsHint => 'Rechercher (nom / code / unité / TVA)...';
+
+  @override
+  String get noProductsYet => 'Aucun produit pour le moment';
+
+  @override
+  String get deleteProductQuestion => 'Supprimer le produit ?';
+
+  @override
+  String areYouSureDeleteProduct(String name) {
+    return 'Voulez-vous vraiment supprimer \"$name\" ?';
+  }
+
+  @override
+  String get productDeleted => 'Produit supprimé ✅';
+
+  @override
+  String get unnamedProduct => 'Produit sans nom';
+
+  @override
+  String get unit => 'Unité';
+
+  @override
+  String get firstNameRequired => 'Le prénom est requis';
+
+  @override
+  String get lastNameRequired => 'Le nom est requis';
+
+  @override
+  String get fiscalIdRequired => 'Le matricule fiscal est requis';
+
+  @override
+  String get fiscalIdMustMatch => 'Le matricule fiscal doit correspondre à 1234567ABC123';
+
+  @override
+  String get passwordMinLength => 'Le mot de passe doit contenir au moins 6 caractères';
+
+  @override
+  String get pleaseConfirmPassword => 'Veuillez confirmer votre mot de passe';
+
+  @override
+  String get passwordsDoNotMatch => 'Les mots de passe ne correspondent pas';
+
+  @override
+  String get accountCreatedSuccessfully => 'Compte créé avec succès';
+
+  @override
+  String get whoAreYou => 'Qui êtes-vous ?';
+
+  @override
+  String get startWithPersonalInformation => 'Commencez par vos informations personnelles.';
+
+  @override
+  String get firstName => 'Prénom';
+
+  @override
+  String get lastName => 'Nom';
+
+  @override
+  String get companyDetails => 'Détails de l\'entreprise';
+
+  @override
+  String get addOrganizationAndFiscalInfo => 'Ajoutez votre organisation et vos informations fiscales.';
+
+  @override
+  String get organizationName => 'Nom de l\'organisation';
+
+  @override
+  String get fiscalIdRequiredLabel => 'Matricule Fiscal*';
+
+  @override
+  String get fiscalIdFormat => 'Format : 1234567ABC123';
+
+  @override
+  String get contactInformation => 'Informations de contact';
+
+  @override
+  String get howCanWeReachYou => 'Comment pouvons-nous vous joindre ?';
+
+  @override
+  String get emailAddressLabel => 'Adresse email';
+
+  @override
+  String get phoneNumber => 'Numéro de téléphone';
+
+  @override
+  String get secureYourAccount => 'Sécurisez votre compte';
+
+  @override
+  String get chooseStrongPassword => 'Choisissez un mot de passe fort.';
+
+  @override
+  String get passwordLabel => 'Mot de passe';
+
+  @override
+  String get confirmPassword => 'Confirmer le mot de passe';
+
+  @override
+  String get reviewAndCreate => 'Vérifier et créer';
+
+  @override
+  String get reviewBeforeCreate => 'Assurez-vous que tout est correct avant de créer le compte.';
+
+  @override
+  String get organization => 'Organisation';
+
+  @override
+  String get fiscalIdLabel => 'Matricule Fiscal';
+
+  @override
+  String get phone => 'Téléphone';
+
+  @override
+  String get createAccount => 'Créer un compte';
+
+  @override
+  String get back => 'Retour';
+
+  @override
+  String get continueText => 'Continuer';
 }

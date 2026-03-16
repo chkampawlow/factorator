@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/invoice_pdf_service.dart';
 import 'package:my_app/services/pdf_preview.dart';
@@ -15,7 +16,6 @@ class InvoiceEditScreen extends StatefulWidget {
     super.key,
     required this.invoiceId,
   });
-  
 
   @override
   State<InvoiceEditScreen> createState() => _InvoiceEditScreenState();
@@ -29,7 +29,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   final _productsRepo = ProductsRepo();
   final _invoiceItemsRepo = InvoiceItemsRepo();
   final _invoicesRepo = InvoicesRepo();
-final _authService = AuthService();
+  final _authService = AuthService();
 
   Map<String, dynamic>? _invoice;
   List<Map<String, dynamic>> _items = [];
@@ -87,6 +87,7 @@ final _authService = AuthService();
       final products = await _productsRepo.getAllProducts();
       final items = await _invoiceItemsRepo.getInvoiceItems(widget.invoiceId);
       final currentUser = await _authService.me();
+
       final rawClientId = remoteInv['custom_code'];
       final clientId = rawClientId is int
           ? rawClientId
@@ -116,7 +117,7 @@ final _authService = AuthService();
         'clientCin': client?['cin'] ?? '',
         'userFirstName': currentUser['first_name'] ?? '',
         'userLastName': currentUser['last_name'] ?? '',
-         'userFiscalId': currentUser['fiscal_id'] ?? '',
+        'userFiscalId': currentUser['fiscal_id'] ?? '',
       };
 
       if (!mounted) return;
@@ -193,12 +194,14 @@ final _authService = AuthService();
   }
 
   Future<void> _addItem() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (_invoice == null || _selectedProduct == null) return;
 
     final qty = _qty();
 
     if (qty <= 0) {
-      _toast('Qty must be > 0');
+      _toast(l10n.qtyMustBeGreaterThanZero);
       return;
     }
 
@@ -236,23 +239,25 @@ final _authService = AuthService();
     _customPriceCtrl.clear();
 
     await _recomputeAndUpdateInvoiceTotals();
-    _toast('Item added');
+    _toast(l10n.itemAdded);
   }
 
   Future<void> _deleteItem(int itemId) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete item'),
-        content: const Text('Remove this item from the invoice?'),
+        title: Text(l10n.deleteItem),
+        content: Text(l10n.removeThisItemFromInvoice),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -262,10 +267,12 @@ final _authService = AuthService();
 
     await _invoiceItemsRepo.deleteInvoiceItem(itemId);
     await _recomputeAndUpdateInvoiceTotals();
-    _toast('Item deleted');
+    _toast(l10n.itemDeleted);
   }
 
   Future<void> _editItem(Map<String, dynamic> item) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final qtyCtrl = TextEditingController(text: _toD(item['qty']).toString());
     final discountCtrl =
         TextEditingController(text: _toD(item['discount']).toString());
@@ -275,7 +282,7 @@ final _authService = AuthService();
     final saved = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text((item['product'] ?? 'Edit item').toString()),
+        title: Text((item['product'] ?? l10n.editItem).toString()),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -284,9 +291,9 @@ final _authService = AuthService();
                 controller: qtyCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Qty',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.qty,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 10),
@@ -294,9 +301,9 @@ final _authService = AuthService();
                 controller: priceCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Price',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.price,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 10),
@@ -304,9 +311,9 @@ final _authService = AuthService();
                 controller: discountCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Discount (%)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.discountPercent,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -315,11 +322,11 @@ final _authService = AuthService();
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -355,7 +362,7 @@ final _authService = AuthService();
       );
 
       await _recomputeAndUpdateInvoiceTotals();
-      _toast('Item updated');
+      _toast(l10n.itemUpdated);
     }
 
     qtyCtrl.dispose();
@@ -364,13 +371,15 @@ final _authService = AuthService();
   }
 
   Future<void> _previewPdf() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (_invoice == null) {
-      _toast('Invoice not found.');
+      _toast(l10n.invoiceNotFound);
       return;
     }
 
     if (_items.isEmpty) {
-      _toast('Add at least one item before previewing the PDF.');
+      _toast(l10n.addAtLeastOneItemBeforePreviewPdf);
       return;
     }
 
@@ -397,7 +406,7 @@ final _authService = AuthService();
       MaterialPageRoute(
         builder: (_) => PdfPreviewScreen(
           pdfBytes: bytes,
-          title: (_invoice!['invoiceNumber'] ?? 'Invoice').toString(),
+          title: (_invoice!['invoiceNumber'] ?? l10n.invoice).toString(),
         ),
       ),
     );
@@ -410,9 +419,11 @@ final _authService = AuthService();
   }
 
   Widget _buildSummaryCard(ColorScheme cs) {
+    final l10n = AppLocalizations.of(context)!;
+
     final invNum = (_invoice!['invoiceNumber'] ?? '').toString();
     final status = (_invoice!['status'] ?? 'UNPAID').toString();
-    final clientName = (_invoice!['clientName'] ?? 'Client').toString();
+    final clientName = (_invoice!['clientName'] ?? l10n.client).toString();
 
     final subtotal = _toD(_invoice!['subtotal']);
     final tva = _toD(_invoice!['totalVat']);
@@ -435,12 +446,12 @@ final _authService = AuthService();
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text('Invoice: $invNum'),
+                  Text('${l10n.invoice}: $invNum'),
                   const SizedBox(height: 4),
-                  Text('Status: ${status.toUpperCase()}'),
+                  Text('${l10n.status}: ${status.toUpperCase()}'),
                   const SizedBox(height: 4),
                   Text(
-                    'Issue: ${(_invoice!['issueDate'] ?? '')}  •  Due: ${(_invoice!['dueDate'] ?? '')}',
+                    '${l10n.issue}: ${(_invoice!['issueDate'] ?? '')}  •  ${l10n.due}: ${(_invoice!['dueDate'] ?? '')}',
                   ),
                 ],
               ),
@@ -473,6 +484,8 @@ final _authService = AuthService();
   }
 
   Widget _buildAddItemCard(ColorScheme cs) {
+    final l10n = AppLocalizations.of(context)!;
+
     final lineTotals = _selectedProduct == null
         ? _LineTotals(ht: 0, tva: 0, ttc: 0)
         : _computeLineTotals(
@@ -488,9 +501,9 @@ final _authService = AuthService();
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Add item',
-              style: TextStyle(fontWeight: FontWeight.w900),
+            Text(
+              l10n.addItem,
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 10),
             Row(
@@ -521,9 +534,9 @@ final _authService = AuthService();
                         }
                       });
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'Product',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.product,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -534,9 +547,9 @@ final _authService = AuthService();
                     controller: _qtyCtrl,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Qty',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.qty,
+                      border: const OutlineInputBorder(),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -551,9 +564,9 @@ final _authService = AuthService();
                     controller: _discountCtrl,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Discount (%)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.discountPercent,
+                      border: const OutlineInputBorder(),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -564,9 +577,9 @@ final _authService = AuthService();
                     controller: _customPriceCtrl,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Price override',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.priceOverride,
+                      border: const OutlineInputBorder(),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -606,7 +619,7 @@ final _authService = AuthService();
               child: FilledButton.icon(
                 onPressed: _products.isEmpty ? null : _addItem,
                 icon: const Icon(Icons.add),
-                label: const Text('Add to invoice'),
+                label: Text(l10n.addToInvoice),
               ),
             ),
           ],
@@ -616,13 +629,15 @@ final _authService = AuthService();
   }
 
   Widget _buildItemsCard(ColorScheme cs) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Card(
       child: _items.isEmpty
           ? Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
                 child: Text(
-                  'No items yet.',
+                  l10n.noItemsYet,
                   style: TextStyle(color: cs.onSurfaceVariant),
                 ),
               ),
@@ -692,6 +707,7 @@ final _authService = AuthService();
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     if (_loading) {
       return const Scaffold(
@@ -701,20 +717,20 @@ final _authService = AuthService();
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Invoice')),
+        appBar: AppBar(title: Text(l10n.invoice)),
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Error', style: Theme.of(context).textTheme.titleLarge),
+              Text(l10n.error, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(_error!, style: TextStyle(color: cs.error)),
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: _loadAll,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(l10n.retry),
               ),
             ],
           ),
@@ -724,47 +740,46 @@ final _authService = AuthService();
 
     if (_invoice == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Invoice')),
-        body: const Center(child: Text('Invoice not found')),
+        appBar: AppBar(title: Text(l10n.invoice)),
+        body: Center(child: Text(l10n.invoiceNotFound)),
       );
     }
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text('Fill • ${(_invoice!['invoiceNumber'] ?? '')}'),
+        title: Text('${l10n.fill} • ${(_invoice!['invoiceNumber'] ?? '')}'),
         actions: [
           IconButton(
             onPressed: _previewPdf,
             icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: 'Preview PDF',
+            tooltip: l10n.previewPdf,
           ),
           IconButton(
             onPressed: _loadAll,
             icon: const Icon(Icons.refresh),
+            tooltip: l10n.refresh,
           ),
         ],
       ),
-
       body: GestureDetector(
-  onTap: () => FocusScope.of(context).unfocus(),
-  child: SafeArea(
-    child: ListView(
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSummaryCard(cs),
-        const SizedBox(height: 12),
-        _buildAddItemCard(cs),
-        const SizedBox(height: 12),
-        _buildItemsCard(cs),
-        const SizedBox(height: 20),
-      ],
-    ),
-  ),
-),
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.all(16),
+            children: [
+              _buildSummaryCard(cs),
+              const SizedBox(height: 12),
+              _buildAddItemCard(cs),
+              const SizedBox(height: 12),
+              _buildItemsCard(cs),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
     );
-    
   }
 }
 

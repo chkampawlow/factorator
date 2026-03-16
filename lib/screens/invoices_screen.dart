@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/storage/invoices_repo.dart';
 import 'create_invoice_screen.dart';
 import 'invoice_edit_screen.dart';
@@ -14,12 +15,16 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   final InvoicesRepo _repo = InvoicesRepo();
 
   bool _loading = true;
+  bool _didLoadOnce = false;
   List<Map<String, dynamic>> _invoices = [];
 
   @override
-  void initState() {
-    super.initState();
-    _load();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didLoadOnce) {
+      _didLoadOnce = true;
+      _load();
+    }
   }
 
   Future<void> _openCreate() async {
@@ -47,6 +52,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   Future<void> _load() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (mounted) {
       setState(() => _loading = true);
     }
@@ -71,7 +78,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Load failed: ${e.toString().replaceFirst('Exception: ', '')}',
+            '${l10n.loadFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
           ),
         ),
       );
@@ -96,16 +103,22 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   String _daysLeftText(DateTime due) {
+    final l10n = AppLocalizations.of(context)!;
+
     final now = DateTime.now();
     final d0 = DateTime(now.year, now.month, now.day);
     final d1 = DateTime(due.year, due.month, due.day);
     final diff = d1.difference(d0).inDays;
 
-    if (diff > 0) return 'Due in $diff day${diff == 1 ? '' : 's'}';
-    if (diff == 0) return 'Due today';
+    if (diff > 0) {
+      return l10n.dueInDays(diff.toString(), diff == 1 ? '' : 's');
+    }
+    if (diff == 0) {
+      return l10n.dueToday;
+    }
 
     final late = diff.abs();
-    return 'Overdue by $late day${late == 1 ? '' : 's'}';
+    return l10n.overdueByDays(late.toString(), late == 1 ? '' : 's');
   }
 
   bool _isOverdue(String status, DateTime due) {
@@ -138,22 +151,23 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Invoices'),
+        title: Text(l10n.invoices),
         actions: [
           IconButton(
             onPressed: _load,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: l10n.refresh,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreate,
         icon: const Icon(Icons.add),
-        label: const Text('New Invoice'),
+        label: Text(l10n.newInvoice),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -178,7 +192,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                         final vatAmount = _money(inv['montant_tva']);
                         final email = (inv['custom_email'] ?? '').toString();
                         final code = (inv['custom_code'] ?? '').toString();
-                        final invoiceType = (inv['invoice_type'] ?? '').toString();
+                        final invoiceType =
+                            (inv['invoice_type'] ?? '').toString();
                         final typeDoc = (inv['type_doc'] ?? '').toString();
 
                         final due = _parseDate(inv['invoice_due_date']);
@@ -195,14 +210,16 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    invNumber.isEmpty ? 'Invoice' : invNumber,
+                                    invNumber.isEmpty ? l10n.invoice : invNumber,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ),
                                 _StatusPill(
-                                  text: overdue ? 'OVERDUE' : status.toUpperCase(),
+                                  text: overdue
+                                      ? l10n.overdue.toUpperCase()
+                                      : status.toUpperCase(),
                                   bg: _statusBg(status, overdue, cs),
                                   fg: _statusFg(status, overdue, cs),
                                 ),
@@ -227,16 +244,18 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                       padding: const EdgeInsets.only(top: 4),
                                       child: Text(
                                         [
-                                          if (code.isNotEmpty) 'Code: $code',
+                                          if (code.isNotEmpty)
+                                            '${l10n.code}: $code',
                                           if (invoiceType.isNotEmpty)
-                                            'Type: $invoiceType',
-                                          if (typeDoc.isNotEmpty) 'Doc: $typeDoc',
+                                            '${l10n.type}: $invoiceType',
+                                          if (typeDoc.isNotEmpty)
+                                            '${l10n.doc}: $typeDoc',
                                         ].join(' • '),
                                       ),
                                     ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${_daysLeftText(due)} • Issued ${issue.toLocal().toString().split(' ')[0]}',
+                                    '${_daysLeftText(due)} • ${l10n.issued} ${issue.toLocal().toString().split(' ')[0]}',
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -315,6 +334,8 @@ class _EmptyInvoices extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
@@ -325,10 +346,10 @@ class _EmptyInvoices extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         const SizedBox(height: 14),
-        const Center(
+        Center(
           child: Text(
-            'No invoices yet',
-            style: TextStyle(
+            l10n.noInvoicesYet,
+            style: const TextStyle(
               fontWeight: FontWeight.w900,
               fontSize: 18,
             ),
@@ -337,7 +358,7 @@ class _EmptyInvoices extends StatelessWidget {
         const SizedBox(height: 6),
         Center(
           child: Text(
-            'Create your first invoice to see it here.',
+            l10n.createYourFirstInvoiceToSeeItHere,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -351,7 +372,7 @@ class _EmptyInvoices extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: onCreate,
               icon: const Icon(Icons.add),
-              label: const Text('Create Invoice'),
+              label: Text(l10n.createInvoice),
             ),
           ),
         ),

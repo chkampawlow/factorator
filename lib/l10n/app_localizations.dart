@@ -499,6 +499,48 @@ abstract class AppLocalizations {
   /// **'hour / piece / kg...'**
   String get unitExample;
 
+  /// No description provided for @dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get dashboard;
+
+  /// No description provided for @quickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick actions'**
+  String get quickActions;
+
+  /// No description provided for @advanceInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance invoice'**
+  String get advanceInvoice;
+
+  /// No description provided for @advanceInvoiceComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance invoice: coming soon'**
+  String get advanceInvoiceComingSoon;
+
+  /// No description provided for @recentTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent transactions'**
+  String get recentTransactions;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @noInvoicesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No invoices yet.'**
+  String get noInvoicesYet;
+
   /// No description provided for @failedToLoadCustomers.
   ///
   /// In en, this message translates to:
@@ -600,6 +642,552 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get edit;
+
+  /// No description provided for @invoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice'**
+  String get invoice;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @issue.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue'**
+  String get issue;
+
+  /// No description provided for @due.
+  ///
+  /// In en, this message translates to:
+  /// **'Due'**
+  String get due;
+
+  /// No description provided for @fill.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill'**
+  String get fill;
+
+  /// No description provided for @previewPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview PDF'**
+  String get previewPdf;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get error;
+
+  /// No description provided for @invoiceNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice not found.'**
+  String get invoiceNotFound;
+
+  /// No description provided for @addAtLeastOneItemBeforePreviewPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one item before previewing the PDF.'**
+  String get addAtLeastOneItemBeforePreviewPdf;
+
+  /// No description provided for @qtyMustBeGreaterThanZero.
+  ///
+  /// In en, this message translates to:
+  /// **'Qty must be > 0'**
+  String get qtyMustBeGreaterThanZero;
+
+  /// No description provided for @itemAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Item added'**
+  String get itemAdded;
+
+  /// No description provided for @itemDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Item deleted'**
+  String get itemDeleted;
+
+  /// No description provided for @itemUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Item updated'**
+  String get itemUpdated;
+
+  /// No description provided for @deleteItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete item'**
+  String get deleteItem;
+
+  /// No description provided for @removeThisItemFromInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this item from the invoice?'**
+  String get removeThisItemFromInvoice;
+
+  /// No description provided for @editItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit item'**
+  String get editItem;
+
+  /// No description provided for @qty.
+  ///
+  /// In en, this message translates to:
+  /// **'Qty'**
+  String get qty;
+
+  /// No description provided for @discountPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount (%)'**
+  String get discountPercent;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @addItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Add item'**
+  String get addItem;
+
+  /// No description provided for @product.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get product;
+
+  /// No description provided for @priceOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Price override'**
+  String get priceOverride;
+
+  /// No description provided for @addToInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to invoice'**
+  String get addToInvoice;
+
+  /// No description provided for @noItemsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No items yet.'**
+  String get noItemsYet;
+
+  /// No description provided for @invoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoices'**
+  String get invoices;
+
+  /// No description provided for @overdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get overdue;
+
+  /// No description provided for @code.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get code;
+
+  /// No description provided for @type.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get type;
+
+  /// No description provided for @doc.
+  ///
+  /// In en, this message translates to:
+  /// **'Doc'**
+  String get doc;
+
+  /// No description provided for @issued.
+  ///
+  /// In en, this message translates to:
+  /// **'Issued'**
+  String get issued;
+
+  /// No description provided for @dueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Due today'**
+  String get dueToday;
+
+  /// No description provided for @dueInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Due in {days} day{suffix}'**
+  String dueInDays(String days, String suffix);
+
+  /// No description provided for @overdueByDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue by {days} day{suffix}'**
+  String overdueByDays(String days, String suffix);
+
+  /// No description provided for @createYourFirstInvoiceToSeeItHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first invoice to see it here.'**
+  String get createYourFirstInvoiceToSeeItHere;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back'**
+  String get welcomeBack;
+
+  /// No description provided for @loginToManageApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Login to manage your clients, products and invoices.'**
+  String get loginToManageApp;
+
+  /// No description provided for @emailAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get emailAddress;
+
+  /// No description provided for @emailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get emailRequired;
+
+  /// No description provided for @enterValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email'**
+  String get enterValidEmail;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @passwordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required'**
+  String get passwordRequired;
+
+  /// No description provided for @minimum6Characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum 6 characters'**
+  String get minimum6Characters;
+
+  /// No description provided for @rememberMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember me'**
+  String get rememberMe;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @login.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get login;
+
+  /// No description provided for @dontHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account? '**
+  String get dontHaveAccount;
+
+  /// No description provided for @createOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Create one'**
+  String get createOne;
+
+  /// No description provided for @loginSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Login success'**
+  String get loginSuccess;
+
+  /// No description provided for @welcomeUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome {name}'**
+  String welcomeUser(String name);
+
+  /// No description provided for @productsServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Products / Services'**
+  String get productsServices;
+
+  /// No description provided for @searchProductsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search (name / code / unit / TVA)...'**
+  String get searchProductsHint;
+
+  /// No description provided for @noProductsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No products yet'**
+  String get noProductsYet;
+
+  /// No description provided for @deleteProductQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete product?'**
+  String get deleteProductQuestion;
+
+  /// No description provided for @areYouSureDeleteProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{name}\"?'**
+  String areYouSureDeleteProduct(String name);
+
+  /// No description provided for @productDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Product deleted ✅'**
+  String get productDeleted;
+
+  /// No description provided for @unnamedProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed product'**
+  String get unnamedProduct;
+
+  /// No description provided for @unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get unit;
+
+  /// No description provided for @firstNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'First name is required'**
+  String get firstNameRequired;
+
+  /// No description provided for @lastNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name is required'**
+  String get lastNameRequired;
+
+  /// No description provided for @fiscalIdRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiscal ID is required'**
+  String get fiscalIdRequired;
+
+  /// No description provided for @fiscalIdMustMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiscal ID must match 1234567ABC123'**
+  String get fiscalIdMustMatch;
+
+  /// No description provided for @passwordMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get passwordMinLength;
+
+  /// No description provided for @pleaseConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm your password'**
+  String get pleaseConfirmPassword;
+
+  /// No description provided for @passwordsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordsDoNotMatch;
+
+  /// No description provided for @accountCreatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created successfully'**
+  String get accountCreatedSuccessfully;
+
+  /// No description provided for @whoAreYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Who are you?'**
+  String get whoAreYou;
+
+  /// No description provided for @startWithPersonalInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with your personal information.'**
+  String get startWithPersonalInformation;
+
+  /// No description provided for @firstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get firstName;
+
+  /// No description provided for @lastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name'**
+  String get lastName;
+
+  /// No description provided for @companyDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Company details'**
+  String get companyDetails;
+
+  /// No description provided for @addOrganizationAndFiscalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your organization and fiscal information.'**
+  String get addOrganizationAndFiscalInfo;
+
+  /// No description provided for @organizationName.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization Name'**
+  String get organizationName;
+
+  /// No description provided for @fiscalIdRequiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiscal ID*'**
+  String get fiscalIdRequiredLabel;
+
+  /// No description provided for @fiscalIdFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Format: 1234567ABC123'**
+  String get fiscalIdFormat;
+
+  /// No description provided for @contactInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact information'**
+  String get contactInformation;
+
+  /// No description provided for @howCanWeReachYou.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we reach you?'**
+  String get howCanWeReachYou;
+
+  /// No description provided for @emailAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get emailAddressLabel;
+
+  /// No description provided for @phoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get phoneNumber;
+
+  /// No description provided for @secureYourAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure your account'**
+  String get secureYourAccount;
+
+  /// No description provided for @chooseStrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a strong password.'**
+  String get chooseStrongPassword;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// No description provided for @confirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get confirmPassword;
+
+  /// No description provided for @reviewAndCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Review & create'**
+  String get reviewAndCreate;
+
+  /// No description provided for @reviewBeforeCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure everything looks good before creating the account.'**
+  String get reviewBeforeCreate;
+
+  /// No description provided for @organization.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization'**
+  String get organization;
+
+  /// No description provided for @fiscalIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiscal ID'**
+  String get fiscalIdLabel;
+
+  /// No description provided for @phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get phone;
+
+  /// No description provided for @createAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get createAccount;
+
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// No description provided for @continueText.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueText;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
