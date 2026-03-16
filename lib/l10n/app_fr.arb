@@ -305,6 +305,46 @@
   "region": "Région",
   "@region": {
     "description": "Région de l'utilisateur"
+  },
+   "name": "Nom",
+  "@name": {
+    "description": "Libellé générique pour le nom d'une personne ou d'un client"
+  },
+  "identifier": "Identifiant",
+  "@identifier": {
+    "description": "Libellé générique quand ni le matricule fiscal ni le CIN ne sont disponibles"
+  },
+  "notes": "Notes",
+  "@notes": {
+    "description": "Titre de la section notes dans le PDF de facture"
+  },
+  "subtotal": "Sous-total",
+  "@subtotal": {
+    "description": "Libellé du sous-total dans le PDF de facture"
+  },
+  "total": "Total",
+  "@total": {
+    "description": "Libellé du total dans le PDF de facture"
+  },
+    "name": "Nom",
+  "@name": {
+    "description": "Libellé générique pour le nom d'une personne ou d'un client"
+  },
+  "identifier": "Identifiant",
+  "@identifier": {
+    "description": "Libellé générique quand ni le matricule fiscal ni le CIN ne sont disponibles"
+  },
+  "notes": "Notes",
+  "@notes": {
+    "description": "Titre de la section notes dans le PDF de facture"
+  },
+  "subtotal": "Sous-total",
+  "@subtotal": {
+    "description": "Libellé du sous-total dans le PDF de facture"
+  },
+  "total": "Total",
+  "@total": {
+    "description": "Libellé du total dans le PDF de facture"
   }
 
 

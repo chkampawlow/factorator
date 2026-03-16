@@ -304,6 +304,26 @@
   "region": "Region",
   "@region": {
     "description": "User region"
+  },
+    "name": "Name",
+  "@name": {
+    "description": "Generic label for a person's or client's name"
+  },
+  "identifier": "Identifier",
+  "@identifier": {
+    "description": "Generic identifier label when neither fiscal ID nor CIN is available"
+  },
+  "notes": "Notes",
+  "@notes": {
+    "description": "Notes section title in invoice PDF"
+  },
+  "subtotal": "Subtotal",
+  "@subtotal": {
+    "description": "Subtotal label in invoice PDF"
+  },
+  "total": "Total",
+  "@total": {
+    "description": "Total label in invoice PDF"
   }
 
 

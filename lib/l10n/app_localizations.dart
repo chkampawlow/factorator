@@ -1284,6 +1284,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Region'**
   String get region;
+
+  /// Generic label for a person's or client's name
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
+
+  /// Generic identifier label when neither fiscal ID nor CIN is available
+  ///
+  /// In en, this message translates to:
+  /// **'Identifier'**
+  String get identifier;
+
+  /// Notes section title in invoice PDF
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notes;
+
+  /// Subtotal label in invoice PDF
+  ///
+  /// In en, this message translates to:
+  /// **'Subtotal'**
+  String get subtotal;
+
+  /// Total label in invoice PDF
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

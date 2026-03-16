@@ -120,6 +120,11 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         'userLastName': currentUser['last_name'] ?? '',
         'userFiscalId': currentUser['fiscal_id'] ?? '',
         'userOrganizationName': currentUser['organization_name'] ?? '',
+          'userPhone': currentUser['phone'] ?? '',
+  'userFax': currentUser['fax'] ?? '',
+  'userAddress': currentUser['address'] ?? '',
+  'userWebsite': currentUser['website'] ?? '',
+  'userEmail': currentUser['email'] ?? '',
       };
 
       if (!mounted) return;
@@ -395,16 +400,46 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       'address': _invoice!['clientAddress'],
     };
 
+    final labels = {
+  'invoice': l10n.invoice,
+  'issueDate': l10n.issue,
+  'dueDate': l10n.due,
+  'organization': l10n.organizationName,
+  'userFiscalId': l10n.fiscalId,
+  'name': l10n.name,
+  'fiscalId': l10n.fiscalId,
+  'cin': l10n.cin,
+  'identifier': l10n.identifier,
+  'address': l10n.address,
+  'email': l10n.email,
+  'phone': l10n.phone,
+  'type': l10n.type,
+  'items': l10n.items,
+  'notes': l10n.notes,
+  'subtotal': l10n.subtotal,
+  'vat': 'TVA',
+  'total': l10n.total,
+  'product': l10n.product,
+  'qty': l10n.qty,
+  'price': l10n.price,
+  'discount': l10n.discountPercent,
+  'ht': 'HT',
+  'ttc': 'TTC',
+  'website': l10n.website,
+  'fax': l10n.fax,
+};
+
     final prefs = await SharedPreferences.getInstance();
     final logoPath = prefs.getString('profile_image_path');
 
-    final bytes = await InvoicePdfService.buildInvoicePdf(
-      invoice: _invoice!,
-      client: client,
-      items: _items,
-      colorScheme: Theme.of(context).colorScheme,
-      logoPath: logoPath,
-    );
+final bytes = await InvoicePdfService.buildInvoicePdf(
+  invoice: _invoice!,
+  client: client,
+  items: _items,
+  colorScheme: Theme.of(context).colorScheme,
+  labels: labels,
+  logoPath: logoPath,
+);
 
     if (!mounted) return;
 

@@ -619,4 +619,19 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get region => 'Région';
+
+  @override
+  String get name => 'Nom';
+
+  @override
+  String get identifier => 'Identifiant';
+
+  @override
+  String get notes => 'Notes';
+
+  @override
+  String get subtotal => 'Sous-total';
+
+  @override
+  String get total => 'Total';
 }

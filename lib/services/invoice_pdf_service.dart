@@ -97,10 +97,40 @@ class InvoicePdfService {
     required Map<String, dynamic> client,
     required List<Map<String, dynamic>> items,
     required ColorScheme colorScheme,
+    Map<String, String>? labels,
     Uint8List? logoBytes,
     String? logoPath,
   }) async {
     final pdf = pw.Document();
+
+    final l = labels ?? {
+      'invoice': 'INVOICE',
+      'issueDate': 'Issue date',
+      'dueDate': 'Due date',
+      'organization': 'Organization',
+      'userFiscalId': 'User fiscal id',
+      'name': 'Name',
+      'fiscalId': 'Fiscal ID',
+      'cin': 'CIN',
+      'identifier': 'Identifier',
+      'address': 'Address',
+      'email': 'Email',
+      'phone': 'Phone',
+      'type': 'Type',
+      'items': 'Items',
+      'notes': 'Notes',
+      'subtotal': 'Subtotal',
+      'vat': 'TVA',
+      'total': 'TOTAL',
+      'product': 'Product',
+      'qty': 'Qty',
+      'price': 'Price',
+      'discount': 'Discount',
+      'ht': 'HT',
+      'ttc': 'TTC',
+      'website': 'Website',
+      'fax': 'Fax',
+    };
 
     // Resolve logo from either memory bytes or local file path
     Uint8List? resolvedLogo;
@@ -149,8 +179,8 @@ class InvoicePdfService {
 
     final identityValue = clientFiscalId.isNotEmpty ? clientFiscalId : clientCin;
     final identityLabel = clientFiscalId.isNotEmpty
-        ? 'Matricule fiscal'
-        : (clientCin.isNotEmpty ? 'CIN' : 'Identifiant');
+        ? l['fiscalId']!
+        : (clientCin.isNotEmpty ? l['cin']! : l['identifier']!);
 
     final tableData = items.map((item) {
       final productId = _safe(
@@ -194,7 +224,7 @@ class InvoicePdfService {
                             ),
                           )
                         : pw.Text(
-                            'INVOICE',
+                            l['invoice']!,
                             style: pw.TextStyle(
                               fontSize: 24,
                               fontWeight: pw.FontWeight.bold,
@@ -260,25 +290,25 @@ class InvoicePdfService {
                     children: [
                       pw.SizedBox(height: 8),
                       _infoLine(
-                        'Date facture',
+                        l['issueDate']!,
                         issueDate,
                         labelColor: onSurfaceVariant,
                         valueColor: onSurface,
                       ),
                       _infoLine(
-                        'Échéance',
+                        l['dueDate']!,
                         dueDate,
                         labelColor: onSurfaceVariant,
                         valueColor: onSurface,
                       ),
                       _infoLine(
-                        'Organisation',
+                        l['organization']!,
                         userOrganizationName,
                         labelColor: onSurfaceVariant,
                         valueColor: onSurface,
                       ),
                       _infoLine(
-                        'MF utilisateur',
+                        l['userFiscalId']!,
                         userFiscalId,
                         labelColor: onSurfaceVariant,
                         valueColor: onSurface,
@@ -301,7 +331,7 @@ class InvoicePdfService {
                     children: [
                       pw.SizedBox(height: 8),
                       _infoLine(
-                        'Nom',
+                        l['name']!,
                         clientName,
                         labelColor: onSurfaceVariant,
                         valueColor: onSurface,
@@ -313,27 +343,27 @@ class InvoicePdfService {
                         valueColor: onSurface,
                       ),
                       _infoLine(
-                        'Adresse',
+                        l['address']!,
                         clientAddress,
                         labelColor: onSurfaceVariant,
                         valueColor: onSurface,
                       ),
                       if (clientEmail.isNotEmpty)
                         _infoLine(
-                          'Email',
+                          l['email']!,
                           clientEmail,
                           labelColor: onSurfaceVariant,
                           valueColor: onSurface,
                         ),
                       if (clientPhone.isNotEmpty)
                         _infoLine(
-                          'Phone',
+                          l['phone']!,
                           clientPhone,
                           labelColor: onSurfaceVariant,
                           valueColor: onSurface,
                         ),
                       _infoLine(
-                        'Type',
+                        l['type']!,
                         clientType,
                         labelColor: onSurfaceVariant,
                         valueColor: onSurface,
@@ -348,7 +378,7 @@ class InvoicePdfService {
           pw.SizedBox(height: 18),
 
           pw.Text(
-            'Items',
+            l['items']!,
             style: pw.TextStyle(
               fontSize: 13,
               fontWeight: pw.FontWeight.bold,
@@ -359,15 +389,15 @@ class InvoicePdfService {
           pw.SizedBox(height: 8),
 
           pw.Table.fromTextArray(
-            headers: const [
+            headers: [
               'ID',
-              'Product',
-              'Qty',
-              'Price',
-              'TVA',
-              'Discount',
-              'HT',
-              'TTC',
+              l['product']!,
+              l['qty']!,
+              l['price']!,
+              l['vat']!,
+              l['discount']!,
+              l['ht']!,
+              l['ttc']!,
             ],
             data: tableData,
             headerStyle: pw.TextStyle(
@@ -425,7 +455,7 @@ class InvoicePdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'Notes',
+                        l['notes']!,
                         style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold,
                           fontSize: 11,
@@ -456,18 +486,18 @@ class InvoicePdfService {
                 child: pw.Column(
                   children: [
                     _summaryRow(
-                      'Subtotal',
+                      l['subtotal']!,
                       '$subtotal TND',
                       textColor: onSurface,
                     ),
                     _summaryRow(
-                      'TVA',
+                      l['vat']!,
                       '$totalVat TND',
                       textColor: onSurface,
                     ),
                     pw.Divider(color: outline),
                     _summaryRow(
-                      'TOTAL',
+                      l['total']!,
                       '$total TND',
                       bold: true,
                       textColor: primary,
@@ -479,21 +509,33 @@ class InvoicePdfService {
           ),
         ],
         footer: (context) => pw.Container(
-          margin: const pw.EdgeInsets.only(top: 14),
-          child: pw.Column(
-            children: [
-              pw.Divider(color: outline),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                'Generated electronically • Page ${context.pageNumber} / ${context.pagesCount}',
-                style: pw.TextStyle(
-                  fontSize: 8,
-                  color: onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
+  margin: const pw.EdgeInsets.only(top: 14),
+  child: pw.Column(
+    children: [
+      pw.Divider(color: outline),
+      pw.SizedBox(height: 4),
+      pw.Text(
+        [
+          if (_safe(invoice['userPhone']).isNotEmpty)
+            '${l['phone']}: ${_safe(invoice['userPhone'])}',
+          if (_safe(invoice['userFax']).isNotEmpty)
+            '${l['fax']}: ${_safe(invoice['userFax'])}',
+          if (_safe(invoice['userAddress']).isNotEmpty)
+            '${l['address']}: ${_safe(invoice['userAddress'])}',
+          if (_safe(invoice['userWebsite']).isNotEmpty)
+            '${l['website']}: ${_safe(invoice['userWebsite'])}',
+          if (_safe(invoice['userEmail']).isNotEmpty)
+            '${l['email']}: ${_safe(invoice['userEmail'])}',
+        ].join(' | '),
+        textAlign: pw.TextAlign.center,
+        style: pw.TextStyle(
+          fontSize: 8,
+          color: onSurfaceVariant,
         ),
+      ),
+    ],
+  ),
+),
       ),
     );
 
