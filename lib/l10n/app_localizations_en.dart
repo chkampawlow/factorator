@@ -516,7 +516,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addOrganizationAndFiscalInfo => 'Add your organization and fiscal information.';
 
   @override
-  String get organizationName => 'Organization Name';
+  String get organizationName => 'Organization name';
 
   @override
   String get fiscalIdRequiredLabel => 'Fiscal ID*';
@@ -595,4 +595,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectProduct => 'Select product';
+
+  @override
+  String get companyInformation => 'Company information';
+
+  @override
+  String get fax => 'Fax';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get website => 'Website';
+
+  @override
+  String get profileUpdated => 'Profile updated successfully';
+
+  @override
+  String get profileImageUpdated => 'Profile image updated';
+
+  @override
+  String get tapImageToChangePhoto => 'Tap image to change photo';
+
+  @override
+  String get region => 'Region';
 }

@@ -39,7 +39,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get email => 'Email';
 
   @override
-  String get fiscalId => 'Matricule fiscal';
+  String get fiscalId => 'Identifiant fiscal';
 
   @override
   String get noUserData => 'Aucune donnée utilisateur';
@@ -516,7 +516,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addOrganizationAndFiscalInfo => 'Ajoutez votre organisation et vos informations fiscales.';
 
   @override
-  String get organizationName => 'Nom de l\'organisation';
+  String get organizationName => 'Nom de l\'entreprise';
 
   @override
   String get fiscalIdRequiredLabel => 'Matricule Fiscal*';
@@ -595,4 +595,28 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get selectProduct => 'Sélectionner un produit';
+
+  @override
+  String get companyInformation => 'Informations de l\'entreprise';
+
+  @override
+  String get fax => 'Fax';
+
+  @override
+  String get address => 'Adresse';
+
+  @override
+  String get website => 'Site web';
+
+  @override
+  String get profileUpdated => 'Profil mis à jour avec succès';
+
+  @override
+  String get profileImageUpdated => 'Photo de profil mise à jour';
+
+  @override
+  String get tapImageToChangePhoto => 'Appuyez sur l\'image pour changer la photo';
+
+  @override
+  String get region => 'Région';
 }

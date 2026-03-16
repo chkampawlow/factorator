@@ -1,5 +1,5 @@
 class ApiConfig {
-  static const String baseUrl = 'http://192.168.1.28/facturation_api/php';
+  static const String baseUrl = 'http://192.168.1.176/facturation_api/php';
 
   // Auth
   static const String login = '$baseUrl/login.php';
@@ -31,4 +31,6 @@ static const String deleteClient = '$baseUrl/delete_client.php';
   static const String getInvoiceItems = '$baseUrl/get_invoice_items.php';
   static const String deleteInvoiceItem = '$baseUrl/delete_invoice_item.php';
 static const String updateInvoiceItem = '$baseUrl/update_invoice_item.php';
+
+static const String updateProfile = '$baseUrl/update_profile.php';
 }

@@ -39,7 +39,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get email => 'البريد الإلكتروني';
 
   @override
-  String get fiscalId => 'المعرّف الجبائي';
+  String get fiscalId => 'المعرف الجبائي';
 
   @override
   String get noUserData => 'لا توجد بيانات مستخدم';
@@ -516,7 +516,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get addOrganizationAndFiscalInfo => 'أضف مؤسستك ومعلوماتك الجبائية.';
 
   @override
-  String get organizationName => 'اسم المؤسسة';
+  String get organizationName => 'اسم الشركة';
 
   @override
   String get fiscalIdRequiredLabel => 'المعرف الجبائي*';
@@ -595,4 +595,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get selectProduct => 'اختر منتجًا';
+
+  @override
+  String get companyInformation => 'معلومات الشركة';
+
+  @override
+  String get fax => 'فاكس';
+
+  @override
+  String get address => 'العنوان';
+
+  @override
+  String get website => 'الموقع الإلكتروني';
+
+  @override
+  String get profileUpdated => 'تم تحديث الملف الشخصي بنجاح';
+
+  @override
+  String get profileImageUpdated => 'تم تحديث صورة الملف الشخصي';
+
+  @override
+  String get tapImageToChangePhoto => 'اضغط على الصورة لتغييرها';
+
+  @override
+  String get region => 'المنطقة';
 }

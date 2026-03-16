@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:my_app/core/api_config.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
@@ -91,7 +94,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
         _loading = false;
@@ -112,6 +114,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _pickProfileImage() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final picked = await _imagePicker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
@@ -120,7 +124,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (picked == null) return;
 
     final appDir = await getApplicationDocumentsDirectory();
-
     final fileName =
         'profile_${DateTime.now().millisecondsSinceEpoch}${p.extension(picked.path)}';
 
@@ -136,6 +139,141 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _profileImagePath = savedFile.path;
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.profileImageUpdated)),
+    );
+  }
+
+  Future<void> _updateCompanyInfo({
+    required String organizationName,
+    required String fax,
+    required String address,
+    required String website,
+  }) async {
+    final token = await _authService.getAccessToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Not authenticated');
+    }
+
+    final uri = Uri.parse(ApiConfig.updateProfile);
+
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'organization_name': organizationName,
+        'fax': fax,
+        'address': address,
+        'website': website,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Update failed');
+    }
+  }
+
+  Future<void> _showCompanyInfoDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final orgCtrl = TextEditingController(
+      text: (_user?['organization_name'] ?? '').toString(),
+    );
+    final faxCtrl = TextEditingController(
+      text: (_user?['fax'] ?? '').toString(),
+    );
+    final addressCtrl = TextEditingController(
+      text: (_user?['address'] ?? '').toString(),
+    );
+    final websiteCtrl = TextEditingController(
+      text: (_user?['website'] ?? '').toString(),
+    );
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(l10n.companyInformation),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: orgCtrl,
+                decoration: InputDecoration(
+                  labelText: l10n.organizationName,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: faxCtrl,
+                decoration: InputDecoration(
+                  labelText: l10n.fax,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: addressCtrl,
+                decoration: InputDecoration(
+                  labelText: l10n.address,
+                  border: const OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: websiteCtrl,
+                decoration: InputDecoration(
+                  labelText: l10n.website,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+
+    if (saved == true) {
+      try {
+        await _updateCompanyInfo(
+          organizationName: orgCtrl.text.trim(),
+          fax: faxCtrl.text.trim(),
+          address: addressCtrl.text.trim(),
+          website: websiteCtrl.text.trim(),
+        );
+
+        await _loadProfileData();
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.profileUpdated)),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
   }
 
   Future<void> _changeCurrency(String? value) async {
@@ -286,33 +424,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             padding: const EdgeInsets.all(20),
                             child: Column(
                               children: [
+                                Align(
+                                  alignment: Alignment.topRight,
+                                  child: PopupMenuButton<String>(
+                                    onSelected: (value) {
+                                      if (value == 'company') {
+                                        _showCompanyInfoDialog();
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: 'company',
+                                        child: Text(l10n.companyInformation),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 GestureDetector(
                                   onTap: _pickProfileImage,
-                                  child: CircleAvatar(
-                                    radius: 36,
-                                    backgroundColor: cs.primaryContainer,
-                                    backgroundImage: _profileImagePath != null
-                                        ? FileImage(File(_profileImagePath!))
-                                        : null,
-                                    child: _profileImagePath == null
-                                        ? Icon(
-                                            Icons.person,
-                                            size: 36,
-                                            color: cs.onPrimaryContainer,
-                                          )
-                                        : null,
+                                  child: Stack(
+                                    alignment: Alignment.bottomRight,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 42,
+                                        backgroundColor: cs.primaryContainer,
+                                        backgroundImage: _profileImagePath != null
+                                            ? FileImage(File(_profileImagePath!))
+                                            : null,
+                                        child: _profileImagePath == null
+                                            ? Icon(
+                                                Icons.person,
+                                                size: 40,
+                                                color: cs.onPrimaryContainer,
+                                              )
+                                            : null,
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: cs.primary,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: cs.surface,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.camera_alt,
+                                          size: 16,
+                                          color: cs.onPrimary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  '${_user?['organization_name'] ?? ''} '
-                                      .trim(),
+                                  '${_user?['organization_name'] ?? ''}'.trim(),
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                const SizedBox(height: 4),
-                                
                               ],
                             ),
                           ),
@@ -322,20 +495,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Column(
                             children: [
                               _infoTile(
-                                icon: Icons.badge_outlined,
-                                label: l10n.fiscalId,
-                                value: (_user?['fiscal_id'] ?? '').toString(),
-                              ),
-                              const Divider(height: 1),
-                              _infoTile(
-                                icon: Icons.mail_outline,
-                                label: l10n.email,
-                                value: (_user?['email'] ?? '').toString(),
-                              ),
-                              const Divider(height: 1),
-                              _infoTile(
                                 icon: Icons.location_on_outlined,
-                                label: 'Region',
+                                label: l10n.region,
                                 value: _region,
                               ),
                             ],

@@ -255,6 +255,56 @@
 "items": "Items",
 "searchProduct": "Search product",
 "noProductsFound": "No products found",
-"selectProduct": "Select product"
+"selectProduct": "Select product",
+  "companyInformation": "Company information",
+  "@companyInformation": {
+    "description": "Title for company information dialog"
+  },
+
+  "organizationName": "Organization name",
+  "@organizationName": {
+    "description": "Company or organization name field"
+  },
+
+  "fiscalId": "Fiscal ID",
+  "@fiscalId": {
+    "description": "Fiscal identification number"
+  },
+
+  "fax": "Fax",
+  "@fax": {
+    "description": "Company fax number"
+  },
+
+  "address": "Address",
+  "@address": {
+    "description": "Company address"
+  },
+
+  "website": "Website",
+  "@website": {
+    "description": "Company website"
+  },
+
+  "profileUpdated": "Profile updated successfully",
+  "@profileUpdated": {
+    "description": "Shown after updating company info"
+  },
+
+  "profileImageUpdated": "Profile image updated",
+  "@profileImageUpdated": {
+    "description": "Shown after updating profile picture"
+  },
+
+  "tapImageToChangePhoto": "Tap image to change photo",
+  "@tapImageToChangePhoto": {
+    "description": "Instruction under profile picture"
+  },
+
+  "region": "Region",
+  "@region": {
+    "description": "User region"
+  }
+
 
 }

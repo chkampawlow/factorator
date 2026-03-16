@@ -157,7 +157,7 @@ abstract class AppLocalizations {
   /// **'Email'**
   String get email;
 
-  /// No description provided for @fiscalId.
+  /// Fiscal identification number
   ///
   /// In en, this message translates to:
   /// **'Fiscal ID'**
@@ -1075,10 +1075,10 @@ abstract class AppLocalizations {
   /// **'Add your organization and fiscal information.'**
   String get addOrganizationAndFiscalInfo;
 
-  /// No description provided for @organizationName.
+  /// Company or organization name field
   ///
   /// In en, this message translates to:
-  /// **'Organization Name'**
+  /// **'Organization name'**
   String get organizationName;
 
   /// No description provided for @fiscalIdRequiredLabel.
@@ -1236,6 +1236,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select product'**
   String get selectProduct;
+
+  /// Title for company information dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Company information'**
+  String get companyInformation;
+
+  /// Company fax number
+  ///
+  /// In en, this message translates to:
+  /// **'Fax'**
+  String get fax;
+
+  /// Company address
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
+  /// Company website
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get website;
+
+  /// Shown after updating company info
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated successfully'**
+  String get profileUpdated;
+
+  /// Shown after updating profile picture
+  ///
+  /// In en, this message translates to:
+  /// **'Profile image updated'**
+  String get profileImageUpdated;
+
+  /// Instruction under profile picture
+  ///
+  /// In en, this message translates to:
+  /// **'Tap image to change photo'**
+  String get tapImageToChangePhoto;
+
+  /// User region
+  ///
+  /// In en, this message translates to:
+  /// **'Region'**
+  String get region;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

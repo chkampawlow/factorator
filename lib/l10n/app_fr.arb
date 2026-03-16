@@ -256,7 +256,57 @@
 "items": "Articles",
 "searchProduct": "Rechercher un produit",
 "noProductsFound": "Aucun produit trouvé",
-"selectProduct": "Sélectionner un produit"
+"selectProduct": "Sélectionner un produit",
+  "companyInformation": "Informations de l'entreprise",
+  "@companyInformation": {
+    "description": "Titre de la fenêtre d'information de l'entreprise"
+  },
+
+  "organizationName": "Nom de l'entreprise",
+  "@organizationName": {
+    "description": "Nom de l'entreprise ou organisation"
+  },
+
+  "fiscalId": "Identifiant fiscal",
+  "@fiscalId": {
+    "description": "Numéro fiscal de l'entreprise"
+  },
+
+  "fax": "Fax",
+  "@fax": {
+    "description": "Numéro de fax de l'entreprise"
+  },
+
+  "address": "Adresse",
+  "@address": {
+    "description": "Adresse de l'entreprise"
+  },
+
+  "website": "Site web",
+  "@website": {
+    "description": "Site web de l'entreprise"
+  },
+
+  "profileUpdated": "Profil mis à jour avec succès",
+  "@profileUpdated": {
+    "description": "Message après mise à jour du profil"
+  },
+
+  "profileImageUpdated": "Photo de profil mise à jour",
+  "@profileImageUpdated": {
+    "description": "Message après changement de photo"
+  },
+
+  "tapImageToChangePhoto": "Appuyez sur l'image pour changer la photo",
+  "@tapImageToChangePhoto": {
+    "description": "Instruction sous la photo de profil"
+  },
+
+  "region": "Région",
+  "@region": {
+    "description": "Région de l'utilisateur"
+  }
+
 
 
 

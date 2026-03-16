@@ -254,7 +254,58 @@
 "items": "العناصر",
 "searchProduct": "ابحث عن منتج",
 "noProductsFound": "لم يتم العثور على منتجات",
-"selectProduct": "اختر منتجًا"
+"selectProduct": "اختر منتجًا",
+
+  "companyInformation": "معلومات الشركة",
+  "@companyInformation": {
+    "description": "عنوان نافذة معلومات الشركة"
+  },
+
+  "organizationName": "اسم الشركة",
+  "@organizationName": {
+    "description": "اسم الشركة أو المؤسسة"
+  },
+
+  "fiscalId": "المعرف الجبائي",
+  "@fiscalId": {
+    "description": "رقم التعريف الجبائي للشركة"
+  },
+
+  "fax": "فاكس",
+  "@fax": {
+    "description": "رقم فاكس الشركة"
+  },
+
+  "address": "العنوان",
+  "@address": {
+    "description": "عنوان الشركة"
+  },
+
+  "website": "الموقع الإلكتروني",
+  "@website": {
+    "description": "الموقع الإلكتروني للشركة"
+  },
+
+  "profileUpdated": "تم تحديث الملف الشخصي بنجاح",
+  "@profileUpdated": {
+    "description": "رسالة تظهر بعد تحديث معلومات الشركة"
+  },
+
+  "profileImageUpdated": "تم تحديث صورة الملف الشخصي",
+  "@profileImageUpdated": {
+    "description": "رسالة تظهر بعد تغيير صورة الملف الشخصي"
+  },
+
+  "tapImageToChangePhoto": "اضغط على الصورة لتغييرها",
+  "@tapImageToChangePhoto": {
+    "description": "تعليمات أسفل صورة الملف الشخصي"
+  },
+
+  "region": "المنطقة",
+  "@region": {
+    "description": "منطقة المستخدم"
+  }
+
 
 
 
