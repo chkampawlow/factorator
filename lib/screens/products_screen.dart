@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import '../services/currency_service.dart';
+import '../services/settings_service.dart';
 import '../storage/products_repo.dart';
 import 'add_product_screen.dart';
 
@@ -12,11 +14,13 @@ class ProductsScreen extends StatefulWidget {
 
 class _ProductsScreenState extends State<ProductsScreen> {
   final _repo = ProductsRepo();
+  final _settingsService = SettingsService();
   final _searchCtrl = TextEditingController();
 
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _filtered = [];
   bool _loading = true;
+  String _currency = 'TND';
 
   @override
   void initState() {
@@ -54,9 +58,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     try {
       final data = await _repo.getAllProducts();
+      final currency = await _settingsService.getCurrency();
       setState(() {
         _products = data;
         _filtered = data;
+        _currency = currency;
         _loading = false;
       });
     } catch (e) {
@@ -123,11 +129,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return false;
   }
 
-  String _money(dynamic v) {
-    final n = (v is num) ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0;
-    return n.toStringAsFixed(3);
-  }
-
   Widget _pill(BuildContext context, {required String text}) {
     final cs = Theme.of(context).colorScheme;
 
@@ -192,7 +193,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final unit = (p['unit'] ?? '-').toString();
     final code = (p['code'] ?? '').toString();
     final tvaRate = (p['tva_rate'] ?? 0).toString();
-    final price = _money(p['price']);
+    final priceValue = (p['price'] is num)
+        ? (p['price'] as num).toDouble()
+        : double.tryParse(p['price'].toString()) ?? 0.0;
+    final price = CurrencyService.format(priceValue, _currency);
 
     final cardBg = cs.surfaceContainerHighest.withOpacity(.45);
     final border = cs.outlineVariant.withOpacity(.18);
@@ -260,7 +264,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '$price TND',
+                price,
                 style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 8),

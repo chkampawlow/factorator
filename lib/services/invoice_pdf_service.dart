@@ -1,12 +1,11 @@
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/material.dart' show Color, ColorScheme;
-import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
+import 'currency_service.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class InvoicePdfService {
-  static final NumberFormat _money = NumberFormat('#,##0.000', 'en_US');
 
   static double _toDouble(dynamic value, [double fallback = 0.0]) {
     if (value == null) return fallback;
@@ -20,9 +19,6 @@ class InvoicePdfService {
     return s.isEmpty ? fallback : s;
   }
 
-  static String _moneyText(dynamic value) {
-    return _money.format(_toDouble(value));
-  }
 
   static PdfColor _pdfColor(Color color) {
     return PdfColor(
@@ -162,6 +158,8 @@ class InvoicePdfService {
     final dueDate = _safe(invoice['dueDate'], '-');
     final status = _safe(invoice['status'], 'OPEN').toUpperCase();
 
+    final currency = _safe(invoice['currency'], 'TND');
+
     final userOrganizationName = _safe(invoice['userOrganizationName'], '-');
     final userFiscalId = _safe(invoice['userFiscalId'], '-');
 
@@ -173,9 +171,9 @@ class InvoicePdfService {
     final clientFiscalId = _safe(client['fiscalId']);
     final clientCin = _safe(client['cin']);
 
-    final subtotal = _moneyText(invoice['subtotal']);
-    final totalVat = _moneyText(invoice['totalVat']);
-    final total = _moneyText(invoice['total']);
+    final subtotal = CurrencyService.format(_toDouble(invoice['subtotal']), currency);
+    final totalVat = CurrencyService.format(_toDouble(invoice['totalVat']), currency);
+    final total = CurrencyService.format(_toDouble(invoice['total']), currency);
 
     final identityValue = clientFiscalId.isNotEmpty ? clientFiscalId : clientCin;
     final identityLabel = clientFiscalId.isNotEmpty
@@ -192,11 +190,11 @@ class InvoicePdfService {
       );
       final product = _safe(item['product'], '-');
       final qty = _toDouble(item['qty']).toStringAsFixed(2);
-      final price = _moneyText(item['price']);
+      final price = CurrencyService.format(_toDouble(item['price']), currency);
       final tvaRate = '${_toDouble(item['tva_rate']).toStringAsFixed(0)}%';
       final discount = '${_toDouble(item['discount']).toStringAsFixed(0)}%';
-      final ht = _moneyText(item['subtotal']);
-      final ttc = _moneyText(item['subtotalTTC']);
+      final ht = CurrencyService.format(_toDouble(item['subtotal']), currency);
+      final ttc = CurrencyService.format(_toDouble(item['subtotalTTC']), currency);
 
       return [productId, product, qty, price, tvaRate, discount, ht, ttc];
     }).toList();
@@ -487,18 +485,18 @@ class InvoicePdfService {
                   children: [
                     _summaryRow(
                       l['subtotal']!,
-                      '$subtotal TND',
+                      subtotal,
                       textColor: onSurface,
                     ),
                     _summaryRow(
                       l['vat']!,
-                      '$totalVat TND',
+                      totalVat,
                       textColor: onSurface,
                     ),
                     pw.Divider(color: outline),
                     _summaryRow(
                       l['total']!,
-                      '$total TND',
+                      total,
                       bold: true,
                       textColor: primary,
                     ),

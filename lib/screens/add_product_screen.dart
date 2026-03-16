@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import '../services/settings_service.dart';
 import '../storage/products_repo.dart';
-import '../widgets/primary_button.dart';
 
 class AddProductScreen extends StatefulWidget {
   final Map<String, dynamic>? product;
@@ -13,8 +13,8 @@ class AddProductScreen extends StatefulWidget {
 }
 
 class _AddProductScreenState extends State<AddProductScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _repo = ProductsRepo();
+  final _settingsService = SettingsService();
 
   final _name = TextEditingController();
   final _price = TextEditingController();
@@ -23,12 +23,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _code = TextEditingController();
 
   bool _loading = false;
+  String _currency = 'TND';
 
   bool get isEdit => widget.product != null;
 
   @override
   void initState() {
     super.initState();
+    _loadCurrency();
 
     final p = widget.product;
 
@@ -41,6 +43,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
     } else {
       _tvaRate.text = '0';
     }
+  }
+
+  Future<void> _loadCurrency() async {
+    final currency = await _settingsService.getCurrency();
+    if (!mounted) return;
+    setState(() {
+      _currency = currency;
+    });
   }
 
   @override
@@ -151,11 +161,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
+  final _formKey = GlobalKey<FormState>();
+
   InputDecoration _fieldDeco(
     BuildContext context, {
     required String label,
     String? hint,
     IconData? icon,
+    String? suffixText,
   }) {
     final cs = Theme.of(context).colorScheme;
 
@@ -163,6 +176,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       labelText: label,
       hintText: hint,
       prefixIcon: icon == null ? null : Icon(icon),
+      suffixText: suffixText,
       filled: true,
       fillColor: cs.surfaceContainerHighest.withOpacity(.40),
       border: OutlineInputBorder(
@@ -190,29 +204,28 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final t = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
 
-    const bottomSafeSpace = 90.0;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
           isEdit ? l10n.editProduct : l10n.addProduct,
           style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(
-            left: 16,
-            right: 16,
-            bottom: 16,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: IconButton(
+              onPressed: _loading ? null : _save,
+              tooltip: isEdit ? l10n.saveChanges : l10n.saveProduct,
+              icon: _loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                    )
+                  : Icon(isEdit ? Icons.check : Icons.add),
+            ),
           ),
-          child: PrimaryButton(
-            text: isEdit ? l10n.saveChanges : l10n.saveProduct,
-            loading: _loading,
-            onTap: _save,
-          ),
-        ),
+        ],
       ),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -220,12 +233,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              16 + bottomSafeSpace,
-            ),
+            padding: const EdgeInsets.all(16),
             children: [
               Container(
                 padding: const EdgeInsets.all(14),
@@ -299,6 +307,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   label: l10n.price,
                   hint: l10n.priceExample,
                   icon: Icons.payments_outlined,
+                  suffixText: _currency,
                 ),
                 validator: _priceValidator,
                 textInputAction: TextInputAction.next,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/storage/clients_repo.dart';
-import '../widgets/primary_button.dart';
 
 class AddClientScreen extends StatefulWidget {
   final Map<String, dynamic>? client;
@@ -204,35 +203,94 @@ class _AddClientScreenState extends State<AddClientScreen> {
   Widget _buildSwipeHeader(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+
     final isCompany = _type == 'company';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: cs.primaryContainer.withOpacity(.45),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withOpacity(.25)),
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withOpacity(.35)),
       ),
       child: Row(
         children: [
-          Icon(
-            isCompany ? Icons.business_outlined : Icons.person_outline,
-            color: cs.primary,
-          ),
-          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              isCompany ? l10n.fiscalIdMf : l10n.cin,
-              style: const TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 15,
+            child: GestureDetector(
+              onTap: () => _setType('individual'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                decoration: BoxDecoration(
+                  color: !isCompany ? cs.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.credit_card,
+                      size: 18,
+                      color: !isCompany ? cs.onPrimary : cs.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        l10n.cin,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: !isCompany
+                              ? cs.onPrimary
+                              : cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          Icon(
-            Icons.swipe,
-            size: 18,
-            color: cs.onSurfaceVariant,
+          const SizedBox(width: 6),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _setType('company'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isCompany ? cs.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.business,
+                      size: 18,
+                      color: isCompany ? cs.onPrimary : cs.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        l10n.fiscalIdMf,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: isCompany
+                              ? cs.onPrimary
+                              : cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -248,6 +306,22 @@ class _AddClientScreenState extends State<AddClientScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEdit ? l10n.editCustomer : l10n.addCustomer),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: IconButton(
+              onPressed: _loading ? null : _save,
+              tooltip: isEdit ? l10n.saveChanges : l10n.saveCustomer,
+              icon: _loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                    )
+                  : Icon(isEdit ? Icons.check : Icons.add),
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -255,135 +329,110 @@ class _AddClientScreenState extends State<AddClientScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onHorizontalDragEnd: (details) {
-                  final v = details.primaryVelocity ?? 0;
-                  if (v < -150) _setType('individual');
-                  if (v > 150) _setType('company');
-                },
-                child: _premiumCard(
-                  context,
-                  child: Column(
-                    children: [
-                      _buildSwipeHeader(context),
-                      const SizedBox(height: 14),
-                      TextFormField(
-                        controller: _name,
-                        decoration: _dec(
-                          context,
-                          isCompany ? l10n.companyName : l10n.fullName,
-                          icon: isCompany
-                              ? Icons.business_outlined
-                              : Icons.person_outline,
-                        ),
+              _premiumCard(
+                context,
+                child: Column(
+                  children: [
+                    _buildSwipeHeader(context),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: _name,
+                      decoration: _dec(
+                        context,
+                        isCompany ? l10n.companyName : l10n.fullName,
+                        icon: isCompany
+                            ? Icons.business_outlined
+                            : Icons.person_outline,
                       ),
-                      const SizedBox(height: 12),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 280),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        transitionBuilder: (child, anim) {
-                          final slide = Tween<Offset>(
-                            begin: isCompany
-                                ? const Offset(0.22, 0)
-                                : const Offset(-0.22, 0),
-                            end: Offset.zero,
-                          ).animate(anim);
+                    ),
+                    const SizedBox(height: 12),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 280),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, anim) {
+                        final slide = Tween<Offset>(
+                          begin: isCompany
+                              ? const Offset(0.22, 0)
+                              : const Offset(-0.22, 0),
+                          end: Offset.zero,
+                        ).animate(anim);
 
-                          return FadeTransition(
-                            opacity: anim,
-                            child: SlideTransition(position: slide, child: child),
-                          );
-                        },
-                        child: isCompany
-                            ? TextFormField(
-                                key: const ValueKey('MF'),
-                                controller: _fiscalId,
-                                decoration: _dec(
-                                  context,
-                                  l10n.fiscalIdMf,
-                                  icon: Icons.badge_outlined,
-                                ),
-                                validator: (v) {
-                                  if (_type != 'company') return null;
-                                  if (v == null || v.trim().isEmpty) {
-                                    return l10n.mfRequired;
-                                  }
-                                  return null;
-                                },
-                              )
-                            : TextFormField(
-                                key: const ValueKey('CIN'),
-                                controller: _cin,
-                                decoration: _dec(
-                                  context,
-                                  l10n.cin,
-                                  icon: Icons.credit_card_outlined,
-                                ),
-                                keyboardType: TextInputType.number,
-                                validator: (v) {
-                                  if (_type != 'individual') return null;
-                                  if (v == null || v.trim().isEmpty) {
-                                    return l10n.cinRequired;
-                                  }
-                                  if (v.trim().length < 6) {
-                                    return l10n.cinTooShort;
-                                  }
-                                  return null;
-                                },
+                        return FadeTransition(
+                          opacity: anim,
+                          child: SlideTransition(position: slide, child: child),
+                        );
+                      },
+                      child: isCompany
+                          ? TextFormField(
+                              key: const ValueKey('MF'),
+                              controller: _fiscalId,
+                              decoration: _dec(
+                                context,
+                                l10n.fiscalIdMf,
+                                icon: Icons.badge_outlined,
                               ),
+                              validator: (v) {
+                                if (_type != 'company') return null;
+                                if (v == null || v.trim().isEmpty) {
+                                  return l10n.mfRequired;
+                                }
+                                return null;
+                              },
+                            )
+                          : TextFormField(
+                              key: const ValueKey('CIN'),
+                              controller: _cin,
+                              decoration: _dec(
+                                context,
+                                l10n.cin,
+                                icon: Icons.credit_card_outlined,
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (v) {
+                                if (_type != 'individual') return null;
+                                if (v == null || v.trim().isEmpty) {
+                                  return l10n.cinRequired;
+                                }
+                                if (v.trim().length < 6) {
+                                  return l10n.cinTooShort;
+                                }
+                                return null;
+                              },
+                            ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _email,
+                      decoration: _dec(
+                        context,
+                        l10n.emailOptional,
+                        icon: Icons.email_outlined,
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _email,
-                        decoration: _dec(
-                          context,
-                          l10n.emailOptional,
-                          icon: Icons.email_outlined,
-                        ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _phone,
+                      decoration: _dec(
+                        context,
+                        l10n.phoneOptional,
+                        icon: Icons.phone_outlined,
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _phone,
-                        decoration: _dec(
-                          context,
-                          l10n.phoneOptional,
-                          icon: Icons.phone_outlined,
-                        ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _address,
+                      decoration: _dec(
+                        context,
+                        l10n.addressOptional,
+                        icon: Icons.location_on_outlined,
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _address,
-                        decoration: _dec(
-                          context,
-                          l10n.addressOptional,
-                          icon: Icons.location_on_outlined,
-                        ),
-                        maxLines: 2,
-                      ),
-                    ],
-                  ),
+                      maxLines: 2,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 90),
             ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            border: Border(
-              top: BorderSide(color: cs.outlineVariant.withOpacity(.25)),
-            ),
-          ),
-          child: PrimaryButton(
-            text: isEdit ? l10n.saveChanges : l10n.saveCustomer,
-            loading: _loading,
-            onTap: _save,
           ),
         ),
       ),

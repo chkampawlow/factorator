@@ -262,6 +262,9 @@ class _MainShellState extends State<MainShell> {
 @override
 Widget build(BuildContext context) {
   final l10n = AppLocalizations.of(context)!;
+  final theme = Theme.of(context);
+  final cs = theme.colorScheme;
+  final isDark = theme.brightness == Brightness.dark;
   final pages = [
     DashboardScreen(onToggleTheme: widget.onToggleTheme),
     const ClientsScreen(),
@@ -276,31 +279,84 @@ Widget build(BuildContext context) {
   ];
   return Scaffold(
     body: pages[_index],
-    bottomNavigationBar: NavigationBar(
-      selectedIndex: _index,
-      onDestinationSelected: (i) => setState(() => _index = i),
-      destinations: [
-        NavigationDestination(
-          icon: const Icon(Icons.dashboard),
-          label: l10n.dashboard,
+    bottomNavigationBar: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: cs.surface.withOpacity(isDark ? 0.92 : 0.98),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: cs.outlineVariant.withOpacity(isDark ? 0.28 : 0.18),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.22 : 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: NavigationBarTheme(
+              data: NavigationBarThemeData(
+                backgroundColor: Colors.transparent,
+                indicatorColor: cs.primaryContainer.withOpacity(isDark ? 0.85 : 0.95),
+                iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
+                  final selected = states.contains(WidgetState.selected);
+                  return IconThemeData(
+                    size: 24,
+                    color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                  );
+                }),
+                labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
+                  final selected = states.contains(WidgetState.selected);
+                  return theme.textTheme.labelMedium!.copyWith(
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: selected ? cs.onSurface : cs.onSurfaceVariant,
+                  );
+                }),
+                labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+                height: 72,
+              ),
+              child: NavigationBar(
+                selectedIndex: _index,
+                elevation: 0,
+                onDestinationSelected: (i) => setState(() => _index = i),
+                destinations: [
+                  NavigationDestination(
+                    icon: const Icon(Icons.dashboard_outlined),
+                    selectedIcon: const Icon(Icons.dashboard_rounded),
+                    label: l10n.dashboard,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.people_outline),
+                    selectedIcon: const Icon(Icons.people_rounded),
+                    label: l10n.clients,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.inventory_2_outlined),
+                    selectedIcon: const Icon(Icons.inventory_2_rounded),
+                    label: l10n.items,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    selectedIcon: const Icon(Icons.receipt_long_rounded),
+                    label: l10n.invoices,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.person_outline),
+                    selectedIcon: const Icon(Icons.person),
+                    label: l10n.profile,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        NavigationDestination(
-          icon: const Icon(Icons.people),
-          label: l10n.clients,
-        ),
-        NavigationDestination(
-          icon: const Icon(Icons.list_alt),
-          label: l10n.items,
-        ),
-        NavigationDestination(
-          icon: const Icon(Icons.receipt_long),
-          label: l10n.invoices,
-        ),
-        NavigationDestination(
-          icon: const Icon(Icons.person_outline),
-          label: l10n.profile,
-        ),
-      ],
+      ),
     ),
   );
 }

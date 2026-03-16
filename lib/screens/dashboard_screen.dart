@@ -4,6 +4,8 @@ import 'package:my_app/screens/add_client_screen.dart';
 import 'package:my_app/screens/clients_screen.dart';
 
 import '../services/auth_service.dart';
+import '../services/currency_service.dart';
+import '../services/settings_service.dart';
 import '../storage/clients_repo.dart';
 import '../storage/dashboard_repo.dart';
 import '../widgets/action_tile.dart';
@@ -22,11 +24,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _repo = DashboardRepo();
   final _clientsRepo = ClientsRepo();
   final _authService = AuthService();
+  final _settingsService = SettingsService();
 
   bool _loading = true;
 
   int _customersCount = 0;
   List<Map<String, dynamic>> _recent = [];
+
+  String _currency = 'TND';
 
 bool _didLoadOnce = false;
 
@@ -50,16 +55,18 @@ Future<void> _load() async {
   try {
     final recent = await _repo.getRecentInvoices(limit: 6);
     final customers = await _countCustomers();
+    final currency = await _settingsService.getCurrency();
+
     setState(() {
       _recent = recent;
       _customersCount = customers;
+      _currency = currency;
       _loading = false;
     });
   } catch (e) {
     setState(() {
       _loading = false;
     });
-    // Optionally, handle the error (e.g., show a snackbar)
   }
 }
 
@@ -277,10 +284,18 @@ onTap: () => _go(AddClientScreen()),                      ),
                                             fit: BoxFit.scaleDown,
                                             alignment: Alignment.centerRight,
                                             child: Text(
-                                              '+${total.toStringAsFixed(2)}',
+                                              CurrencyService.format(total, _currency),
                                               style: t.bodyLarge?.copyWith(
                                                 fontWeight: FontWeight.w900,
                                               ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            _currency,
+                                            style: t.bodySmall?.copyWith(
+                                              color: cs.onSurfaceVariant,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],

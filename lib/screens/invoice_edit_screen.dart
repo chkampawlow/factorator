@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
+import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/invoice_pdf_service.dart';
 import 'package:my_app/services/pdf_preview.dart';
+import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/clients_repo.dart';
 import 'package:my_app/storage/invoice_items_repo.dart';
 import 'package:my_app/storage/invoices_repo.dart';
@@ -31,6 +32,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   final _invoiceItemsRepo = InvoiceItemsRepo();
   final _invoicesRepo = InvoicesRepo();
   final _authService = AuthService();
+  final _settingsService = SettingsService();
 
   Map<String, dynamic>? _invoice;
   List<Map<String, dynamic>> _items = [];
@@ -38,12 +40,12 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
 
   Map<String, dynamic>? _selectedProduct;
   int? _selectedProductId;
+  String _currency = 'TND';
 
   final TextEditingController _qtyCtrl = TextEditingController(text: '1');
   final TextEditingController _discountCtrl = TextEditingController(text: '0');
   final TextEditingController _customPriceCtrl = TextEditingController();
 
-  final _money = NumberFormat('#,##0.000', 'en_US');
 
   @override
   void initState() {
@@ -88,6 +90,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       final products = await _productsRepo.getAllProducts();
       final items = await _invoiceItemsRepo.getInvoiceItems(widget.invoiceId);
       final currentUser = await _authService.me();
+      final currency = await _settingsService.getCurrency();
 
       final rawClientId = remoteInv['custom_code'];
       final clientId = rawClientId is int
@@ -125,12 +128,14 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   'userAddress': currentUser['address'] ?? '',
   'userWebsite': currentUser['website'] ?? '',
   'userEmail': currentUser['email'] ?? '',
+        'currency': currency,
       };
 
       if (!mounted) return;
 
       setState(() {
         _invoice = inv;
+        _currency = currency;
         _products = products;
         _items = items;
 
@@ -400,34 +405,34 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       'address': _invoice!['clientAddress'],
     };
 
-    final labels = {
-  'invoice': l10n.invoice,
-  'issueDate': l10n.issue,
-  'dueDate': l10n.due,
-  'organization': l10n.organizationName,
-  'userFiscalId': l10n.fiscalId,
-  'name': l10n.name,
-  'fiscalId': l10n.fiscalId,
-  'cin': l10n.cin,
-  'identifier': l10n.identifier,
-  'address': l10n.address,
-  'email': l10n.email,
-  'phone': l10n.phone,
-  'type': l10n.type,
-  'items': l10n.items,
-  'notes': l10n.notes,
-  'subtotal': l10n.subtotal,
-  'vat': 'TVA',
-  'total': l10n.total,
-  'product': l10n.product,
-  'qty': l10n.qty,
-  'price': l10n.price,
-  'discount': l10n.discountPercent,
-  'ht': 'HT',
-  'ttc': 'TTC',
-  'website': l10n.website,
-  'fax': l10n.fax,
-};
+    final Map<String, String> labels = {
+      'invoice': l10n.invoice,
+      'issueDate': l10n.issue,
+      'dueDate': l10n.due,
+      'organization': l10n.organizationName,
+      'userFiscalId': l10n.fiscalId,
+      'name': 'Name',
+      'fiscalId': l10n.fiscalId,
+      'cin': l10n.cin,
+      'identifier': 'Identifier',
+      'address': l10n.address,
+      'email': l10n.email,
+      'phone': l10n.phone,
+      'type': 'Type',
+      'items': 'Items',
+      'notes': 'Notes',
+      'subtotal': 'Subtotal',
+      'vat': 'TVA',
+      'total': 'Total',
+      'product': l10n.product,
+      'qty': l10n.qty,
+      'price': l10n.price,
+      'discount': l10n.discountPercent,
+      'ht': 'HT',
+      'ttc': 'TTC',
+      'website': l10n.website,
+      'fax': l10n.fax,
+    };
 
     final prefs = await SharedPreferences.getInstance();
     final logoPath = prefs.getString('profile_image_path');
@@ -470,6 +475,7 @@ final bytes = await InvoicePdfService.buildInvoicePdf(
     final subtotal = _toD(_invoice!['subtotal']);
     final tva = _toD(_invoice!['totalVat']);
     final total = _toD(_invoice!['total']);
+    final currency = (_invoice!['currency'] ?? _currency).toString();
 
     return Card(
       child: Padding(
@@ -504,16 +510,16 @@ final bytes = await InvoicePdfService.buildInvoicePdf(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'HT ${_money.format(subtotal)}',
+                  'HT ${CurrencyService.format(subtotal, currency)}',
                   style: TextStyle(color: cs.onSurfaceVariant),
                 ),
                 Text(
-                  'TVA ${_money.format(tva)}',
+                  'TVA ${CurrencyService.format(tva, currency)}',
                   style: TextStyle(color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_money.format(total)} TND',
+                  CurrencyService.format(total, currency),
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 16,
@@ -605,7 +611,7 @@ Future<void> _pickProduct() async {
                                 final name = (p['name'] ?? '').toString();
                                 final code = (p['code'] ?? '').toString();
                                 final unit = (p['unit'] ?? '').toString();
-                                final price = _money.format(_toD(p['price']));
+                                final price = CurrencyService.format(_toD(p['price']), _currency);
                                 final tva =
                                     _toD(p['tva_rate']).toStringAsFixed(0);
 
@@ -625,7 +631,7 @@ Future<void> _pickProduct() async {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   trailing: Text(
-                                    '$price TND',
+                                    price,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -667,7 +673,7 @@ Widget _buildAddItemCard(ColorScheme cs) {
 
   final selectedProductLabel = _selectedProduct == null
       ? l10n.selectProduct
-      : '${(_selectedProduct!['name'] ?? '').toString()} • ${_money.format(_productPrice())}';
+      : '${(_selectedProduct!['name'] ?? '').toString()} • ${CurrencyService.format(_productPrice(), _currency)}';
 
   return Card(
     child: Padding(
@@ -798,12 +804,12 @@ Widget _buildAddItemCard(ColorScheme cs) {
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(width: 18),
-                    Text('HT ${_money.format(lineTotals.ht)}'),
+                    Text('HT ${CurrencyService.format(lineTotals.ht, _currency)}'),
                     const SizedBox(width: 18),
-                    Text('TVA ${_money.format(lineTotals.tva)}'),
+                    Text('TVA ${CurrencyService.format(lineTotals.tva, _currency)}'),
                     const SizedBox(width: 18),
                     Text(
-                      'TTC ${_money.format(lineTotals.ttc)}',
+                      'TTC ${CurrencyService.format(lineTotals.ttc, _currency)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                       ),
@@ -870,16 +876,16 @@ Widget _buildAddItemCard(ColorScheme cs) {
                       style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
                     subtitle: Text(
-                      '${qty.toStringAsFixed(2)} × ${_money.format(price)}',
+                      '${qty.toStringAsFixed(2)} × ${CurrencyService.format(price, _currency)}',
                     ),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('HT ${_money.format(ht)}'),
+                        Text('HT ${CurrencyService.format(ht, _currency)}'),
                         Text(
-                          'TTC ${_money.format(ttc)}',
+                          'TTC ${CurrencyService.format(ttc, _currency)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
                           ),

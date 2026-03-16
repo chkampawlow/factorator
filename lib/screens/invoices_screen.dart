@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
-import 'package:my_app/screens/add_client_screen.dart';
 import 'package:my_app/screens/create_invoice_screen.dart';
 import 'package:my_app/screens/invoice_edit_screen.dart';
+import 'package:my_app/services/currency_service.dart';
+import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/invoices_repo.dart';
 
 class InvoicesScreen extends StatefulWidget {
@@ -14,9 +15,11 @@ class InvoicesScreen extends StatefulWidget {
 
 class _InvoicesScreenState extends State<InvoicesScreen> {
   final InvoicesRepo _repo = InvoicesRepo();
+  final SettingsService _settingsService = SettingsService();
 
   bool _loading = true;
   bool _didLoadOnce = false;
+  String _currency = 'TND';
   List<Map<String, dynamic>> _invoices = [];
 
   @override
@@ -61,11 +64,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
     try {
       final data = await _repo.getAllInvoices();
+      final currency = await _settingsService.getCurrency();
 
       if (!mounted) return;
 
       setState(() {
         _invoices = List<Map<String, dynamic>>.from(data);
+        _currency = currency;
         _loading = false;
       });
     } catch (e) {
@@ -144,11 +149,6 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     return cs.onTertiaryContainer;
   }
 
-  String _money(dynamic value) {
-    final n = _toDouble(value);
-    return n.toStringAsFixed(3);
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -188,9 +188,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                         final invoiceId = _toInt(inv['id']);
                         final invNumber = (inv['invoice'] ?? '').toString();
                         final status = (inv['status'] ?? 'open').toString();
-                        final total = _money(inv['total']);
-                        final subtotal = _money(inv['subtotal']);
-                        final vatAmount = _money(inv['montant_tva']);
+                        final totalValue = _toDouble(inv['total']);
+                        final subtotalValue = _toDouble(inv['subtotal']);
+                        final vatAmountValue = _toDouble(inv['montant_tva']);
+                        final total = CurrencyService.format(totalValue, _currency);
+                        final subtotal = CurrencyService.format(subtotalValue, _currency);
+                        final vatAmount = CurrencyService.format(vatAmountValue, _currency);
                         final email = (inv['custom_email'] ?? '').toString();
                         final code = (inv['custom_code'] ?? '').toString();
                         final invoiceType =
@@ -274,7 +277,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  '$total TND',
+                                  total,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w900,
                                   ),
