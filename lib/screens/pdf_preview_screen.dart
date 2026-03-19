@@ -15,11 +15,15 @@ class PdfPreviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safeTitle = title.trim().isEmpty ? 'Invoice PDF' : title.trim();
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     if (pdfBytes.isEmpty) {
       return Scaffold(
         appBar: AppBar(
           title: Text(safeTitle),
+          centerTitle: true,
         ),
         body: const Center(
           child: Text('PDF is empty'),
@@ -30,13 +34,67 @@ class PdfPreviewScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(safeTitle),
+        centerTitle: true,
       ),
       body: PdfPreview(
         build: (format) async => pdfBytes,
         canChangePageFormat: false,
+        canChangeOrientation: false,
         canDebug: false,
         allowPrinting: true,
         allowSharing: true,
+        enableScrollToPage: true,
+        maxPageWidth: screenWidth,
+        padding: const EdgeInsets.all(8),
+        previewPageMargin: const EdgeInsets.all(8),
+        pdfFileName: '$safeTitle.pdf',
+        scrollViewDecoration: BoxDecoration(
+          color: cs.surface,
+        ),
+        pdfPreviewPageDecoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        actionBarTheme: PdfActionBarTheme(
+          backgroundColor: cs.surface,
+          iconColor: cs.primary,
+        ),
+        onError: (context, error) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.picture_as_pdf_outlined,
+                  size: 44,
+                  color: cs.error,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Unable to preview this PDF',
+                  style: theme.textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error.toString(),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         loadingWidget: const Center(
           child: CircularProgressIndicator(),
         ),

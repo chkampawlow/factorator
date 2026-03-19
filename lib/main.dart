@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:my_app/core/api_config.dart';
 import 'package:my_app/l10n/app_localizations.dart';
-import 'package:my_app/screens/%20profile_screen.dart';
+import 'package:my_app/screens/profile_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
 import 'screens/clients_screen.dart';
@@ -10,11 +11,19 @@ import 'screens/invoices_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/products_screen.dart';
 import 'screens/signup_screen.dart';
+import 'services/api_base_url_service.dart';
 import 'services/auth_service.dart';
 import 'services/location_language_service.dart';
 import 'services/settings_service.dart';
 
-void main() => runApp(const FacturationApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final baseUrlService = ApiBaseUrlService();
+  ApiConfig.baseUrl = await baseUrlService.loadBaseUrl();
+
+  runApp(const FacturationApp());
+}
 
 class FacturationApp extends StatefulWidget {
   const FacturationApp({super.key});
@@ -222,7 +231,6 @@ class _AppStartGateState extends State<AppStartGate> {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
-      
     }
 
     if (!_loggedIn) {
@@ -259,105 +267,114 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-@override
-Widget build(BuildContext context) {
-  final l10n = AppLocalizations.of(context)!;
-  final theme = Theme.of(context);
-  final cs = theme.colorScheme;
-  final isDark = theme.brightness == Brightness.dark;
-  final pages = [
-    DashboardScreen(onToggleTheme: widget.onToggleTheme),
-    const ClientsScreen(),
-    const ProductsScreen(),
-    const InvoicesScreen(),
-    ProfileScreen(
-      onToggleTheme: widget.onToggleTheme,
-      onChangePrimaryColor: widget.onChangePrimaryColor,
-      onChangeLanguage: widget.onChangeLanguage,
-      currentPrimaryColor: widget.currentPrimaryColor,
-    ),
-  ];
-  return Scaffold(
-    body: pages[_index],
-    bottomNavigationBar: SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: cs.surface.withOpacity(isDark ? 0.92 : 0.98),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: cs.outlineVariant.withOpacity(isDark ? 0.28 : 0.18),
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final pages = [
+      DashboardScreen(onToggleTheme: widget.onToggleTheme),
+      const ClientsScreen(),
+      const ProductsScreen(),
+      const InvoicesScreen(),
+      ProfileScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
+    ];
+
+    return Scaffold(
+      body: pages[_index],
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: cs.surface.withOpacity(isDark ? 0.92 : 0.98),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: cs.outlineVariant.withOpacity(isDark ? 0.28 : 0.18),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.22 : 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.22 : 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: NavigationBarTheme(
-              data: NavigationBarThemeData(
-                backgroundColor: Colors.transparent,
-                indicatorColor: cs.primaryContainer.withOpacity(isDark ? 0.85 : 0.95),
-                iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
-                  final selected = states.contains(WidgetState.selected);
-                  return IconThemeData(
-                    size: 24,
-                    color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-                  );
-                }),
-                labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
-                  final selected = states.contains(WidgetState.selected);
-                  return theme.textTheme.labelMedium!.copyWith(
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    color: selected ? cs.onSurface : cs.onSurfaceVariant,
-                  );
-                }),
-                labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-                height: 72,
-              ),
-              child: NavigationBar(
-                selectedIndex: _index,
-                elevation: 0,
-                onDestinationSelected: (i) => setState(() => _index = i),
-                destinations: [
-                  NavigationDestination(
-                    icon: const Icon(Icons.dashboard_outlined),
-                    selectedIcon: const Icon(Icons.dashboard_rounded),
-                    label: l10n.dashboard,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.people_outline),
-                    selectedIcon: const Icon(Icons.people_rounded),
-                    label: l10n.clients,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.inventory_2_outlined),
-                    selectedIcon: const Icon(Icons.inventory_2_rounded),
-                    label: l10n.items,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.receipt_long_outlined),
-                    selectedIcon: const Icon(Icons.receipt_long_rounded),
-                    label: l10n.invoices,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.person_outline),
-                    selectedIcon: const Icon(Icons.person),
-                    label: l10n.profile,
-                  ),
-                ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: NavigationBarTheme(
+                data: NavigationBarThemeData(
+                  backgroundColor: Colors.transparent,
+                  indicatorColor:
+                      cs.primaryContainer.withOpacity(isDark ? 0.85 : 0.95),
+                  iconTheme:
+                      WidgetStateProperty.resolveWith<IconThemeData>((states) {
+                    final selected = states.contains(WidgetState.selected);
+                    return IconThemeData(
+                      size: 24,
+                      color: selected
+                          ? cs.onPrimaryContainer
+                          : cs.onSurfaceVariant,
+                    );
+                  }),
+                  labelTextStyle:
+                      WidgetStateProperty.resolveWith<TextStyle>((states) {
+                    final selected = states.contains(WidgetState.selected);
+                    return theme.textTheme.labelMedium!.copyWith(
+                      fontWeight:
+                          selected ? FontWeight.w800 : FontWeight.w600,
+                      color: selected ? cs.onSurface : cs.onSurfaceVariant,
+                    );
+                  }),
+                  labelBehavior:
+                      NavigationDestinationLabelBehavior.onlyShowSelected,
+                  height: 72,
+                ),
+                child: NavigationBar(
+                  selectedIndex: _index,
+                  elevation: 0,
+                  onDestinationSelected: (i) => setState(() => _index = i),
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.dashboard_outlined),
+                      selectedIcon: const Icon(Icons.dashboard_rounded),
+                      label: l10n.dashboard,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.people_outline),
+                      selectedIcon: const Icon(Icons.people_rounded),
+                      label: l10n.clients,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      selectedIcon: const Icon(Icons.inventory_2_rounded),
+                      label: l10n.items,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.receipt_long_outlined),
+                      selectedIcon: const Icon(Icons.receipt_long_rounded),
+                      label: l10n.invoices,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.person_outline),
+                      selectedIcon: const Icon(Icons.person),
+                      label: l10n.profile,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

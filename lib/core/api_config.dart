@@ -1,42 +1,41 @@
 class ApiConfig {
-  static const String baseUrl = 'http://deployment-airfare-insights-regulations.trycloudflare.com/ready/';
+  static String baseUrl = '';
 
   // Auth
-  static const String login = '$baseUrl/auth/login.php';
-  static const String signup = '$baseUrl/auth/signup.php';
-  static const String me = '$baseUrl/auth/me.php';
-  static const String refresh = '$baseUrl/auth/refresh.php';
+  static String get login => '$baseUrl/auth/login.php';
+  static String get signup => '$baseUrl/auth/signup.php';
+  static String get me => '$baseUrl/auth/me.php';
+  static String get refresh => '$baseUrl/auth/refresh.php';
 
   // Clients
-  static const String getClients = '$baseUrl/clients/get_clients.php';
-  static const String addClient = '$baseUrl/clients/add_client.php';
-  static const String updateClient = '$baseUrl/clients/update_client.php';
-  static const String deleteClient = '$baseUrl/clients/delete_client.php';
+  static String get getClients => '$baseUrl/clients/get_clients.php';
+  static String get addClient => '$baseUrl/clients/add_client.php';
+  static String get updateClient => '$baseUrl/clients/update_client.php';
+  static String get deleteClient => '$baseUrl/clients/delete_client.php';
 
   // Products
-  static const String getProducts = '$baseUrl/products/get_products.php';
-  static const String addProduct = '$baseUrl/products/add_product.php';
-  static const String updateProduct = '$baseUrl/products/update_product.php';
-  static const String deleteProduct = '$baseUrl/products/delete_product.php';
+  static String get getProducts => '$baseUrl/products/get_products.php';
+  static String get addProduct => '$baseUrl/products/add_product.php';
+  static String get updateProduct => '$baseUrl/products/update_product.php';
+  static String get deleteProduct => '$baseUrl/products/delete_product.php';
 
   // Invoices
-  static const String getInvoices = '$baseUrl/invoices/get_invoices.php';
-  static const String getInvoiceById = '$baseUrl/invoices/get_invoice_by_id.php';
-  static const String addInvoice = '$baseUrl/invoices/add_invoice.php';
-  static const String recomputeInvoiceTotals =
+  static String get getInvoices => '$baseUrl/invoices/get_invoices.php';
+  static String get getInvoiceById => '$baseUrl/invoices/get_invoice_by_id.php';
+  static String get addInvoice => '$baseUrl/invoices/add_invoice.php';
+  static String get recomputeInvoiceTotals =>
       '$baseUrl/invoices/recompute_invoice_totals.php';
 
   // Invoice items
-  static const String addInvoiceItem =
+  static String get addInvoiceItem =>
       '$baseUrl/invoice_items/add_invoice_item.php';
-  static const String getInvoiceItems =
+  static String get getInvoiceItems =>
       '$baseUrl/invoice_items/get_invoice_items.php';
-  static const String deleteInvoiceItem =
+  static String get deleteInvoiceItem =>
       '$baseUrl/invoice_items/delete_invoice_item.php';
-  static const String updateInvoiceItem =
+  static String get updateInvoiceItem =>
       '$baseUrl/invoice_items/update_invoice_item.php';
 
   // User
-  static const String updateProfile =
-      '$baseUrl/user/update_profile.php';
+  static String get updateProfile => '$baseUrl/user/update_profile.php';
 }

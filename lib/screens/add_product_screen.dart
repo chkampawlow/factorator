@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import '../services/settings_service.dart';
 import '../storage/products_repo.dart';
+import '../services/exchange_rate_service.dart';
 
 class AddProductScreen extends StatefulWidget {
   final Map<String, dynamic>? product;
@@ -41,7 +42,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _tvaRate.text = (p['tva_rate'] ?? p['tvaRate'] ?? 0).toString();
       _unit.text = (p['unit'] ?? '').toString();
     } else {
-      _tvaRate.text = '0';
+      _tvaRate.text = '19';
     }
   }
 
@@ -99,10 +100,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final name = _name.text.trim();
       final unit = _unit.text.trim().isEmpty ? null : _unit.text.trim();
 
-      final price = _parseNum(_price.text);
+      final entered = _parseNum(_price.text);
+
+      if (entered == null) {
+        throw Exception(AppLocalizations.of(context)!.priceAndTvaMustBeValidNumbers);
+      }
+
+      // convert entered currency to TND (base)
+      final rate = ExchangeRateService.rates[_currency] ?? 1.0;
+      final price = entered / rate;
+
       final tvaRate = _parseNum(_tvaRate.text);
 
-      if (price == null || tvaRate == null) {
+      if (tvaRate == null) {
         throw Exception(AppLocalizations.of(context)!.priceAndTvaMustBeValidNumbers);
       }
 
@@ -169,6 +179,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     String? hint,
     IconData? icon,
     String? suffixText,
+    Widget? suffixIcon,
   }) {
     final cs = Theme.of(context).colorScheme;
 
@@ -177,6 +188,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       hintText: hint,
       prefixIcon: icon == null ? null : Icon(icon),
       suffixText: suffixText,
+      suffixIcon: suffixIcon,
       filled: true,
       fillColor: cs.surfaceContainerHighest.withOpacity(.40),
       border: OutlineInputBorder(
@@ -307,7 +319,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   label: l10n.price,
                   hint: l10n.priceExample,
                   icon: Icons.payments_outlined,
-                  suffixText: _currency,
+                  suffixIcon: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _currency,
+                        isDense: true,
+                        borderRadius: BorderRadius.circular(12),
+                        items: const [
+                          DropdownMenuItem(value: 'TND', child: Text('TND')),
+                          DropdownMenuItem(value: 'EUR', child: Text('EUR')),
+                          DropdownMenuItem(value: 'USD', child: Text('USD')),
+                        ],
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() => _currency = v);
+                        },
+                      ),
+                    ),
+                  ),
                 ),
                 validator: _priceValidator,
                 textInputAction: TextInputAction.next,
@@ -321,21 +351,33 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   label: l10n.tvaPercent,
                   hint: l10n.tvaExample,
                   icon: Icons.percent,
+                  suffixText: ' %',
                 ),
                 validator: _priceValidator,
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _unit,
+              DropdownButtonFormField<String>(
+                value: _unit.text.isEmpty ? null : _unit.text,
                 decoration: _fieldDeco(
                   context,
                   label: l10n.unitOptional,
-                  hint: l10n.unitExample,
                   icon: Icons.straighten,
                 ),
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _save(),
+                items: const [
+                  DropdownMenuItem(value: 'pcs', child: Text('pcs (Pieces)')),
+                  DropdownMenuItem(value: 'kg', child: Text('kg (Kilogram)')),
+                  DropdownMenuItem(value: 'g', child: Text('g (Gram)')),
+                  DropdownMenuItem(value: 'L', child: Text('L (Liter)')),
+                  DropdownMenuItem(value: 'm', child: Text('m (Meter)')),
+                  DropdownMenuItem(value: 'h', child: Text('h (Hour)')),
+                  DropdownMenuItem(value: 'day', child: Text('day')),
+                  DropdownMenuItem(value: 'service', child: Text('service')),
+                ],
+                onChanged: (v) {
+                  if (v == null) return;
+                  setState(() => _unit.text = v);
+                },
               ),
             ],
           ),
