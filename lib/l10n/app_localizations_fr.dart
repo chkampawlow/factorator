@@ -218,7 +218,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get unitExample => 'heure / pièce / kg...';
 
   @override
-  String get dashboard => 'Tableau de bord';
+  String get dashboard => 'Tableau';
 
   @override
   String get quickActions => 'Actions rapides';
