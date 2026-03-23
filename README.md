@@ -1,16 +1,34 @@
-# facturation
+---
 
-A new Flutter project.
+# 📱 FLUTTER README (Frontend)
 
-## Getting Started
+```md
+# 📱 Facturation App (Flutter)
 
-This project is a starting point for a Flutter application.
+A modern mobile application for managing invoices, clients, and products.
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## ✨ Features
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- 🔐 Secure login (JWT)
+- 🧾 Create & manage invoices
+- 🧑 Client management
+- 📦 Product management
+- 💱 Multi-currency support (TND / EUR / USD)
+- 🌍 Multi-language (EN / FR / AR)
+- 🌙 Dark / Light mode
+- 📊 Dashboard with analytics
+
+---
+
+## 🛠️ Tech Stack
+
+- Flutter (Dart)
+- REST API (PHP backend)
+- Secure Storage (tokens)
+- Material UI
+
+---
+
+## 📁 Project Structure
