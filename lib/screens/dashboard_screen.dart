@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/add_client_screen.dart';
 import 'package:my_app/screens/clients_screen.dart';
+import 'package:my_app/screens/invoice_edit_screen.dart';
+import 'package:my_app/screens/invoices_screen.dart';
 
 import '../services/auth_service.dart';
 import '../services/currency_service.dart';
@@ -197,7 +199,7 @@ onTap: () => _go(AddClientScreen()),                      ),
                         ),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () => _go(const InvoicesScreen(initialInvoiceId: 0)),
                         child: Text(l10n.all),
                       ),
                     ],
@@ -220,6 +222,14 @@ onTap: () => _go(AddClientScreen()),                      ),
                           final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase();
                           final total = double.tryParse(inv['total'].toString()) ?? 0.0;
                           final issue = _parseDate((inv['invoice_date'] ?? '').toString());
+                          final clientName = (
+                            inv['client_name'] ??
+                            inv['custom_name'] ??
+                            inv['customer_name'] ??
+                            inv['name'] ??
+                            ''
+                          ).toString().trim();
+                          final invoiceId = int.tryParse((inv['id'] ?? '').toString()) ?? 0;
 
                           final isPaid = status == 'PAID';
                           final tagBg = isPaid ? cs.primaryContainer : cs.tertiaryContainer;
@@ -227,81 +237,99 @@ onTap: () => _go(AddClientScreen()),                      ),
 
                           return Column(
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            '${inv['invoice']} • ${_dateOnly(issue)}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: t.bodyLarge?.copyWith(
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        minWidth: 90,
-                                        maxWidth: 140,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: tagBg,
-                                              borderRadius: BorderRadius.circular(999),
-                                            ),
-                                            child: Text(
-                                              status,
+                              InkWell(
+                                onTap: invoiceId > 0
+                                    ? () => _go(InvoiceEditScreen(invoiceId: invoiceId))
+                                    : null,
+                                borderRadius: BorderRadius.circular(16),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              clientName.isNotEmpty
+                                                  ? clientName
+                                                  : (inv['invoice'] ?? '').toString(),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w900,
-                                                color: tagFg,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            alignment: Alignment.centerRight,
-                                            child: Text(
-                                              CurrencyService.format(total, _currency),
                                               style: t.bodyLarge?.copyWith(
                                                 fontWeight: FontWeight.w900,
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            _currency,
-                                            style: t.bodySmall?.copyWith(
-                                              color: cs.onSurfaceVariant,
-                                              fontWeight: FontWeight.w600,
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${(inv['invoice'] ?? '').toString()} • ${_dateOnly(issue)}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: t.bodyMedium?.copyWith(
+                                                color: cs.onSurfaceVariant,
+                                                fontWeight: FontWeight.w700,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(height: 6),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 12),
+                                      ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          minWidth: 90,
+                                          maxWidth: 140,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: tagBg,
+                                                borderRadius: BorderRadius.circular(999),
+                                              ),
+                                              child: Text(
+                                                status,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w900,
+                                                  color: tagFg,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              alignment: Alignment.centerRight,
+                                              child: Text(
+                                                CurrencyService.format(total, _currency),
+                                                style: t.bodyLarge?.copyWith(
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              _currency,
+                                              style: t.bodySmall?.copyWith(
+                                                color: cs.onSurfaceVariant,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                               if (inv != _recent.last) const Divider(height: 1),

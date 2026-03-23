@@ -7,7 +7,12 @@ import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/invoices_repo.dart';
 
 class InvoicesScreen extends StatefulWidget {
-  const InvoicesScreen({super.key});
+  final int initialInvoiceId;
+
+  const InvoicesScreen({
+    super.key,
+    this.initialInvoiceId = 0,
+  });
 
   @override
   State<InvoicesScreen> createState() => _InvoicesScreenState();
@@ -16,11 +21,46 @@ class InvoicesScreen extends StatefulWidget {
 class _InvoicesScreenState extends State<InvoicesScreen> {
   final InvoicesRepo _repo = InvoicesRepo();
   final SettingsService _settingsService = SettingsService();
+  final TextEditingController _searchCtrl = TextEditingController();
 
   bool _loading = true;
   bool _didLoadOnce = false;
   String _currency = 'TND';
+  String _statusFilter = 'all';
   List<Map<String, dynamic>> _invoices = [];
+
+  List<Map<String, dynamic>> get _filteredInvoices {
+    final query = _searchCtrl.text.trim().toLowerCase();
+
+    return _invoices.where((inv) {
+      final invoiceNumber = (inv['invoice'] ?? '').toString().toLowerCase();
+      final email = (inv['custom_email'] ?? '').toString().toLowerCase();
+      final code = (inv['custom_code'] ?? '').toString().toLowerCase();
+      final invoiceType = (inv['invoice_type'] ?? '').toString().toLowerCase();
+      final typeDoc = (inv['type_doc'] ?? '').toString().toLowerCase();
+      final clientName = (
+        inv['client_name'] ??
+        inv['custom_name'] ??
+        inv['customer_name'] ??
+        inv['name'] ??
+        ''
+      ).toString().toLowerCase();
+      final status = (inv['status'] ?? 'open').toString().toLowerCase();
+
+      final matchesStatus =
+          _statusFilter == 'all' ? true : status == _statusFilter;
+
+      final matchesQuery = query.isEmpty ||
+          invoiceNumber.contains(query) ||
+          email.contains(query) ||
+          code.contains(query) ||
+          invoiceType.contains(query) ||
+          typeDoc.contains(query) ||
+          clientName.contains(query);
+
+      return matchesStatus && matchesQuery;
+    }).toList();
+  }
 
   @override
   void didChangeDependencies() {
@@ -150,9 +190,16 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+    final filteredInvoices = _filteredInvoices;
 
     return Scaffold(
       appBar: AppBar(
@@ -174,127 +221,264 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         padding: const EdgeInsets.all(16),
         child: _loading
             ? const Center(child: CircularProgressIndicator())
-            : _invoices.isEmpty
-                ? _EmptyInvoices(onCreate: _openCreate)
-                : RefreshIndicator(
-                    onRefresh: _load,
-                    child: ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: _invoices.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, i) {
-                        final inv = _invoices[i];
+            : Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
 
-                        final invoiceId = _toInt(inv['id']);
-                        final invNumber = (inv['invoice'] ?? '').toString();
-                        final status = (inv['status'] ?? 'open').toString();
-                        final totalValue = _toDouble(inv['total']);
-                        final subtotalValue = _toDouble(inv['subtotal']);
-                        final vatAmountValue = _toDouble(inv['montant_tva']);
-                        final total = CurrencyService.format(totalValue, _currency);
-                        final subtotal = CurrencyService.format(subtotalValue, _currency);
-                        final vatAmount = CurrencyService.format(vatAmountValue, _currency);
-                        final email = (inv['custom_email'] ?? '').toString();
-                        final code = (inv['custom_code'] ?? '').toString();
-                        final invoiceType =
-                            (inv['invoice_type'] ?? '').toString();
-                        final typeDoc = (inv['type_doc'] ?? '').toString();
-
-                        final due = _parseDate(inv['invoice_due_date']);
-                        final issue = _parseDate(inv['invoice_date']);
-                        final overdue = _isOverdue(status, due);
-
-                        return Card(
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            title: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    invNumber.isEmpty ? l10n.invoice : invNumber,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _searchCtrl,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: 'Search invoice, client, email...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchCtrl.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    onPressed: () {
+                                      _searchCtrl.clear();
+                                      setState(() {});
+                                    },
+                                    icon: const Icon(Icons.close),
                                   ),
-                                ),
-                                _StatusPill(
-                                  text: overdue
-                                      ? l10n.overdue.toUpperCase()
-                                      : status.toUpperCase(),
-                                  bg: _statusBg(status, overdue, cs),
-                                  fg: _statusFg(status, overdue, cs),
-                                ),
-                              ],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (email.isNotEmpty)
-                                    Text(
-                                      email,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  if (code.isNotEmpty ||
-                                      invoiceType.isNotEmpty ||
-                                      typeDoc.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        [
-                                          if (code.isNotEmpty)
-                                            '${l10n.code}: $code',
-                                          if (invoiceType.isNotEmpty)
-                                            '${l10n.type}: $invoiceType',
-                                          if (typeDoc.isNotEmpty)
-                                            '${l10n.doc}: $typeDoc',
-                                        ].join(' • '),
-                                      ),
-                                    ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${_daysLeftText(due)} • ${l10n.issued} ${issue.toLocal().toString().split(' ')[0]}',
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'HT $subtotal • TVA $vatAmount',
-                                    style: TextStyle(
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  total,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  color: cs.onSurfaceVariant,
-                                ),
-                              ],
-                            ),
-                            onTap: () => _openEdit(invoiceId),
                           ),
-                        );
-                      },
+                        ),
+                        const SizedBox(height: 12),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              ChoiceChip(
+                                label: const Text('All'),
+                                selected: _statusFilter == 'all',
+                                onSelected: (_) {
+                                  setState(() => _statusFilter = 'all');
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              ChoiceChip(
+                                label: const Text('Open'),
+                                selected: _statusFilter == 'open',
+                                onSelected: (_) {
+                                  setState(() => _statusFilter = 'open');
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              ChoiceChip(
+                                label: const Text('Paid'),
+                                selected: _statusFilter == 'paid',
+                                onSelected: (_) {
+                                  setState(() => _statusFilter = 'paid');
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              ChoiceChip(
+                                label: const Text('Draft'),
+                                selected: _statusFilter == 'draft',
+                                onSelected: (_) {
+                                  setState(() => _statusFilter = 'draft');
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: _invoices.isEmpty
+                        ? _EmptyInvoices(onCreate: _openCreate)
+                        : filteredInvoices.isEmpty
+                            ? ListView(
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(),
+                                children: const [
+                                  SizedBox(height: 80),
+                                  Center(
+                                    child: Text('No invoices match your search'),
+                                  ),
+                                ],
+                              )
+                            : RefreshIndicator(
+                                onRefresh: _load,
+                                child: ListView.separated(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  itemCount: filteredInvoices.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 10),
+                                  itemBuilder: (context, i) {
+                                    final inv = filteredInvoices[i];
+
+                                    final invoiceId = _toInt(inv['id']);
+                                    final invNumber =
+                                        (inv['invoice'] ?? '').toString();
+                                    final status =
+                                        (inv['status'] ?? 'open').toString();
+                                    final totalValue = _toDouble(inv['total']);
+                                    final subtotalValue =
+                                        _toDouble(inv['subtotal']);
+                                    final vatAmountValue =
+                                        _toDouble(inv['montant_tva']);
+                                    final total = CurrencyService.format(
+                                      totalValue,
+                                      _currency,
+                                    );
+                                    final subtotal = CurrencyService.format(
+                                      subtotalValue,
+                                      _currency,
+                                    );
+                                    final vatAmount = CurrencyService.format(
+                                      vatAmountValue,
+                                      _currency,
+                                    );
+                                    final email =
+                                        (inv['custom_email'] ?? '').toString();
+                                    final code =
+                                        (inv['custom_code'] ?? '').toString();
+                                    final invoiceType =
+                                        (inv['invoice_type'] ?? '').toString();
+                                    final typeDoc =
+                                        (inv['type_doc'] ?? '').toString();
+                                    final clientName = (
+                                      inv['client_name'] ??
+                                      inv['custom_name'] ??
+                                      inv['customer_name'] ??
+                                      inv['name'] ??
+                                      ''
+                                    ).toString();
+
+                                    final due =
+                                        _parseDate(inv['invoice_due_date']);
+                                    final issue = _parseDate(inv['invoice_date']);
+                                    final overdue = _isOverdue(status, due);
+
+                                    return Card(
+                                      child: ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        title: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                invNumber.isEmpty
+                                                    ? l10n.invoice
+                                                    : invNumber,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ),
+                                            _StatusPill(
+                                              text: overdue
+                                                  ? l10n.overdue.toUpperCase()
+                                                  : status.toUpperCase(),
+                                              bg: _statusBg(status, overdue, cs),
+                                              fg: _statusFg(status, overdue, cs),
+                                            ),
+                                          ],
+                                        ),
+                                        subtitle: Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 6),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              if (clientName.trim().isNotEmpty)
+                                                Text(
+                                                  clientName,
+                                                  style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w800,
+                                                  ),
+                                                ),
+                                              if (email.isNotEmpty)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    top: 2,
+                                                  ),
+                                                  child: Text(
+                                                    email,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                              if (code.isNotEmpty ||
+                                                  invoiceType.isNotEmpty ||
+                                                  typeDoc.isNotEmpty)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    top: 4,
+                                                  ),
+                                                  child: Text(
+                                                    [
+                                                      if (code.isNotEmpty)
+                                                        '${l10n.code}: $code',
+                                                      if (invoiceType
+                                                          .isNotEmpty)
+                                                        '${l10n.type}: $invoiceType',
+                                                      if (typeDoc.isNotEmpty)
+                                                        '${l10n.doc}: $typeDoc',
+                                                    ].join(' • '),
+                                                  ),
+                                                ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${_daysLeftText(due)} • ${l10n.issued} ${issue.toLocal().toString().split(' ')[0]}',
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'HT $subtotal • TVA $vatAmount',
+                                                style: TextStyle(
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        trailing: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              total,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Icon(
+                                              Icons.chevron_right,
+                                              color: cs.onSurfaceVariant,
+                                            ),
+                                          ],
+                                        ),
+                                        onTap: () => _openEdit(invoiceId),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                  ),
+                ],
+              ),
       ),
     );
   }
