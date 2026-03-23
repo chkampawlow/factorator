@@ -1,8 +1,3 @@
----
-
-# 📱 FLUTTER README
-
-```md
 # 📱 Factorator App
 
 <p align="center">
@@ -46,11 +41,42 @@ Factorator is a modern mobile application for managing invoices and business dat
 
 ## 📁 Project Structure
 
-```text
-lib/
-├── screens/
-├── services/
-├── storage/
-├── widgets/
-├── l10n/
-└── main.dart
+    lib/
+    ├── screens/
+    ├── services/
+    ├── storage/
+    ├── widgets/
+    ├── l10n/
+    └── main.dart
+
+---
+
+## ⚙️ Setup
+
+Install dependencies:
+
+    flutter pub get
+
+Run app:
+
+    flutter run
+
+---
+
+## 🔐 Authentication
+
+All requests include:
+
+    Authorization: Bearer STATIC_API_TOKEN
+
+---
+
+## 📦 Build APK
+
+    flutter build apk --release
+
+---
+
+## 👨‍💻 Author
+
+Med Karim Checambou
