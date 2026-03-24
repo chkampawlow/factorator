@@ -22,6 +22,10 @@ class ApiClient {
     await _storage.write(key: 'access_token', value: token);
   }
 
+  Future<void> saveRefreshToken(String token) async {
+    await _storage.write(key: 'refresh_token', value: token);
+  }
+
   Future<void> clearTokens() async {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
@@ -32,12 +36,13 @@ class ApiClient {
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'Authorization': 'Bearer ${ApiConfig.staticToken}',
     };
 
     if (authRequired) {
       final token = await getAccessToken();
       if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
+        headers['X-Access-Token'] = token;
       }
     }
 
@@ -45,8 +50,9 @@ class ApiClient {
   }
 
   Uri _uri(String endpoint, [Map<String, dynamic>? queryParams]) {
-    final fullUrl =
-        endpoint.startsWith('http') ? endpoint : '${ApiConfig.baseUrl}/$endpoint';
+    final fullUrl = endpoint.startsWith('http')
+        ? endpoint
+        : '${ApiConfig.baseUrl}$endpoint';
 
     return Uri.parse(fullUrl).replace(
       queryParameters: queryParams?.map(
@@ -67,6 +73,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Authorization': 'Bearer ${ApiConfig.staticToken}',
       },
       body: jsonEncode({
         'refresh_token': refreshToken,

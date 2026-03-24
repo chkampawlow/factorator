@@ -324,7 +324,35 @@
   "total": "Total",
   "@total": {
     "description": "Total label in invoice PDF"
-  }
-
-
+  },
+  
+  "verifyEmail": "Verify your email",
+  "verifyEmailDescription": "Please verify your email before continuing. Enter the 6-digit code or resend the email.",
+  "verificationCode": "Verification code",
+  "verifyNow": "Verify now",
+  "resendEmail": "Resend email",
+  "resendEmailIn": "Resend email in {seconds}s",
+  "@resendEmailIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "verificationEmailSent": "Verification email sent",
+  "enterVerificationCode": "Enter the verification code",
+  "emailVerifiedSuccessfully": "Email verified successfully",
+  "forgotPassword": "Forgot password",
+  "forgotPasswordDescription": "Enter your email and we will send you a 6-digit code to reset your password.",
+  "sendResetCode": "Send reset code",
+  "resetCodeSent": "Reset code sent",
+  "resetPassword": "Reset password",
+  "resetPasswordDescription": "Enter the 6-digit code and your new password.",
+  "enterResetCode": "Enter the reset code",
+  "newPassword": "New password",
+  "confirmPassword": "Confirm password",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "passwordResetSuccessful": "Password reset successful"
 }
+
+

@@ -1,5 +1,14 @@
 class ApiConfig {
-  static String baseUrl = '';
+  static String baseUrl = 'https://receipt-locked-photo-hay.trycloudflare.com/backend/';
+
+  // 🔐 STATIC TOKEN
+  static const String staticToken = 'a3Jmk8xjRHe443zusjKxAaE7PkHqrFPq';
+
+  // ✅ Headers
+  static Map<String, String> get headers => {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $staticToken',
+      };
 
   // Auth
   static String get login => '$baseUrl/auth/login.php';
@@ -39,8 +48,20 @@ class ApiConfig {
   // User
   static String get updateProfile => '$baseUrl/user/update_profile.php';
 
-//update client 
 
-//delete invoice
-}
 
+//mailing services
+  static String get sendVerificationEmail =>
+    '$baseUrl/auth/send_verification_email.php';
+
+static String get verifyEmail =>
+    '$baseUrl/auth/verify_email.php';
+
+static String get forgotPassword =>
+    '$baseUrl/auth/forgot_password.php';
+
+static String get resetPassword =>
+    '$baseUrl/auth/reset_password.php';
+
+static String get sendInvoicePdf =>
+    '$baseUrl/mailer/send_invoice_pdf.php';}

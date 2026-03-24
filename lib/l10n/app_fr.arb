@@ -345,7 +345,37 @@
   "total": "Total",
   "@total": {
     "description": "Libellé du total dans le PDF de facture"
-  }
+  },
+  
+  "verifyEmail": "Vérifiez votre email",
+  "verifyEmailDescription": "Veuillez vérifier votre email avant de continuer. Entrez le code à 6 chiffres ou renvoyez l'email.",
+  "verificationCode": "Code de vérification",
+  "verifyNow": "Vérifier",
+  "resendEmail": "Renvoyer l'email",
+  "resendEmailIn": "Renvoyer l'email dans {seconds}s",
+  "@resendEmailIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "verificationEmailSent": "Email de vérification envoyé",
+  "enterVerificationCode": "Entrez le code de vérification",
+  "emailVerifiedSuccessfully": "Email vérifié avec succès",
+
+  "forgotPassword": "Mot de passe oublié",
+  "forgotPasswordDescription": "Entrez votre email et nous vous enverrons un code à 6 chiffres pour réinitialiser votre mot de passe.",
+  "sendResetCode": "Envoyer le code",
+  "resetCodeSent": "Code de réinitialisation envoyé",
+  "resetPassword": "Réinitialiser le mot de passe",
+  "resetPasswordDescription": "Entrez le code à 6 chiffres et votre nouveau mot de passe.",
+  "enterResetCode": "Entrez le code de réinitialisation",
+  "newPassword": "Nouveau mot de passe",
+  "confirmPassword": "Confirmer le mot de passe",
+  "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+  "passwordResetSuccessful": "Mot de passe réinitialisé avec succès"
+
 
 
 

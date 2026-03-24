@@ -428,7 +428,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rememberMe => 'Remember me';
 
   @override
-  String get forgotPassword => 'Forgot password?';
+  String get forgotPassword => 'Forgot password';
 
   @override
   String get login => 'Login';
@@ -634,4 +634,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get total => 'Total';
+
+  @override
+  String get verifyEmail => 'Verify your email';
+
+  @override
+  String get verifyEmailDescription => 'Please verify your email before continuing. Enter the 6-digit code or resend the email.';
+
+  @override
+  String get verificationCode => 'Verification code';
+
+  @override
+  String get verifyNow => 'Verify now';
+
+  @override
+  String get resendEmail => 'Resend email';
+
+  @override
+  String resendEmailIn(int seconds) {
+    return 'Resend email in ${seconds}s';
+  }
+
+  @override
+  String get verificationEmailSent => 'Verification email sent';
+
+  @override
+  String get enterVerificationCode => 'Enter the verification code';
+
+  @override
+  String get emailVerifiedSuccessfully => 'Email verified successfully';
+
+  @override
+  String get forgotPasswordDescription => 'Enter your email and we will send you a 6-digit code to reset your password.';
+
+  @override
+  String get sendResetCode => 'Send reset code';
+
+  @override
+  String get resetCodeSent => 'Reset code sent';
+
+  @override
+  String get resetPassword => 'Reset password';
+
+  @override
+  String get resetPasswordDescription => 'Enter the 6-digit code and your new password.';
+
+  @override
+  String get enterResetCode => 'Enter the reset code';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get passwordResetSuccessful => 'Password reset successful';
 }

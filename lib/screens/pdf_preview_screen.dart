@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:my_app/core/api_client.dart';
+import 'package:my_app/core/api_config.dart';
 import 'package:printing/printing.dart';
 
 class PdfPreviewScreen extends StatelessWidget {
@@ -37,6 +40,41 @@ class PdfPreviewScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: PdfPreview(
+        actions: [
+          PdfPreviewAction(
+            icon: const Icon(Icons.send_rounded),
+            onPressed: (context, build, pageFormat) async {
+              try {
+                final bytes = await build(pageFormat);
+
+                await ApiClient.instance.post(
+                  ApiConfig.sendInvoicePdf,
+                  authRequired: true,
+                  body: {
+                    'pdf': base64Encode(bytes),
+                    'filename': '$safeTitle.pdf',
+                  },
+                );
+
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('PDF sent successfully'),
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      e.toString().replaceFirst('Exception: ', ''),
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
         build: (format) async => pdfBytes,
         canChangePageFormat: false,
         canChangeOrientation: false,

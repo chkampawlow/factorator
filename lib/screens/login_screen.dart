@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/core/api_config.dart';
 import 'package:my_app/l10n/app_localizations.dart';
-import 'package:my_app/services/api_base_url_service.dart';
+import 'package:my_app/screens/forgot_password_screen.dart';
+import 'package:my_app/screens/verify_email_screen.dart';
 import 'package:my_app/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -30,33 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _showBaseUrlDialog() async {
-    final service = ApiBaseUrlService();
-
-    final newUrl = await showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => _ServerUrlDialog(
-        initialValue: ApiConfig.baseUrl,
-      ),
-    );
-
-    if (newUrl == null || newUrl.trim().isEmpty) return;
-
-    await service.saveBaseUrl(newUrl);
-    ApiConfig.baseUrl = newUrl.trim();
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Server updated'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-
-    setState(() {});
-  }
 
   Future<void> _login() async {
     final l10n = AppLocalizations.of(context)!;
@@ -79,22 +52,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      final user = response['user'] as Map<String, dynamic>?;
-      final organizationName =
-          (user?['organization_name'] ?? '').toString().trim();
+final user = response['user'] as Map<String, dynamic>?;
+final organizationName =
+    (user?['organization_name'] ?? '').toString().trim();
+final emailVerified = user?['email_verified'] == true;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            organizationName.isNotEmpty
-                ? l10n.welcomeUser(organizationName)
-                : l10n.loginSuccess,
-          ),
-        ),
-      );
+ScaffoldMessenger.of(context).showSnackBar(
+  SnackBar(
+    behavior: SnackBarBehavior.floating,
+    content: Text(
+      organizationName.isNotEmpty
+          ? l10n.welcomeUser(organizationName)
+          : l10n.loginSuccess,
+    ),
+  ),
+);
 
-      Navigator.pushReplacementNamed(context, '/dashboard');
+if (!emailVerified) {
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const VerifyEmailScreen(),
+    ),
+  );
+  return;
+}
+
+Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -128,16 +112,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.login),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_ethernet_rounded),
-            tooltip: 'Server URL',
-            onPressed: _showBaseUrlDialog,
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -169,47 +143,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: theme.textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    "press <..> to add the server url this is for testing purposes only and will not be in the final app",
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest.withOpacity(.55),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: cs.outlineVariant.withOpacity(.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.cloud_outlined,
-                          size: 18,
-                          color: cs.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            ApiConfig.baseUrl,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 22),
                   Card(
                     child: Padding(
@@ -287,9 +220,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 TextButton(
-                                  onPressed: () {},
-                                  child: Text(l10n.forgotPassword),
-                                ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ForgotPasswordScreen(),
+      ),
+    );
+  },
+  child: Text(l10n.forgotPassword),
+),
                               ],
                             ),
                             if (_error != null) ...[
@@ -358,152 +298,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _ServerUrlDialog extends StatefulWidget {
-  final String initialValue;
-
-  const _ServerUrlDialog({
-    required this.initialValue,
-  });
-
-  @override
-  State<_ServerUrlDialog> createState() => _ServerUrlDialogState();
-}
-
-class _ServerUrlDialogState extends State<_ServerUrlDialog> {
-  late final TextEditingController _controller;
-  bool _valid = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  bool _isValidUrl(String value) {
-    final text = value.trim();
-    if (text.isEmpty) return false;
-    return text.startsWith('http://') || text.startsWith('https://');
-  }
-
-  void _save() {
-    final value = _controller.text.trim();
-
-    if (!_isValidUrl(value)) {
-      setState(() {
-        _valid = false;
-      });
-      return;
-    }
-
-    Navigator.pop(context, value);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
-      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-      contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              Icons.settings_ethernet_rounded,
-              color: cs.onPrimaryContainer,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Server URL',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Enter the backend base URL used by the app.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            keyboardType: TextInputType.url,
-            decoration: InputDecoration(
-              labelText: 'Base URL',
-              hintText: 'https://xxxx.trycloudflare.com',
-              prefixIcon: const Icon(Icons.link_rounded),
-              errorText: _valid ? null : 'Please enter a valid URL',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            onChanged: (_) {
-              if (!_valid) {
-                setState(() {
-                  _valid = true;
-                });
-              }
-            },
-            onSubmitted: (_) => _save(),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withOpacity(.45),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              'Example: https://your-tunnel.trycloudflare.com',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton.icon(
-          onPressed: _save,
-          icon: const Icon(Icons.check_rounded),
-          label: const Text('Save'),
-        ),
-      ],
     );
   }
 }

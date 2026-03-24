@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:my_app/core/api_config.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/profile_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
@@ -11,17 +10,11 @@ import 'screens/invoices_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/products_screen.dart';
 import 'screens/signup_screen.dart';
-import 'services/api_base_url_service.dart';
 import 'services/auth_service.dart';
 import 'services/location_language_service.dart';
 import 'services/settings_service.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  final baseUrlService = ApiBaseUrlService();
-  ApiConfig.baseUrl = await baseUrlService.loadBaseUrl();
-
+void main() {
   runApp(const FacturationApp());
 }
 

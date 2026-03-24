@@ -428,7 +428,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get rememberMe => 'تذكرني';
 
   @override
-  String get forgotPassword => 'هل نسيت كلمة المرور؟';
+  String get forgotPassword => 'نسيت كلمة المرور';
 
   @override
   String get login => 'تسجيل الدخول';
@@ -634,4 +634,57 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get total => 'Total';
+
+  @override
+  String get verifyEmail => 'تحقق من بريدك الإلكتروني';
+
+  @override
+  String get verifyEmailDescription => 'يرجى التحقق من بريدك الإلكتروني قبل المتابعة. أدخل الرمز المكوّن من 6 أرقام أو أعد إرسال البريد.';
+
+  @override
+  String get verificationCode => 'رمز التحقق';
+
+  @override
+  String get verifyNow => 'تحقق الآن';
+
+  @override
+  String get resendEmail => 'إعادة إرسال البريد';
+
+  @override
+  String resendEmailIn(int seconds) {
+    return 'إعادة إرسال البريد خلال $secondsث';
+  }
+
+  @override
+  String get verificationEmailSent => 'تم إرسال بريد التحقق';
+
+  @override
+  String get enterVerificationCode => 'أدخل رمز التحقق';
+
+  @override
+  String get emailVerifiedSuccessfully => 'تم التحقق من البريد الإلكتروني بنجاح';
+
+  @override
+  String get forgotPasswordDescription => 'أدخل بريدك الإلكتروني وسنرسل لك رمزًا مكوّنًا من 6 أرقام لإعادة تعيين كلمة المرور.';
+
+  @override
+  String get sendResetCode => 'إرسال رمز إعادة التعيين';
+
+  @override
+  String get resetCodeSent => 'تم إرسال رمز إعادة التعيين';
+
+  @override
+  String get resetPassword => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get resetPasswordDescription => 'أدخل الرمز المكوّن من 6 أرقام وكلمة المرور الجديدة.';
+
+  @override
+  String get enterResetCode => 'أدخل رمز إعادة التعيين';
+
+  @override
+  String get newPassword => 'كلمة المرور الجديدة';
+
+  @override
+  String get passwordResetSuccessful => 'تمت إعادة تعيين كلمة المرور بنجاح';
 }

@@ -428,7 +428,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get rememberMe => 'Se souvenir de moi';
 
   @override
-  String get forgotPassword => 'Mot de passe oublié ?';
+  String get forgotPassword => 'Mot de passe oublié';
 
   @override
   String get login => 'Connexion';
@@ -634,4 +634,57 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get total => 'Total';
+
+  @override
+  String get verifyEmail => 'Vérifiez votre email';
+
+  @override
+  String get verifyEmailDescription => 'Veuillez vérifier votre email avant de continuer. Entrez le code à 6 chiffres ou renvoyez l\'email.';
+
+  @override
+  String get verificationCode => 'Code de vérification';
+
+  @override
+  String get verifyNow => 'Vérifier';
+
+  @override
+  String get resendEmail => 'Renvoyer l\'email';
+
+  @override
+  String resendEmailIn(int seconds) {
+    return 'Renvoyer l\'email dans ${seconds}s';
+  }
+
+  @override
+  String get verificationEmailSent => 'Email de vérification envoyé';
+
+  @override
+  String get enterVerificationCode => 'Entrez le code de vérification';
+
+  @override
+  String get emailVerifiedSuccessfully => 'Email vérifié avec succès';
+
+  @override
+  String get forgotPasswordDescription => 'Entrez votre email et nous vous enverrons un code à 6 chiffres pour réinitialiser votre mot de passe.';
+
+  @override
+  String get sendResetCode => 'Envoyer le code';
+
+  @override
+  String get resetCodeSent => 'Code de réinitialisation envoyé';
+
+  @override
+  String get resetPassword => 'Réinitialiser le mot de passe';
+
+  @override
+  String get resetPasswordDescription => 'Entrez le code à 6 chiffres et votre nouveau mot de passe.';
+
+  @override
+  String get enterResetCode => 'Entrez le code de réinitialisation';
+
+  @override
+  String get newPassword => 'Nouveau mot de passe';
+
+  @override
+  String get passwordResetSuccessful => 'Mot de passe réinitialisé avec succès';
 }
