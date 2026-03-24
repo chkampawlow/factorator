@@ -1,16 +1,82 @@
-# facturation
+# 📱 Factorator App
 
-A new Flutter project.
+<p align="center">
+  <img src="https://img.shields.io/badge/Flutter-Mobile-blue?logo=flutter" />
+  <img src="https://img.shields.io/badge/Dart-Language-0175C2?logo=dart" />
+  <img src="https://img.shields.io/badge/API-REST-green" />
+  <img src="https://img.shields.io/badge/Platform-Android-lightgrey?logo=android" />
+  <img src="https://img.shields.io/badge/Status-Active-success" />
+</p>
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 Overview
 
-A few resources to get you started if this is your first Flutter project:
+Factorator is a modern mobile application for managing invoices and business data.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## ✨ Features
+
+- 🔐 Secure login (JWT)
+- 🧾 Invoice creation & management
+- 🧑 Client management
+- 📦 Product management
+- 📄 PDF invoice preview & sharing
+- 🌙 Dark / Light mode
+- 🌍 Multi-language (FR / EN / AR)
+- 💱 Multi-currency (TND / EUR / USD)
+- ⚙️ Configurable backend URL
+
+---
+
+## 🛠️ Tech Stack
+
+- Flutter
+- Dart
+- Material UI
+- REST API (PHP backend)
+
+---
+
+## 📁 Project Structure
+
+    lib/
+    ├── screens/
+    ├── services/
+    ├── storage/
+    ├── widgets/
+    ├── l10n/
+    └── main.dart
+
+---
+
+## ⚙️ Setup
+
+Install dependencies:
+
+    flutter pub get
+
+Run app:
+
+    flutter run
+
+---
+
+## 🔐 Authentication
+
+All requests include:
+
+    Authorization: Bearer STATIC_API_TOKEN
+
+---
+
+## 📦 Build APK
+
+    flutter build apk --release
+
+---
+
+## 👨‍💻 Author
+
+Med Karim Checambou
