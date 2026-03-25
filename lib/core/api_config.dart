@@ -1,5 +1,5 @@
 class ApiConfig {
-  static String baseUrl = 'https://receipt-locked-photo-hay.trycloudflare.com/backend/';
+  static String baseUrl = 'https://ins-women-fcc-presidential.trycloudflare.com/backend/';
 
   // 🔐 STATIC TOKEN
   static const String staticToken = 'a3Jmk8xjRHe443zusjKxAaE7PkHqrFPq';
@@ -18,6 +18,7 @@ class ApiConfig {
 
   // Clients
   static String get getClients => '$baseUrl/clients/get_clients.php';
+  static String get getClientsevenarchived => '$baseUrl/clients/get_clients_all_with_archieved.php';
   static String get addClient => '$baseUrl/clients/add_client.php';
   static String get updateClient => '$baseUrl/clients/update_client.php';
   static String get deleteClient => '$baseUrl/clients/delete_client.php';

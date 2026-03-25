@@ -85,7 +85,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     setState(() => _sending = true);
 
     try {
-      await _authService.sendVerificationEmail();
+await _authService.sendVerificationEmail(
+  Localizations.localeOf(context).languageCode,
+);
       _startResendTimer();
 
       if (!mounted) return;

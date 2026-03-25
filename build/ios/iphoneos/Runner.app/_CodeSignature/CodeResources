@@ -46,7 +46,7 @@
 		</data>
 		<key>Frameworks/App.framework/App</key>
 		<data>
-		Xqnnk446vjEqirtWAheCX7AYNPk=
+		0I5edRRFHUTOh10bq99q6OiGM14=
 		</data>
 		<key>Frameworks/App.framework/Info.plist</key>
 		<data>
@@ -54,11 +54,11 @@
 		</data>
 		<key>Frameworks/App.framework/_CodeSignature/CodeResources</key>
 		<data>
-		vuwIHzX4nZ/sXqzzF0jShpCD2Q4=
+		FnoT0RNwKC4I388/WMM2rNFaX3E=
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/AssetManifest.bin</key>
 		<data>
-		21tVqbIV90TbglF4ZJhNBz8uj4w=
+		kfFX+6I7VPCeDV1TL/RADAfCnWo=
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/FontManifest.json</key>
 		<data>
@@ -72,6 +72,30 @@
 		<data>
 		BASHf/14q0VcgmnKtkQLt+qMEqo=
 		</data>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Black.ttf</key>
+		<data>
+		2vfXWlQWATQDHB9MftOqj4CzP50=
+		</data>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Bold.ttf</key>
+		<data>
+		3XCGK0CKCEpOVaoDUp644GZBFl4=
+		</data>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Light.ttf</key>
+		<data>
+		zvNfYGGrhvyWnkvkVokU4769+4A=
+		</data>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Medium.ttf</key>
+		<data>
+		NftsY52GR14LpvGIMAExDQq0B20=
+		</data>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Regular.ttf</key>
+		<data>
+		/wbb2Mig/vErBmjLe4ScIJohtDU=
+		</data>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-SemiBold.ttf</key>
+		<data>
+		MNw+yKukX5dUEbxnVJTFm1wif0c=
+		</data>
 		<key>Frameworks/App.framework/flutter_assets/fonts/MaterialIcons-Regular.otf</key>
 		<data>
 		/CUoTuPQqqdexfyOT9lpJhV+2MQ=
@@ -82,7 +106,7 @@
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/kernel_blob.bin</key>
 		<data>
-		cJ8z3o1v9/WsJb+Vxfi1ye/V0lE=
+		m0PsndVq+kKB8v0YeDovPmzWAGM=
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/shaders/ink_sparkle.frag</key>
 		<data>
@@ -214,7 +238,7 @@
 		</data>
 		<key>Frameworks/flutter_secure_storage_darwin.framework/flutter_secure_storage_darwin</key>
 		<data>
-		MVmV2MMOKX87qL5SnT0vtrHDPJ0=
+		7mk7mXNFyfp8JdwDdaujkSPBGoE=
 		</data>
 		<key>Frameworks/geocoding_ios.framework/Info.plist</key>
 		<data>
@@ -226,7 +250,7 @@
 		</data>
 		<key>Frameworks/geocoding_ios.framework/geocoding_ios</key>
 		<data>
-		OyLoxEQm1gYNgQpfnD4AAbILmlw=
+		GkZQ/RxE3H9/bsPgwyzK9YwjQys=
 		</data>
 		<key>Frameworks/geocoding_ios.framework/geocoding_ios_privacy.bundle/Info.plist</key>
 		<data>
@@ -242,7 +266,7 @@
 		</data>
 		<key>Frameworks/geolocator_apple.framework/geolocator_apple</key>
 		<data>
-		tCvcYigzF/JHMMFphrlmWPiMX3Q=
+		z+PKHd7VnOOtJ8VrniEHijMp4TY=
 		</data>
 		<key>Frameworks/geolocator_apple.framework/geolocator_apple_privacy.bundle/Info.plist</key>
 		<data>
@@ -262,7 +286,7 @@
 		</data>
 		<key>Frameworks/image_picker_ios.framework/image_picker_ios</key>
 		<data>
-		5GuUubGbzI5K3llfVOLzafHqD3k=
+		1dP1LX0xX8bhyawuDfe+Th3Jg08=
 		</data>
 		<key>Frameworks/image_picker_ios.framework/image_picker_ios_privacy.bundle/Info.plist</key>
 		<data>
@@ -294,7 +318,7 @@
 		</data>
 		<key>Frameworks/printing.framework/printing</key>
 		<data>
-		YXf66yuY/RYZqQInOGw+J/ol6lg=
+		mQmMvsRx6EX7/nvvnOzqcitAJGo=
 		</data>
 		<key>Frameworks/shared_preferences_foundation.framework/Info.plist</key>
 		<data>
@@ -306,7 +330,7 @@
 		</data>
 		<key>Frameworks/shared_preferences_foundation.framework/shared_preferences_foundation</key>
 		<data>
-		MGUZVIrWSDsF1wuQ/EIEQU9FOLs=
+		TeQCXstHo+BXHa7we5moH8bA930=
 		</data>
 		<key>Frameworks/shared_preferences_foundation.framework/shared_preferences_foundation_privacy.bundle/Info.plist</key>
 		<data>
@@ -326,7 +350,7 @@
 		</data>
 		<key>Frameworks/sqflite_darwin.framework/sqflite_darwin</key>
 		<data>
-		GAmcEyJo1HtcmKywP1/Ohv8FTh8=
+		U57gRVxxEvq/bc8WGpfXTtocYpc=
 		</data>
 		<key>Frameworks/sqflite_darwin.framework/sqflite_darwin_privacy.bundle/Info.plist</key>
 		<data>
@@ -346,11 +370,11 @@
 		</data>
 		<key>Runner.debug.dylib</key>
 		<data>
-		xotLIxcO6dGC2h26OuoK9TuuaLQ=
+		6HlxOxTMJsYesaBSTAGZ521Qf3E=
 		</data>
 		<key>__preview.dylib</key>
 		<data>
-		gYxc1yfQxKaZSFuH1WV1vWzs8fo=
+		Elzaqw0EEpqzX3Zb7IW077ZvWJo=
 		</data>
 		<key>embedded.mobileprovision</key>
 		<data>
@@ -433,7 +457,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			xHdNG1ngnePbi1BaOYBoxJs9zkK2FXQ19GzK84wQt84=
+			OZLAQ7H2uLN1148zl3cgf8dkBG7XNCVp3AU0NUywU+k=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/Info.plist</key>
@@ -447,14 +471,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			SEInmvleKy1ctqV4YcY4bUBZ/icOFoFoo/G7uy95n18=
+			vhgrldBaRDMH26KJAze9CwMdnCIbPmwnavp0/YnVWU0=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/flutter_assets/AssetManifest.bin</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			9WbMb8zGVzZcAZeszzp9b4D4Ugn/Zm/3dPTcvFJKqEI=
+			V91nMAcJ4SLEPQZe45KxyoS2oRQu2jlhVkbOXukzdyY=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/flutter_assets/FontManifest.json</key>
@@ -478,6 +502,48 @@
 			Ylst3tzkLj0hjOuIabyRGejeqGUKbLJKt3nVAIBVsUE=
 			</data>
 		</dict>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Black.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			NIgNgFrYS7nBlb7ME3m4mYbuHvyPeFjidiNMBPTeY9k=
+			</data>
+		</dict>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Bold.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			oOWNcbhbFZAuqHkU2OMabSLaSKwttwIT3P0afa0/GYo=
+			</data>
+		</dict>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Light.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			wTf2eKPIsfEucw+lj03bUzTnhxlSgBV2VHjJwt5gPVc=
+			</data>
+		</dict>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Medium.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ZMfKuOLPADw/xO3KGCDn4bDuZnNzz4UABgvKlyYqK2U=
+			</data>
+		</dict>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-Regular.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			RHhqOOJ8WCYsvWU0G+2k+k9scIXsQugws1uhrjeAcDA=
+			</data>
+		</dict>
+		<key>Frameworks/App.framework/flutter_assets/assets/fonts/Cairo-SemiBold.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			P+LhgqiKXWSpayif0cUYvcmxTskVJaA5kMNekfeGOio=
+			</data>
+		</dict>
 		<key>Frameworks/App.framework/flutter_assets/fonts/MaterialIcons-Regular.otf</key>
 		<dict>
 			<key>hash2</key>
@@ -496,7 +562,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			6702AD480snWT92WaOZEYfNrdkPjs8W6Y6zyYzNkNTQ=
+			lHI5yhAuqkshWb+MPkuuFb6YYVGqDo6gS/9l5yte+GU=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/flutter_assets/shaders/ink_sparkle.frag</key>
@@ -727,7 +793,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			4fttifCgd7vMM3hYJS13fPp1kFGcsadSA9vDvFhvaBQ=
+			VbrhZghYWpt1z8PrUe2D059GJS2X1lnCNd5WcnAjnag=
 			</data>
 		</dict>
 		<key>Frameworks/geocoding_ios.framework/Info.plist</key>
@@ -748,7 +814,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			+ZvATx06LxzvbOlSDFOu0dtBXmb5O+LBpqFDXg6pyJQ=
+			tqkOJ4tsmHQj/R9y0R7chfYtAeYylG05sJ4yVaj1R2s=
 			</data>
 		</dict>
 		<key>Frameworks/geocoding_ios.framework/geocoding_ios_privacy.bundle/Info.plist</key>
@@ -776,7 +842,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			keotwetHLl61YnyLJsZfBf9prbhgOJKY7mr5RQF51tE=
+			g60Fjqivd3KBo5g29pSiLcoIiFSulezC1AUSaGUyKBw=
 			</data>
 		</dict>
 		<key>Frameworks/geolocator_apple.framework/geolocator_apple_privacy.bundle/Info.plist</key>
@@ -811,7 +877,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			qPD2IXlKSX3ya6IMnzy7ltvwt0KDathJ5PWk1mrvBbE=
+			mQc2ZlYx1EjyipGrvwvHw/KrBFqTxCdVnXMy23hZNNk=
 			</data>
 		</dict>
 		<key>Frameworks/image_picker_ios.framework/image_picker_ios_privacy.bundle/Info.plist</key>
@@ -867,7 +933,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			tklDteQ+62MZ4JrjOckXrn9aWE+atqhLreDNzlvKkpY=
+			zwRi53Cbj/2l7pCDp4Nq1cyRqFEYz8WWn1ed18JObi0=
 			</data>
 		</dict>
 		<key>Frameworks/shared_preferences_foundation.framework/Info.plist</key>
@@ -888,7 +954,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			hznmFTHegOXFOJ4NVhhbNOLOtxsJ/+DcxNIYT65q7Aw=
+			pavqgpHBfwjD2qnNNG1pM2T2/mWwuvOvQ6VJvUbC+7k=
 			</data>
 		</dict>
 		<key>Frameworks/shared_preferences_foundation.framework/shared_preferences_foundation_privacy.bundle/Info.plist</key>
@@ -923,7 +989,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			O6vpbY6TQIFkUFR+ZPcfhxAos6vtOKIa8HscFYQz+2k=
+			nMIG2KOxsdjpEKgV7+lbseQ+zlOUNvPGTw7EBMxuXHw=
 			</data>
 		</dict>
 		<key>Frameworks/sqflite_darwin.framework/sqflite_darwin_privacy.bundle/Info.plist</key>
@@ -944,14 +1010,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			6xpXJCoxA0ZkZDMLnhCVLDn7uYFprxbu/XGwWucFknc=
+			PZuMlo0ZxMGbuUAvBK22oKpwWqOg/A6+2GHazPYro48=
 			</data>
 		</dict>
 		<key>__preview.dylib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			dodakW6aC78OLrjWt/H1PGj60z9xAp+1IJFb8wPn8Rc=
+			jAaEbC4q7O2+hzopfI0GXpx5ac1itkDoaZYvo8aiBSM=
 			</data>
 		</dict>
 		<key>embedded.mobileprovision</key>

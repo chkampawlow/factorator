@@ -10,7 +10,7 @@
 		</data>
 		<key>flutter_assets/AssetManifest.bin</key>
 		<data>
-		21tVqbIV90TbglF4ZJhNBz8uj4w=
+		kfFX+6I7VPCeDV1TL/RADAfCnWo=
 		</data>
 		<key>flutter_assets/FontManifest.json</key>
 		<data>
@@ -24,6 +24,30 @@
 		<data>
 		BASHf/14q0VcgmnKtkQLt+qMEqo=
 		</data>
+		<key>flutter_assets/assets/fonts/Cairo-Black.ttf</key>
+		<data>
+		2vfXWlQWATQDHB9MftOqj4CzP50=
+		</data>
+		<key>flutter_assets/assets/fonts/Cairo-Bold.ttf</key>
+		<data>
+		3XCGK0CKCEpOVaoDUp644GZBFl4=
+		</data>
+		<key>flutter_assets/assets/fonts/Cairo-Light.ttf</key>
+		<data>
+		zvNfYGGrhvyWnkvkVokU4769+4A=
+		</data>
+		<key>flutter_assets/assets/fonts/Cairo-Medium.ttf</key>
+		<data>
+		NftsY52GR14LpvGIMAExDQq0B20=
+		</data>
+		<key>flutter_assets/assets/fonts/Cairo-Regular.ttf</key>
+		<data>
+		/wbb2Mig/vErBmjLe4ScIJohtDU=
+		</data>
+		<key>flutter_assets/assets/fonts/Cairo-SemiBold.ttf</key>
+		<data>
+		MNw+yKukX5dUEbxnVJTFm1wif0c=
+		</data>
 		<key>flutter_assets/fonts/MaterialIcons-Regular.otf</key>
 		<data>
 		/CUoTuPQqqdexfyOT9lpJhV+2MQ=
@@ -34,7 +58,7 @@
 		</data>
 		<key>flutter_assets/kernel_blob.bin</key>
 		<data>
-		cJ8z3o1v9/WsJb+Vxfi1ye/V0lE=
+		m0PsndVq+kKB8v0YeDovPmzWAGM=
 		</data>
 		<key>flutter_assets/shaders/ink_sparkle.frag</key>
 		<data>
@@ -55,7 +79,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			9WbMb8zGVzZcAZeszzp9b4D4Ugn/Zm/3dPTcvFJKqEI=
+			V91nMAcJ4SLEPQZe45KxyoS2oRQu2jlhVkbOXukzdyY=
 			</data>
 		</dict>
 		<key>flutter_assets/FontManifest.json</key>
@@ -79,6 +103,48 @@
 			Ylst3tzkLj0hjOuIabyRGejeqGUKbLJKt3nVAIBVsUE=
 			</data>
 		</dict>
+		<key>flutter_assets/assets/fonts/Cairo-Black.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			NIgNgFrYS7nBlb7ME3m4mYbuHvyPeFjidiNMBPTeY9k=
+			</data>
+		</dict>
+		<key>flutter_assets/assets/fonts/Cairo-Bold.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			oOWNcbhbFZAuqHkU2OMabSLaSKwttwIT3P0afa0/GYo=
+			</data>
+		</dict>
+		<key>flutter_assets/assets/fonts/Cairo-Light.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			wTf2eKPIsfEucw+lj03bUzTnhxlSgBV2VHjJwt5gPVc=
+			</data>
+		</dict>
+		<key>flutter_assets/assets/fonts/Cairo-Medium.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ZMfKuOLPADw/xO3KGCDn4bDuZnNzz4UABgvKlyYqK2U=
+			</data>
+		</dict>
+		<key>flutter_assets/assets/fonts/Cairo-Regular.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			RHhqOOJ8WCYsvWU0G+2k+k9scIXsQugws1uhrjeAcDA=
+			</data>
+		</dict>
+		<key>flutter_assets/assets/fonts/Cairo-SemiBold.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			P+LhgqiKXWSpayif0cUYvcmxTskVJaA5kMNekfeGOio=
+			</data>
+		</dict>
 		<key>flutter_assets/fonts/MaterialIcons-Regular.otf</key>
 		<dict>
 			<key>hash2</key>
@@ -97,7 +163,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			6702AD480snWT92WaOZEYfNrdkPjs8W6Y6zyYzNkNTQ=
+			lHI5yhAuqkshWb+MPkuuFb6YYVGqDo6gS/9l5yte+GU=
 			</data>
 		</dict>
 		<key>flutter_assets/shaders/ink_sparkle.frag</key>

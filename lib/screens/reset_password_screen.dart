@@ -76,7 +76,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => _sending = true);
 
     try {
-      await _authService.forgotPassword(widget.email);
+      await _authService.forgotPassword(widget.email, Localizations.localeOf(context).languageCode);
       _startResendTimer();
 
       if (!mounted) return;

@@ -124,10 +124,13 @@ class AuthService {
   Future<void> logout() async {
     await _api.clearTokens();
   }
-  Future<void> sendVerificationEmail() async {
+Future<void> sendVerificationEmail(String language) async {
   await ApiClient.instance.post(
     ApiConfig.sendVerificationEmail,
     authRequired: true,
+    body: {
+      'language': language,
+    },
   );
 }
 
@@ -140,10 +143,13 @@ Future<void> verifyEmail(String code) async {
     },
   );
 }
-Future<void> forgotPassword(String email) async {
+Future<void> forgotPassword(String email, String language) async {
   await ApiClient.instance.post(
     ApiConfig.forgotPassword,
-    body: {'email': email},
+    body: {
+      'email': email,
+      'language': language,
+    },
   );
 }
 

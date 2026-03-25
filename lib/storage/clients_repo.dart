@@ -58,6 +58,30 @@ class ClientsRepo {
     throw Exception('Invalid clients response');
   }
 
+    Future<List<Map<String, dynamic>>> getAllClientsarchived() async {
+    final response = await _api.get(
+      ApiConfig.getClientsevenarchived,
+      authRequired: true,
+    );
+
+    if (response is Map<String, dynamic>) {
+      final data = response['data'];
+      if (data is List) {
+        return data
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    }
+
+    if (response is List) {
+      return response
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    }
+
+    throw Exception('Invalid clients response');
+  }
+
   Future<int> updateClient({
     required int id,
     required String type,

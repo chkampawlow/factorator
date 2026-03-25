@@ -255,7 +255,7 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
     });
 
     try {
-      final data = await widget.clientsRepo.getAllClients();
+      final data = await widget.clientsRepo.getAllClientsarchived();
 
       if (!mounted) return;
 

@@ -30,6 +30,12 @@ class _AddClientScreenState extends State<AddClientScreen> {
   final _cin = TextEditingController();
 
   bool _loading = false;
+
+  int get _clientId {
+    final raw = widget.client?['id'];
+    if (raw is int) return raw;
+    return int.tryParse(raw?.toString() ?? '') ?? 0;
+  }
   bool get isEdit => widget.client != null;
 
   bool _looksLikeFiscalId(String value) {
@@ -127,9 +133,30 @@ class _AddClientScreenState extends State<AddClientScreen> {
 
     try {
       if (isEdit) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.clientUpdateApiNotAddedYet)),
+        if (_clientId <= 0) {
+          throw Exception('Invalid client id');
+        }
+
+        await _repo.updateClient(
+          id: _clientId,
+          type: _type,
+          name: name,
+          email: email,
+          phone: phone,
+          address: address,
+          fiscalId: fiscalId,
+          cin: cin,
         );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Client updated successfully'),
+          ),
+        );
+
+        Navigator.pop(context, true);
       } else {
         final result = await _repo.addClient(
           type: _type,

@@ -162,8 +162,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final response = await http.post(
       uri,
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Authorization': 'Bearer ${ApiConfig.staticToken}',
+    'X-Access-Token': token,
       },
       body: jsonEncode({
         'organization_name': organizationName,
