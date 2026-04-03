@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/forgot_password_screen.dart';
+import 'package:my_app/screens/two_factor_login_screen.dart';
 import 'package:my_app/screens/verify_email_screen.dart';
 import 'package:my_app/services/auth_service.dart';
 
@@ -51,6 +52,21 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!mounted) return;
+
+final requires2fa = response['requires_2fa'] == true;
+
+if (requires2fa) {
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => TwoFactorLoginScreen(
+        email: _emailCtrl.text.trim(),
+        rememberMe: _rememberMe,
+      ),
+    ),
+  );
+  return;
+}
 
 final user = response['user'] as Map<String, dynamic>?;
 final organizationName =

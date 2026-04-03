@@ -100,4 +100,18 @@ class InvoicesRepo {
     throw Exception(response['message'] ?? 'Recompute totals failed');
   }
 }
+Future<void> updateInvoiceStatus(int id, String status) async {
+  final res = await _api.post(
+    ApiConfig.updateInvoiceStatus,
+    authRequired: true,
+    body: {
+      'id': id,
+      'status': status,
+    },
+  ) as Map<String, dynamic>;
+
+  if (res['success'] != true) {
+    throw Exception(res['message'] ?? 'Failed to update invoice status');
+  }
+}
 }

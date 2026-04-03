@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
-import '../services/currency_service.dart';
+import 'package:my_app/services/currency_service.dart';
 import '../services/settings_service.dart';
 import '../storage/products_repo.dart';
 import 'add_product_screen.dart';
@@ -201,6 +201,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final cardBg = cs.surfaceContainerHighest.withOpacity(.45);
     final border = cs.outlineVariant.withOpacity(.18);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
       decoration: BoxDecoration(
@@ -209,8 +211,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.05),
-            blurRadius: 16,
+            color: Theme.of(context).shadowColor.withOpacity(isDark ? 0.22 : 0.08),
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
@@ -290,17 +292,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          l10n.productsServices,
-          style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-        ),
+        title: Text(l10n.productsServices),
         actions: [
           IconButton(
             onPressed: _loadProducts,
             icon: const Icon(Icons.refresh),
             tooltip: l10n.refresh,
           ),
-          const SizedBox(width: 6),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -318,88 +316,112 @@ class _ProductsScreenState extends State<ProductsScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadProducts,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest.withOpacity(.55),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: cs.outlineVariant.withOpacity(.25),
+                  TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: l10n.searchProductsHint,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchCtrl.text.isEmpty
+                          ? null
+                          : IconButton(
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() {});
+                              },
+                              icon: const Icon(Icons.close),
+                            ),
+                      filled: true,
+                      fillColor: cs.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
                       ),
-                    ),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      decoration: InputDecoration(
-                        hintText: l10n.searchProductsHint,
-                        prefixIcon: const Icon(Icons.search),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: cs.outlineVariant.withOpacity(0.35),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: cs.primary,
+                          width: 1.5,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  if (_filtered.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 30),
-                      child: Center(
-                        child: Text(
-                          l10n.noProductsYet,
-                          style: t.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: _filtered.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 80),
+                              Center(
+                                child: Text(
+                                  l10n.noProductsYet,
+                                  style: t.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadProducts,
+                            child: ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: _filtered.length,
+                              itemBuilder: (context, index) {
+                                final p = _filtered[index];
+                                final id = int.tryParse(p['id'].toString()) ?? 0;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Dismissible(
+                                    key: ValueKey('product_$id'),
+                                    confirmDismiss: (direction) async {
+                                      if (direction == DismissDirection.startToEnd) {
+                                        await _editProduct(p);
+                                        return false;
+                                      }
+                                      if (direction == DismissDirection.endToStart) {
+                                        final deleted = await _confirmDelete(p);
+                                        return deleted;
+                                      }
+                                      return false;
+                                    },
+                                    background: _swipeBg(
+                                      context,
+                                      icon: Icons.edit,
+                                      label: l10n.edit,
+                                      alignLeft: true,
+                                      color: cs.primaryContainer,
+                                      fg: cs.onPrimaryContainer,
+                                    ),
+                                    secondaryBackground: _swipeBg(
+                                      context,
+                                      icon: Icons.delete_outline,
+                                      label: l10n.delete,
+                                      alignLeft: false,
+                                      color: cs.errorContainer,
+                                      fg: cs.onErrorContainer,
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(22),
+                                      onTap: () => _editProduct(p),
+                                      child: _premiumProductCard(context, p),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ),
-                    )
-                  else
-                    ..._filtered.map((p) {
-                      final id = int.tryParse(p['id'].toString()) ?? 0;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Dismissible(
-                          key: ValueKey('product_$id'),
-                          confirmDismiss: (direction) async {
-                            if (direction == DismissDirection.startToEnd) {
-                              await _editProduct(p);
-                              return false;
-                            }
-                            if (direction == DismissDirection.endToStart) {
-                              final deleted = await _confirmDelete(p);
-                              return deleted;
-                            }
-                            return false;
-                          },
-                          background: _swipeBg(
-                            context,
-                            icon: Icons.edit,
-                            label: l10n.edit,
-                            alignLeft: true,
-                            color: cs.primaryContainer,
-                            fg: cs.onPrimaryContainer,
-                          ),
-                          secondaryBackground: _swipeBg(
-                            context,
-                            icon: Icons.delete_outline,
-                            label: l10n.delete,
-                            alignLeft: false,
-                            color: cs.errorContainer,
-                            fg: cs.onErrorContainer,
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(22),
-                            onTap: () => _editProduct(p),
-                            child: _premiumProductCard(context, p),
-                          ),
-                        ),
-                      );
-                    }),
+                  ),
                 ],
               ),
             ),

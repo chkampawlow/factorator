@@ -186,6 +186,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
   Widget _premiumClientCard(BuildContext context, Map<String, dynamic> c) {
     final t = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final name = (c['name'] ?? '').toString();
     final subtitle = _clientSubtitle(c);
@@ -202,8 +203,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.05),
-            blurRadius: 16,
+            color: Theme.of(context).shadowColor.withOpacity(isDark ? 0.22 : 0.08),
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
@@ -298,17 +299,13 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          l10n.customers,
-          style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-        ),
+        title: Text(l10n.customers),
         actions: [
           IconButton(
             onPressed: _loadClients,
             icon: const Icon(Icons.refresh),
             tooltip: l10n.refresh,
           ),
-          const SizedBox(width: 6),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -327,107 +324,113 @@ class _ClientsScreenState extends State<ClientsScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadClients,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest.withOpacity(.55),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: cs.outlineVariant.withOpacity(.25),
+                  TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: l10n.searchNameMfCin,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchCtrl.text.isEmpty
+                          ? null
+                          : IconButton(
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                _applySearch();
+                              },
+                              icon: const Icon(Icons.close),
+                            ),
+                      filled: true,
+                      fillColor: cs.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
                       ),
-                    ),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      decoration: InputDecoration(
-                        hintText: l10n.searchNameMfCin,
-                        prefixIcon: const Icon(Icons.search),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: cs.outlineVariant.withOpacity(0.35),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: cs.primary,
+                          width: 1.5,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.allCustomers,
-                          style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-                        ),
-                      ),
-                      Text(
-                        '${_filtered.length}',
-                        style: t.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: cs.primary,
-                        ),
-                      ),
-                    ],
+                  Expanded(
+                    child: _filtered.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 80),
+                              Center(
+                                child: Text(
+                                  l10n.noCustomersYet,
+                                  style: t.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadClients,
+                            child: ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: _filtered.length,
+                              itemBuilder: (context, index) {
+                                final c = _filtered[index];
+                                final rawId = c['id'];
+                                final keyId = rawId?.toString() ?? UniqueKey().toString();
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Dismissible(
+                                    key: ValueKey('client_$keyId'),
+                                    confirmDismiss: (direction) async {
+                                      if (direction == DismissDirection.startToEnd) {
+                                        await _editClient(c);
+                                        return false;
+                                      }
+                                      if (direction == DismissDirection.endToStart) {
+                                        return await _confirmDelete(c);
+                                      }
+                                      return false;
+                                    },
+                                    background: _swipeBg(
+                                      context,
+                                      icon: Icons.edit,
+                                      label: l10n.edit,
+                                      alignLeft: true,
+                                      color: cs.primaryContainer,
+                                      fg: cs.onPrimaryContainer,
+                                    ),
+                                    secondaryBackground: _swipeBg(
+                                      context,
+                                      icon: Icons.delete_outline,
+                                      label: l10n.delete,
+                                      alignLeft: false,
+                                      color: cs.errorContainer,
+                                      fg: cs.onErrorContainer,
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(22),
+                                      onTap: () async => _editClient(c),
+                                      child: _premiumClientCard(context, c),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                   ),
-                  const SizedBox(height: 12),
-                  if (_filtered.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 30),
-                      child: Center(
-                        child: Text(
-                          l10n.noCustomersYet,
-                          style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    )
-                  else
-                    ..._filtered.map((c) {
-                      final rawId = c['id'];
-                      final keyId = rawId?.toString() ?? UniqueKey().toString();
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Dismissible(
-                          key: ValueKey('client_$keyId'),
-                          confirmDismiss: (direction) async {
-                            if (direction == DismissDirection.startToEnd) {
-                              await _editClient(c);
-                              return false;
-                            }
-
-                            if (direction == DismissDirection.endToStart) {
-                              return await _confirmDelete(c);
-                            }
-
-                            return false;
-                          },
-                          background: _swipeBg(
-                            context,
-                            icon: Icons.edit,
-                            label: l10n.edit,
-                            alignLeft: true,
-                            color: cs.primaryContainer,
-                            fg: cs.onPrimaryContainer,
-                          ),
-                          secondaryBackground: _swipeBg(
-                            context,
-                            icon: Icons.delete_outline,
-                            label: l10n.delete,
-                            alignLeft: false,
-                            color: cs.errorContainer,
-                            fg: cs.onErrorContainer,
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(22),
-                            onTap: () async => _editClient(c),
-                            child: _premiumClientCard(context, c),
-                          ),
-                        ),
-                      );
-                    }),
                 ],
               ),
             ),

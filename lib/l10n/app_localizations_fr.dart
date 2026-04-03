@@ -233,7 +233,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get recentTransactions => 'Transactions récentes';
 
   @override
-  String get all => 'Tout';
+  String get all => 'Tous';
 
   @override
   String get noInvoicesYet => 'Aucune facture pour le moment.';
@@ -687,4 +687,276 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get passwordResetSuccessful => 'Mot de passe réinitialisé avec succès';
+
+  @override
+  String get twoFactorTitle => 'Authentification à deux facteurs';
+
+  @override
+  String twoFactorSubtitle(Object email) {
+    return 'Saisissez le code à 6 chiffres depuis votre application d’authentification pour $email.';
+  }
+
+  @override
+  String get twoFactorCode => 'Code d’authentification';
+
+  @override
+  String get twoFactorCodeRequired => 'Le code d’authentification est requis';
+
+  @override
+  String get twoFactorCodeInvalid => 'Entrez un code valide à 6 chiffres';
+
+  @override
+  String get twoFactorHint => 'Ouvrez Google Authenticator et saisissez le code actuel à 6 chiffres.';
+
+  @override
+  String get twoFactorVerify => 'Vérifier';
+
+  @override
+  String get twoFactorBack => 'Retour';
+
+  @override
+  String get twoFactorSuccess => 'Vérification en deux facteurs réussie';
+
+  @override
+  String get twoFactorSetupTitle => 'Google Authenticator';
+
+  @override
+  String get twoFactorSetupSubtitle => 'Configurez l’authentification à deux facteurs pour mieux protéger votre compte.';
+
+  @override
+  String get twoFactorStep1 => 'Étape 1';
+
+  @override
+  String get twoFactorScanQr => 'Scannez ce QR code avec Google Authenticator ou saisissez la clé manuelle ci-dessous.';
+
+  @override
+  String get twoFactorManualKey => 'Clé manuelle';
+
+  @override
+  String get twoFactorManualKeyUnavailable => 'Clé manuelle indisponible';
+
+  @override
+  String get twoFactorQrUnavailable => 'QR code indisponible';
+
+  @override
+  String get twoFactorStep2 => 'Étape 2';
+
+  @override
+  String get twoFactorEnterSetupCode => 'Saisissez le code à 6 chiffres généré par votre application d’authentification.';
+
+  @override
+  String get twoFactorEnableButton => 'Activer la 2FA';
+
+  @override
+  String get twoFactorEnabledSuccess => 'Authentification à deux facteurs activée avec succès';
+
+  @override
+  String get somethingWentWrong => 'Une erreur s’est produite';
+
+  @override
+  String get twoFactorDisableTitle => 'Désactiver l’authentification à deux facteurs';
+
+  @override
+  String get twoFactorDisableMessage => 'Voulez-vous vraiment désactiver Google Authenticator pour ce compte ?';
+
+  @override
+  String get twoFactorDisableButton => 'Désactiver';
+
+  @override
+  String get twoFactorDisableCodeTitle => 'Entrez le code de désactivation';
+
+  @override
+  String get twoFactorDisabledSuccess => 'Authentification à deux facteurs désactivée avec succès';
+
+  @override
+  String get twoFactorToggleTitle => 'Google Authenticator';
+
+  @override
+  String get twoFactorToggleOn => 'L’authentification à deux facteurs est activée';
+
+  @override
+  String get twoFactorToggleOff => 'L’authentification à deux facteurs est désactivée';
+
+  @override
+  String get twoFactorLoadingStatus => 'Vérification du statut de l’authentification à deux facteurs...';
+
+  @override
+  String get twoFactorDisabling => 'Désactivation de l’authentification à deux facteurs...';
+
+  @override
+  String get twoFactorPreparing => 'Préparation de l’authentification à deux facteurs...';
+
+  @override
+  String get twoFactorManualKeyCopied => 'Clé manuelle copiée';
+
+  @override
+  String get copy => 'Copier';
+
+  @override
+  String get monthlyRevenue => 'Revenu mensuel';
+
+  @override
+  String get pending => 'En attente';
+
+  @override
+  String get averageInvoice => 'Moyenne facture';
+
+  @override
+  String get topClients => 'Top clients';
+
+  @override
+  String get revenueCurve => 'Courbe des revenus';
+
+  @override
+  String get paidVsUnpaid => 'Payées vs impayées';
+
+  @override
+  String get totalLabel => 'Total';
+
+  @override
+  String get paidLabel => 'Payée';
+
+  @override
+  String get unpaidLabel => 'Non payée';
+
+  @override
+  String get paymentRate => 'Taux de paiement';
+
+  @override
+  String get growthCurve => 'Courbe de croissance';
+
+  @override
+  String get cancelledLabel => 'Annulée';
+
+  @override
+  String get searchInvoiceClientEmail => 'Rechercher facture, client, email...';
+
+  @override
+  String get noInvoicesMatchSearch => 'Aucune facture ne correspond à votre recherche';
+
+  @override
+  String get changeStatus => 'Changer le statut';
+
+  @override
+  String get markAsPaid => 'Marquer comme payé';
+
+  @override
+  String get markAsUnpaid => 'Marquer comme impayé';
+
+  @override
+  String get markAsCancelled => 'Marquer comme annulé';
+
+  @override
+  String get invoiceStatusUpdated => 'Statut de la facture mis à jour';
+
+  @override
+  String get updateFailed => 'Échec de la mise à jour';
+
+  @override
+  String get dueSoon => 'Bientôt due';
+
+  @override
+  String get paid => 'Payées';
+
+  @override
+  String get unpaid => 'Non payées';
+
+  @override
+  String get cancelled => 'Annulées';
+
+  @override
+  String get expenseNotesTitle => 'Notes de dépenses';
+
+  @override
+  String get createExpenseNoteTitle => 'Nouvelle dépense';
+
+  @override
+  String get searchExpenseHint => 'Rechercher par titre, catégorie ou description';
+
+  @override
+  String get noExpenseNotes => 'Aucune note de dépense';
+
+  @override
+  String get noExpenseNotesMatchSearch => 'Aucune note de dépense ne correspond à votre recherche';
+
+  @override
+  String get createYourFirstExpenseNoteToSeeItHere => 'Créez votre première note de dépense pour l’afficher ici';
+
+  @override
+  String get expenseNotePreviewTitleFallback => 'Note de dépense';
+
+  @override
+  String get expenseStatusUpdated => 'Statut de la dépense mis à jour avec succès';
+
+  @override
+  String get expenseNoteDeletedSuccess => 'Note de dépense supprimée avec succès';
+
+  @override
+  String get confirmDeleteTitle => 'Confirmer la suppression';
+
+  @override
+  String get confirmDeleteExpenseMessage => 'Êtes-vous sûr de vouloir supprimer cette note de dépense ?';
+
+  @override
+  String get deleteButton => 'Supprimer';
+
+  @override
+  String get cancelButton => 'Annuler';
+
+  @override
+  String get statusPaid => 'Payé';
+
+  @override
+  String get statusUnpaid => 'Impayé';
+
+  @override
+  String get statusCancelled => 'Annulé';
+
+  @override
+  String get dateLabel => 'Date';
+
+  @override
+  String get categoryLabel => 'Catégorie';
+
+  @override
+  String get editExpenseNoteTitle => 'Modifier la dépense';
+
+  @override
+  String get editExpenseNoteSubtitle => 'Mettez à jour les détails de la note de dépense.';
+
+  @override
+  String get expenseNoteUpdatedSuccess => 'Note de dépense mise à jour avec succès';
+
+  @override
+  String get statusPending => 'En attente';
+
+  @override
+  String get receiptPathLabel => 'Chemin du reçu';
+
+  @override
+  String get receiptPathHint => 'Saisir le chemin du fichier du reçu';
+
+  @override
+  String get updateButton => 'Mettre à jour';
+
+  @override
+  String get createExpenseNoteSubtitle => 'Ajoutez et suivez une nouvelle note de dépense.';
+
+  @override
+  String get expenseNoteCreatedSuccess => 'Note de dépense créée avec succès';
+
+  @override
+  String get title => 'Titre';
+
+  @override
+  String get amount => 'Montant';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get invalidField => 'Valeur invalide';
+
+  @override
+  String get saveButton => 'Enregistrer';
 }

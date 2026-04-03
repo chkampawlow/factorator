@@ -155,7 +155,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get addNewClient => 'إضافة عميل جديد';
 
   @override
-  String get loadFailed => 'فشل التحميل';
+  String get loadFailed => 'فشل في التحميل';
 
   @override
   String get invalidNumber => 'رقم غير صالح';
@@ -265,7 +265,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customerDeletedSuccessfully => 'تم حذف العميل بنجاح';
 
   @override
-  String get deleteFailed => 'فشل الحذف';
+  String get deleteFailed => 'فشل في الحذف';
 
   @override
   String get unnamedCustomer => 'عميل بدون اسم';
@@ -687,4 +687,276 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get passwordResetSuccessful => 'تمت إعادة تعيين كلمة المرور بنجاح';
+
+  @override
+  String get twoFactorTitle => 'المصادقة الثنائية';
+
+  @override
+  String twoFactorSubtitle(Object email) {
+    return 'أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة للحساب $email.';
+  }
+
+  @override
+  String get twoFactorCode => 'رمز المصادقة';
+
+  @override
+  String get twoFactorCodeRequired => 'رمز المصادقة مطلوب';
+
+  @override
+  String get twoFactorCodeInvalid => 'أدخل رمزًا صحيحًا من 6 أرقام';
+
+  @override
+  String get twoFactorHint => 'افتح Google Authenticator وأدخل الرمز الحالي المكوّن من 6 أرقام.';
+
+  @override
+  String get twoFactorVerify => 'تحقق';
+
+  @override
+  String get twoFactorBack => 'رجوع';
+
+  @override
+  String get twoFactorSuccess => 'تم التحقق الثنائي بنجاح';
+
+  @override
+  String get twoFactorSetupTitle => 'Google Authenticator';
+
+  @override
+  String get twoFactorSetupSubtitle => 'قم بإعداد المصادقة الثنائية لحماية حسابك بشكل أفضل.';
+
+  @override
+  String get twoFactorStep1 => 'الخطوة 1';
+
+  @override
+  String get twoFactorScanQr => 'امسح رمز QR هذا باستخدام Google Authenticator أو أدخل المفتاح اليدوي أدناه.';
+
+  @override
+  String get twoFactorManualKey => 'المفتاح اليدوي';
+
+  @override
+  String get twoFactorManualKeyUnavailable => 'المفتاح اليدوي غير متوفر';
+
+  @override
+  String get twoFactorQrUnavailable => 'رمز QR غير متوفر';
+
+  @override
+  String get twoFactorStep2 => 'الخطوة 2';
+
+  @override
+  String get twoFactorEnterSetupCode => 'أدخل الرمز المكوّن من 6 أرقام الذي أنشأه تطبيق المصادقة.';
+
+  @override
+  String get twoFactorEnableButton => 'تفعيل المصادقة الثنائية';
+
+  @override
+  String get twoFactorEnabledSuccess => 'تم تفعيل المصادقة الثنائية بنجاح';
+
+  @override
+  String get somethingWentWrong => 'حدث خطأ ما';
+
+  @override
+  String get twoFactorDisableTitle => 'تعطيل Google Authenticator';
+
+  @override
+  String get twoFactorDisableMessage => 'هل تريد فعلاً تعطيل المصادقة الثنائية؟';
+
+  @override
+  String get twoFactorDisableButton => 'تعطيل';
+
+  @override
+  String get twoFactorDisableCodeTitle => 'أدخل رمز التعطيل';
+
+  @override
+  String get twoFactorDisabledSuccess => 'تم تعطيل المصادقة الثنائية بنجاح';
+
+  @override
+  String get twoFactorToggleTitle => 'Google Authenticator';
+
+  @override
+  String get twoFactorToggleOn => 'المصادقة الثنائية مفعلة';
+
+  @override
+  String get twoFactorToggleOff => 'المصادقة الثنائية غير مفعلة';
+
+  @override
+  String get twoFactorLoadingStatus => 'جاري التحقق من حالة المصادقة الثنائية...';
+
+  @override
+  String get twoFactorDisabling => 'جاري تعطيل المصادقة الثنائية...';
+
+  @override
+  String get twoFactorPreparing => 'جاري إعداد رمز QR...';
+
+  @override
+  String get twoFactorManualKeyCopied => 'تم نسخ المفتاح اليدوي';
+
+  @override
+  String get copy => 'نسخ';
+
+  @override
+  String get monthlyRevenue => 'الإيرادات الشهرية';
+
+  @override
+  String get pending => 'قيد الانتظار';
+
+  @override
+  String get averageInvoice => 'متوسط الفاتورة';
+
+  @override
+  String get topClients => 'أفضل العملاء';
+
+  @override
+  String get revenueCurve => 'منحنى الإيرادات';
+
+  @override
+  String get paidVsUnpaid => 'المدفوعة مقابل غير المدفوعة';
+
+  @override
+  String get totalLabel => 'الإجمالي';
+
+  @override
+  String get paidLabel => 'مدفوعة';
+
+  @override
+  String get unpaidLabel => 'غير مدفوعة';
+
+  @override
+  String get paymentRate => 'معدل الدفع';
+
+  @override
+  String get growthCurve => 'منحنى النمو';
+
+  @override
+  String get cancelledLabel => 'ملغاة';
+
+  @override
+  String get searchInvoiceClientEmail => 'ابحث عن فاتورة، عميل، بريد...';
+
+  @override
+  String get noInvoicesMatchSearch => 'لا توجد فواتير تطابق البحث';
+
+  @override
+  String get changeStatus => 'تغيير الحالة';
+
+  @override
+  String get markAsPaid => 'تعيين كمدفوع';
+
+  @override
+  String get markAsUnpaid => 'تعيين كغير مدفوع';
+
+  @override
+  String get markAsCancelled => 'تعيين كملغى';
+
+  @override
+  String get invoiceStatusUpdated => 'تم تحديث حالة الفاتورة';
+
+  @override
+  String get updateFailed => 'فشل في التحديث';
+
+  @override
+  String get dueSoon => 'قريب الاستحقاق';
+
+  @override
+  String get paid => 'مدفوعة';
+
+  @override
+  String get unpaid => 'غير مدفوعة';
+
+  @override
+  String get cancelled => 'ملغاة';
+
+  @override
+  String get expenseNotesTitle => 'ملاحظات المصاريف';
+
+  @override
+  String get createExpenseNoteTitle => 'مصروف جديد';
+
+  @override
+  String get searchExpenseHint => 'ابحث حسب العنوان أو الفئة أو الوصف';
+
+  @override
+  String get noExpenseNotes => 'لا توجد ملاحظات مصاريف';
+
+  @override
+  String get noExpenseNotesMatchSearch => 'لا توجد ملاحظات مصاريف تطابق البحث';
+
+  @override
+  String get createYourFirstExpenseNoteToSeeItHere => 'قم بإنشاء أول ملاحظة مصروف لتظهر هنا';
+
+  @override
+  String get expenseNotePreviewTitleFallback => 'ملاحظة مصروف';
+
+  @override
+  String get expenseStatusUpdated => 'تم تحديث حالة المصروف بنجاح';
+
+  @override
+  String get expenseNoteDeletedSuccess => 'تم حذف ملاحظة المصروف بنجاح';
+
+  @override
+  String get confirmDeleteTitle => 'تأكيد الحذف';
+
+  @override
+  String get confirmDeleteExpenseMessage => 'هل أنت متأكد من حذف هذه الملاحظة؟';
+
+  @override
+  String get deleteButton => 'حذف';
+
+  @override
+  String get cancelButton => 'إلغاء';
+
+  @override
+  String get statusPaid => 'مدفوع';
+
+  @override
+  String get statusUnpaid => 'غير مدفوع';
+
+  @override
+  String get statusCancelled => 'ملغى';
+
+  @override
+  String get dateLabel => 'التاريخ';
+
+  @override
+  String get categoryLabel => 'الفئة';
+
+  @override
+  String get editExpenseNoteTitle => 'تعديل المصروف';
+
+  @override
+  String get editExpenseNoteSubtitle => 'قم بتحديث تفاصيل ملاحظة المصروف.';
+
+  @override
+  String get expenseNoteUpdatedSuccess => 'تم تحديث ملاحظة المصروف بنجاح';
+
+  @override
+  String get statusPending => 'قيد الانتظار';
+
+  @override
+  String get receiptPathLabel => 'مسار الإيصال';
+
+  @override
+  String get receiptPathHint => 'أدخل مسار ملف الإيصال';
+
+  @override
+  String get updateButton => 'تحديث';
+
+  @override
+  String get createExpenseNoteSubtitle => 'أضف وتتبع ملاحظة مصروف جديدة.';
+
+  @override
+  String get expenseNoteCreatedSuccess => 'تم إنشاء ملاحظة المصروف بنجاح';
+
+  @override
+  String get title => 'العنوان';
+
+  @override
+  String get amount => 'المبلغ';
+
+  @override
+  String get description => 'الوصف';
+
+  @override
+  String get invalidField => 'قيمة غير صالحة';
+
+  @override
+  String get saveButton => 'حفظ';
 }

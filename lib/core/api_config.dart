@@ -1,5 +1,5 @@
 class ApiConfig {
-  static String baseUrl = 'https://ins-women-fcc-presidential.trycloudflare.com/backend/';
+  static String baseUrl = 'http://192.168.1.144/backend';
 
   // 🔐 STATIC TOKEN
   static const String staticToken = 'a3Jmk8xjRHe443zusjKxAaE7PkHqrFPq';
@@ -35,6 +35,9 @@ class ApiConfig {
   static String get addInvoice => '$baseUrl/invoices/add_invoice.php';
   static String get recomputeInvoiceTotals =>
       '$baseUrl/invoices/recompute_invoice_totals.php';
+  static String get updateInvoiceStatus =>
+    '$baseUrl/invoices/update_invoice_status.php';
+  
 
   // Invoice items
   static String get addInvoiceItem =>
@@ -65,4 +68,20 @@ static String get resetPassword =>
     '$baseUrl/auth/reset_password.php';
 
 static String get sendInvoicePdf =>
-    '$baseUrl/mailer/send_invoice_pdf.php';}
+    '$baseUrl/mailer/send_invoice_pdf.php';
+    
+//2fa services
+static String get verify2faLogin => '$baseUrl/auth/verify_2fa_login.php';    
+static String get enable2fa => '$baseUrl/auth/enable_2fa.php';
+static String get confirm2fa => '$baseUrl/auth/confirm_2fa.php';
+static String get disable2fa => '$baseUrl/auth/disable_2fa.php';
+static String get twofaStatus => '$baseUrl/auth/twofa_status.php';
+ 
+ 
+//Expences repo
+static String get expenseNotesList => '$baseUrl/expense_notes/list.php';
+static String get expenseNotesAdd => '$baseUrl/expense_notes/add.php';
+static String get expenseNotesUpdate => '$baseUrl/expense_notes/update.php';
+static String get expenseNotesDelete => '$baseUrl/expense_notes/delete.php';
+static String get expenseNotesUpdateStatus => '$baseUrl/expense_notes/update_status.php'; 
+    }

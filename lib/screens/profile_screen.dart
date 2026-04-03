@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/screens/enable_2fa_screen.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/location_service.dart';
 import 'package:my_app/services/settings_service.dart';
@@ -693,6 +694,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: Text(l10n.toggleTheme),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: widget.onToggleTheme,
+                              ),
+                              const Divider(height: 1),
+                              ListTile(
+                                leading: const Icon(Icons.shield_outlined),
+                                title: const Text('Google Authenticator'),
+                                subtitle: const Text('Enable two-factor authentication'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const Enable2FAScreen(),
+                                    ),
+                                  );
+                                },
                               ),
                               const Divider(height: 1),
                               ListTile(

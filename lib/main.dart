@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/screens/expense_notes_screen.dart';
 import 'package:my_app/screens/profile_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
@@ -272,6 +273,7 @@ class _MainShellState extends State<MainShell> {
       const ClientsScreen(),
       const ProductsScreen(),
       const InvoicesScreen(),
+      const ExpenseNotesScreen(),
       ProfileScreen(
         onToggleTheme: widget.onToggleTheme,
         onChangePrimaryColor: widget.onChangePrimaryColor,
@@ -355,6 +357,12 @@ class _MainShellState extends State<MainShell> {
                       icon: const Icon(Icons.receipt_long_outlined),
                       selectedIcon: const Icon(Icons.receipt_long_rounded),
                       label: l10n.invoices,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.account_balance_wallet_outlined),
+                      selectedIcon:
+                          const Icon(Icons.account_balance_wallet_rounded),
+                      label: l10n.expenseNotesTitle,
                     ),
                     NavigationDestination(
                       icon: const Icon(Icons.person_outline),

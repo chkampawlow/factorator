@@ -28,6 +28,11 @@ class AuthService {
     debugPrint('AuthService.login response: $data');
 
     if (data['success'] == true) {
+      if (data['requires_2fa'] == true) {
+        debugPrint('2FA required, skipping token storage for now.');
+        return data;
+      }
+
       final accessToken = (data['access_token'] ?? '').toString();
       final refreshToken = (data['refresh_token'] ?? '').toString();
 
@@ -58,7 +63,6 @@ class AuthService {
     debugPrint('AuthService.login failed: ${data['message']}');
     throw Exception(data['message'] ?? 'Login failed');
   }
-
 
   Future<String?> getAccessToken() async {
     return await _storage.read(key: 'access_token');
@@ -92,7 +96,6 @@ class AuthService {
     final Map<String, dynamic> data = await _api.post(
       ApiConfig.signup,
       body: {
-
         'organization_name': organizationName,
         'fiscal_id': fiscalId,
         'email': email,
@@ -108,58 +111,153 @@ class AuthService {
 
     throw Exception(data['message'] ?? 'Signup failed');
   }
+
   Future<Map<String, dynamic>> me() async {
-  final Map<String, dynamic> data = await _api.get(
-    ApiConfig.me,
-    authRequired: true,
-  ) as Map<String, dynamic>;
+    final Map<String, dynamic> data = await _api.get(
+      ApiConfig.me,
+      authRequired: true,
+    ) as Map<String, dynamic>;
 
-  if (data['success'] == true) {
-    return Map<String, dynamic>.from(data['user'] as Map);
+    if (data['success'] == true) {
+      return Map<String, dynamic>.from(data['user'] as Map);
+    }
+
+    throw Exception(data['message'] ?? 'Invalid session');
   }
-
-  throw Exception(data['message'] ?? 'Invalid session');
-}
 
   Future<void> logout() async {
     await _api.clearTokens();
   }
-Future<void> sendVerificationEmail(String language) async {
-  await ApiClient.instance.post(
-    ApiConfig.sendVerificationEmail,
+
+  Future<void> sendVerificationEmail(String language) async {
+    await _api.post(
+      ApiConfig.sendVerificationEmail,
+      authRequired: true,
+      body: {
+        'language': language,
+      },
+    );
+  }
+
+  Future<void> verifyEmail(String code) async {
+    await _api.post(
+      ApiConfig.verifyEmail,
+      authRequired: true,
+      body: {
+        'code': code,
+      },
+    );
+  }
+
+  Future<void> forgotPassword(String email, String language) async {
+    await _api.post(
+      ApiConfig.forgotPassword,
+      body: {
+        'email': email,
+        'language': language,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> verify2faLogin({
+    required String email,
+    required String code,
+    required bool rememberMe,
+  }) async {
+    final Map<String, dynamic> data = await _api.post(
+      ApiConfig.verify2faLogin,
+      body: {
+        'email': email,
+        'code': code,
+        'remember_me': rememberMe,
+      },
+    ) as Map<String, dynamic>;
+
+    if (data['success'] == true) {
+      final accessToken = (data['access_token'] ?? '').toString();
+      final refreshToken = (data['refresh_token'] ?? '').toString();
+
+      if (accessToken.isEmpty || refreshToken.isEmpty) {
+        throw Exception('Missing authentication tokens');
+      }
+
+      await _storage.write(key: 'access_token', value: accessToken);
+      await _storage.write(key: 'refresh_token', value: refreshToken);
+      await _storage.write(
+        key: 'remember_me',
+        value: rememberMe ? 'true' : 'false',
+      );
+
+      return data;
+    }
+
+    throw Exception(data['message'] ?? '2FA verification failed');
+  }
+
+  Future<void> resetPassword(String code, String password) async {
+    await _api.post(
+      ApiConfig.resetPassword,
+      body: {
+        'code': code,
+        'password': password,
+      },
+    );
+  }
+
+  Future<void> confirm2fa(String code) async {
+  final Map<String, dynamic> data = await _api.post(
+    ApiConfig.confirm2fa,
     authRequired: true,
     body: {
-      'language': language,
+      'code': code,
     },
-  );
-}
+  ) as Map<String, dynamic>;
 
-Future<void> verifyEmail(String code) async {
-  await ApiClient.instance.post(
-    ApiConfig.verifyEmail,
-    authRequired: true, // 🔥 ADD THIS
+  if (data['success'] == true) {
+    return;
+  }
+
+  throw Exception(data['message'] ?? 'Failed to confirm 2FA');
+}
+Future<Map<String, dynamic>> enable2fa() async {
+  final Map<String, dynamic> data = await _api.post(
+    ApiConfig.enable2fa,
+    authRequired: true,
+  ) as Map<String, dynamic>;
+
+  if (data['success'] == true) {
+    return data;
+  }
+
+  throw Exception(data['message'] ?? 'Failed to initialize 2FA');
+}
+Future<void> disable2fa(String code) async {
+  final Map<String, dynamic> data = await _api.post(
+    ApiConfig.disable2fa,
+    authRequired: true,
     body: {
       'code': code,
     },
-  );
-}
-Future<void> forgotPassword(String email, String language) async {
-  await ApiClient.instance.post(
-    ApiConfig.forgotPassword,
-    body: {
-      'email': email,
-      'language': language,
-    },
-  );
+  ) as Map<String, dynamic>;
+
+  if (data['success'] == true) {
+    return;
+  }
+
+  throw Exception(data['message'] ?? 'Failed to disable 2FA');
 }
 
-Future<void> resetPassword(String code, String password) async {
-  await ApiClient.instance.post(
-    ApiConfig.resetPassword,
-    body: {
-      'code': code,
-      'password': password,
-    },
-  );
+Future<bool> get2faStatus() async {
+  final Map<String, dynamic> data = await _api.get(
+    ApiConfig.twofaStatus,
+    authRequired: true,
+  ) as Map<String, dynamic>;
+
+  if (data['success'] == true) {
+    return data['enabled'] == true;
+  }
+
+  throw Exception(data['message'] ?? 'Failed to fetch 2FA status');
 }
+
 }
