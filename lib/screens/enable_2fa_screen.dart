@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class Enable2FAScreen extends StatefulWidget {
@@ -125,10 +126,7 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
       await _authService.disable2fa(code);
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.twoFactorDisabledSuccess)),
-      );
+      AppAlerts.success(context, l10n.twoFactorDisabledSuccess);
 
       setState(() {
         _enabled = false;
@@ -218,16 +216,12 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
     final code = _codeCtrl.text.trim();
 
     if (code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.twoFactorCodeRequired)),
-      );
+      AppAlerts.warning(context, l10n.twoFactorCodeRequired);
       return;
     }
 
     if (!RegExp(r'^\d{6}$').hasMatch(code)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.twoFactorCodeInvalid)),
-      );
+      AppAlerts.warning(context, l10n.twoFactorCodeInvalid);
       return;
     }
 
@@ -240,10 +234,7 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
       await _authService.confirm2fa(code);
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.twoFactorEnabledSuccess)),
-      );
+      AppAlerts.success(context, l10n.twoFactorEnabledSuccess);
 
       setState(() {
         _enabled = true;
@@ -341,7 +332,7 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: theme.shadowColor.withOpacity(theme.brightness == Brightness.dark ? 0.22 : 0.08),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -354,11 +345,11 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cs.surface,
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: theme.shadowColor.withOpacity(theme.brightness == Brightness.dark ? 0.18 : 0.06),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -372,14 +363,14 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
                   : QrImageView(
                       data: _qrUrl!,
                       size: 220,
-                      backgroundColor: Colors.white,
+                      backgroundColor: cs.surface,
                       eyeStyle: QrEyeStyle(
                         eyeShape: QrEyeShape.square,
                         color: cs.primary,
                       ),
-                      dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleStyle: QrDataModuleStyle(
                         dataModuleShape: QrDataModuleShape.square,
-                        color: Colors.black,
+                        color: cs.onSurface,
                       ),
                     ),
             ),
@@ -424,11 +415,7 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
                                 ClipboardData(text: _secret!),
                               );
                               if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n.twoFactorManualKeyCopied),
-                                ),
-                              );
+                              AppAlerts.success(context, l10n.twoFactorManualKeyCopied);
                             },
                       icon: const Icon(Icons.copy_rounded),
                       label: Text(l10n.copy),
@@ -576,8 +563,26 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
                                         decoration: InputDecoration(
                                           labelText: l10n.twoFactorCode,
                                           prefixIcon: const Icon(Icons.numbers_rounded),
-                                          border: const OutlineInputBorder(),
                                           counterText: '',
+                                          filled: true,
+                                          fillColor: cs.surface,
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            borderSide: BorderSide(
+                                              color: cs.outlineVariant.withOpacity(0.35),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            borderSide: BorderSide(
+                                              color: cs.primary,
+                                              width: 1.5,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                       if (_error != null) ...[
@@ -604,12 +609,12 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
                                         child: FilledButton(
                                           onPressed: _confirming ? null : _confirm2FA,
                                           child: _confirming
-                                              ? const SizedBox(
+                                              ? SizedBox(
                                                   height: 22,
                                                   width: 22,
                                                   child: CircularProgressIndicator(
                                                     strokeWidth: 2.4,
-                                                    color: Colors.white,
+                                                    color: cs.onPrimary,
                                                   ),
                                                 )
                                               : Text(l10n.twoFactorEnableButton),

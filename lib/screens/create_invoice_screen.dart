@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import '../storage/clients_repo.dart';
 import '../storage/invoices_repo.dart';
 import 'add_client_screen.dart';
@@ -76,8 +77,9 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l10n.clientSelectionFailed}: $e')),
+      AppAlerts.error(
+        context,
+        '${l10n.clientSelectionFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     }
   }
@@ -86,9 +88,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     if (_selectedClient == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.pleaseChooseClient)),
-      );
+      AppAlerts.warning(context, l10n.pleaseChooseClient);
       return;
     }
 
@@ -120,8 +120,9 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l10n.saveFailed}: $e')),
+      AppAlerts.error(
+        context,
+        '${l10n.saveFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     } finally {
       if (mounted) {
@@ -348,7 +349,39 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _error != null
-                        ? Center(child: Text('${l10n.loadFailed}: $_error'))
+                        ? Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.55),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.error.withOpacity(0.25),
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.error_rounded,
+                                    color: Theme.of(context).colorScheme.onErrorContainer,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      '${l10n.loadFailed}: ${_error ?? ''}',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onErrorContainer,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
                         : ListView.builder(
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) {

@@ -499,8 +499,52 @@
   "amount": "Amount",
   "description": "Description",
   "invalidField": "Invalid value",
-  "saveButton": "Save"
+  "saveButton": "Save",
+  "notAuthenticated": "Not authenticated",
+"currencyChangedTo": "Currency changed to {currency}",
+"@currencyChangedTo": {
+  "placeholders": {
+    "currency": { "type": "String" }
+  }
+},
+"languageChangedTo": "Language changed to {language}",
+"@languageChangedTo": {
+  "placeholders": {
+    "language": { "type": "String" }
+  }
+},
+"companyInfoIncompleteTitle": "Company information is incomplete",
+"companyInfoIncompleteBody": "Please complete your company information.",
+"googleAuthenticator": "Google Authenticator",
+"enableTwoFactorAuthentication": "Enable two-factor authentication",
 
+
+  "monthlyExpenses": "Monthly expenses",
+  "netMonthlyRevenue": "Net monthly revenue",
+    "alertsTitle": "Alerts",
+  "alertsSnackbars": "Snackbars",
+  "alertsBanners": "Banners",
+  "alertsDialogs": "Dialogs",
+  "alertsBottomSheets": "Bottom sheets",
+  "alertSuccessTitle": "Success",
+  "alertSuccessBody": "Saved successfully.",
+  "alertInfoTitle": "Information",
+  "alertInfoBody": "This is an informational message.",
+  "alertWarningTitle": "Warning",
+  "alertWarningBody": "Check your inputs before continuing.",
+  "alertErrorTitle": "Error",
+  "alertErrorBody": "Something went wrong. Try again.",
+  "alertConfirmTitle": "Confirm action",
+  "alertConfirmBody": "Do you want to continue?",
+  "alertBottomSheetTitle": "Attention required",
+  "alertBottomSheetBody": "Review the details before saving.",
+  "alertSavedBody": "Changes saved.",
+  "alertUndo": "Undo",
+  "alertDismiss": "Dismiss",
+  "french": "French",
+"english": "English",
+"arabic": "Arabic",
+"checkingSession": "Checking session..."
 }
 
 

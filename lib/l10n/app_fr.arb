@@ -521,7 +521,52 @@
   "amount": "Montant",
   "description": "Description",
   "invalidField": "Valeur invalide",
-  "saveButton": "Enregistrer"
+  "saveButton": "Enregistrer",
+  "notAuthenticated": "Non authentifié",
+"currencyChangedTo": "Devise changée vers {currency}",
+"@currencyChangedTo": {
+  "placeholders": {
+    "currency": { "type": "String" }
+  }
+},
+"languageChangedTo": "Langue changée vers {language}",
+"@languageChangedTo": {
+  "placeholders": {
+    "language": { "type": "String" }
+  }
+},
+"companyInfoIncompleteTitle": "Informations de l’entreprise incomplètes",
+"companyInfoIncompleteBody": "Veuillez compléter les informations de votre entreprise.",
+"googleAuthenticator": "Google Authenticator",
+"enableTwoFactorAuthentication": "Activer l’authentification à deux facteurs",
+  "monthlyExpenses": "Dépenses mensuelles",
+  "netMonthlyRevenue": "Revenu mensuel net",
+  
+  "alertsTitle": "Alertes",
+  "alertsSnackbars": "Snackbars",
+  "alertsBanners": "Bannières",
+  "alertsDialogs": "Dialogues",
+  "alertsBottomSheets": "Feuilles",
+  "alertSuccessTitle": "Succès",
+  "alertSuccessBody": "Enregistré avec succès.",
+  "alertInfoTitle": "Information",
+  "alertInfoBody": "Ceci est un message d’information.",
+  "alertWarningTitle": "Avertissement",
+  "alertWarningBody": "Vérifiez vos champs avant de continuer.",
+  "alertErrorTitle": "Erreur",
+  "alertErrorBody": "Une erreur s’est produite. Réessayez.",
+  "alertConfirmTitle": "Confirmer l’action",
+  "alertConfirmBody": "Voulez-vous continuer ?",
+  "alertBottomSheetTitle": "Attention requise",
+  "alertBottomSheetBody": "Vérifiez les détails avant d’enregistrer.",
+  "alertSavedBody": "Modifications enregistrées.",
+  "alertUndo": "Annuler",
+  "alertDismiss": "Fermer",
+  "french": "Français",
+"english": "Anglais",
+"arabic": "Arabe",
+"checkingSession": "Vérification de la session..."
+
 }
 
 

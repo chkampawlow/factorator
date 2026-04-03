@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/expense_notes_repo.dart';
@@ -204,16 +205,12 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
   }
 
   void _snack(String msg, {bool isError = false}) {
-    final cs = Theme.of(context).colorScheme;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: isError ? cs.errorContainer : cs.primaryContainer,
-        showCloseIcon: true,
-        closeIconColor: isError ? cs.onErrorContainer : cs.onPrimaryContainer,
-      ),
-    );
+    if (!mounted) return;
+    if (isError) {
+      AppAlerts.error(context, msg);
+    } else {
+      AppAlerts.success(context, msg);
+    }
   }
 
   @override

@@ -1956,6 +1956,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get saveButton;
+
+  /// No description provided for @notAuthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not authenticated'**
+  String get notAuthenticated;
+
+  /// No description provided for @currencyChangedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency changed to {currency}'**
+  String currencyChangedTo(String currency);
+
+  /// No description provided for @languageChangedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Language changed to {language}'**
+  String languageChangedTo(String language);
+
+  /// No description provided for @companyInfoIncompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Company information is incomplete'**
+  String get companyInfoIncompleteTitle;
+
+  /// No description provided for @companyInfoIncompleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete your company information.'**
+  String get companyInfoIncompleteBody;
+
+  /// No description provided for @googleAuthenticator.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Authenticator'**
+  String get googleAuthenticator;
+
+  /// No description provided for @enableTwoFactorAuthentication.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable two-factor authentication'**
+  String get enableTwoFactorAuthentication;
+
+  /// No description provided for @monthlyExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly expenses'**
+  String get monthlyExpenses;
+
+  /// No description provided for @netMonthlyRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Net monthly revenue'**
+  String get netMonthlyRevenue;
+
+  /// No description provided for @alertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts'**
+  String get alertsTitle;
+
+  /// No description provided for @alertsSnackbars.
+  ///
+  /// In en, this message translates to:
+  /// **'Snackbars'**
+  String get alertsSnackbars;
+
+  /// No description provided for @alertsBanners.
+  ///
+  /// In en, this message translates to:
+  /// **'Banners'**
+  String get alertsBanners;
+
+  /// No description provided for @alertsDialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Dialogs'**
+  String get alertsDialogs;
+
+  /// No description provided for @alertsBottomSheets.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottom sheets'**
+  String get alertsBottomSheets;
+
+  /// No description provided for @alertSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get alertSuccessTitle;
+
+  /// No description provided for @alertSuccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved successfully.'**
+  String get alertSuccessBody;
+
+  /// No description provided for @alertInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Information'**
+  String get alertInfoTitle;
+
+  /// No description provided for @alertInfoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This is an informational message.'**
+  String get alertInfoBody;
+
+  /// No description provided for @alertWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get alertWarningTitle;
+
+  /// No description provided for @alertWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your inputs before continuing.'**
+  String get alertWarningBody;
+
+  /// No description provided for @alertErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get alertErrorTitle;
+
+  /// No description provided for @alertErrorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get alertErrorBody;
+
+  /// No description provided for @alertConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm action'**
+  String get alertConfirmTitle;
+
+  /// No description provided for @alertConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to continue?'**
+  String get alertConfirmBody;
+
+  /// No description provided for @alertBottomSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attention required'**
+  String get alertBottomSheetTitle;
+
+  /// No description provided for @alertBottomSheetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the details before saving.'**
+  String get alertBottomSheetBody;
+
+  /// No description provided for @alertSavedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes saved.'**
+  String get alertSavedBody;
+
+  /// No description provided for @alertUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get alertUndo;
+
+  /// No description provided for @alertDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get alertDismiss;
+
+  /// No description provided for @french.
+  ///
+  /// In en, this message translates to:
+  /// **'French'**
+  String get french;
+
+  /// No description provided for @english.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
+  /// No description provided for @arabic.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic'**
+  String get arabic;
+
+  /// No description provided for @checkingSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking session...'**
+  String get checkingSession;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

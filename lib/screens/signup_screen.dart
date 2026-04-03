@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/location_service.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -135,7 +136,7 @@ class _SignupScreenState extends State<SignupScreen> {
           return false;
         }
         if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(fiscalId)) {
-          _setError('Invalid fiscal ID');
+          _setError(l10n.invalidFiscalId);
           return false;
         }
         break;
@@ -209,7 +210,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       await _authService.signup(
-
         organizationName: _organizationCtrl.text.trim(),
         fiscalId: _fiscalIdCtrl.text.trim().toUpperCase(),
         email: _emailCtrl.text.trim(),
@@ -220,17 +220,17 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.accountCreatedSuccessfully),
-        ),
-      );
+      AppAlerts.success(context, l10n.accountCreatedSuccessfully);
 
       Navigator.pop(context);
     } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = msg;
       });
+      if (mounted) {
+        AppAlerts.error(context, msg);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -636,12 +636,12 @@ class _SignupScreenState extends State<SignupScreen> {
                               ? _submit
                               : _continueAction),
                       child: _loading
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 22,
                               width: 22,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.4,
-                                color: Colors.white,
+                                color: cs.onPrimary,
                               ),
                             )
                           : Text(

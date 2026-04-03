@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/core/api_client.dart';
 import 'package:my_app/core/api_config.dart';
 import 'package:printing/printing.dart';
@@ -80,19 +81,12 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                     setState(() {
                       _emailSent = true;
                     });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('PDF sent successfully'),
-                      ),
-                    );
+                    AppAlerts.success(context, 'PDF sent successfully');
                   } catch (e) {
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          e.toString().replaceFirst('Exception: ', ''),
-                        ),
-                      ),
+                    AppAlerts.error(
+                      context,
+                      e.toString().replaceFirst('Exception: ', ''),
                     );
                   } finally {
                     if (mounted) {
@@ -123,8 +117,8 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 16,
+                  color: theme.shadowColor.withOpacity(theme.brightness == Brightness.dark ? 0.22 : 0.08),
+                  blurRadius: 20,
                   offset: const Offset(0, 6),
                 ),
               ],
@@ -169,7 +163,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
           if (_sending)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.18),
+                color: cs.scrim.withOpacity(0.18),
                 child: const Center(
                   child: Card(
                     child: Padding(

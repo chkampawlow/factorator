@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import '../storage/clients_repo.dart';
 import 'add_client_screen.dart';
 
@@ -76,10 +77,10 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
       setState(() => _loading = false);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${AppLocalizations.of(context)!.failedToLoadCustomers}: ${e.toString().replaceFirst('Exception: ', '')}'),
-        ),
+      final l10n = AppLocalizations.of(context)!;
+      AppAlerts.error(
+        context,
+        '${l10n.failedToLoadCustomers}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     }
   }
@@ -126,17 +127,15 @@ class _ClientsScreenState extends State<ClientsScreen> {
     final rawId = client['id'];
 
     if (rawId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.missingClientId)),
-      );
+      final l10n = AppLocalizations.of(context)!;
+      AppAlerts.error(context, l10n.missingClientId);
       return false;
     }
 
     final int? id = rawId is int ? rawId : int.tryParse(rawId.toString());
     if (id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.invalidClientId)),
-      );
+      final l10n = AppLocalizations.of(context)!;
+      AppAlerts.error(context, l10n.invalidClientId);
       return false;
     }
 
@@ -165,19 +164,18 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
       if (!mounted) return false;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.customerDeletedSuccessfully)),
-      );
+      final l10n = AppLocalizations.of(context)!;
+      AppAlerts.success(context, l10n.customerDeletedSuccessfully);
 
-      await _loadClients();
+      // Do NOT refresh here; handled elsewhere.
       return true;
     } catch (e) {
       if (!mounted) return false;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${AppLocalizations.of(context)!.deleteFailed}: ${e.toString().replaceFirst('Exception: ', '')}'),
-        ),
+      final l10n = AppLocalizations.of(context)!;
+      AppAlerts.error(
+        context,
+        '${l10n.deleteFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
       return false;
     }

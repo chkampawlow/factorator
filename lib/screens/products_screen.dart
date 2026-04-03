@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/services/currency_service.dart';
 import '../services/settings_service.dart';
 import '../storage/products_repo.dart';
@@ -54,11 +55,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<void> _loadProducts() async {
-    setState(() => _loading = true);
+    if (mounted) {
+      setState(() => _loading = true);
+    }
 
     try {
       final data = await _repo.getAllProducts();
       final currency = await _settingsService.getCurrency();
+
+      if (!mounted) return;
+
       setState(() {
         _products = data;
         _filtered = data;
@@ -66,14 +72,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _loading = false;
       });
 
-      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l10n.loadFailed}: $e')),
+      AppAlerts.error(
+        context,
+        '${l10n.loadFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     }
   }
@@ -114,15 +122,23 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
 
     if (ok == true) {
-      await _repo.deleteProduct(product['id'] as int);
+      final rawId = product['id'];
+      final id = rawId is int ? rawId : int.tryParse(rawId.toString());
+      if (id == null || id <= 0) {
+        AppAlerts.error(context, l10n.invalidProductId);
+        return false;
+      }
+
+      await _repo.deleteProduct(id);
 
       if (!mounted) return false;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.productDeleted)),
-      );
+      setState(() {
+        _products.removeWhere((x) => x['id'].toString() == id.toString());
+        _filtered.removeWhere((x) => x['id'].toString() == id.toString());
+      });
 
-      await _loadProducts();
+      AppAlerts.success(context, l10n.productDeleted);
       return true;
     }
 

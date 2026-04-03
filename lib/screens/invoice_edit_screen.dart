@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/pdf_preview_screen.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/invoice_pdf_service.dart';
@@ -26,6 +27,7 @@ class InvoiceEditScreen extends StatefulWidget {
 class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   bool _loading = true;
   String? _error;
+  bool _clientDeleted = false;
 
   final _clientsRepo = ClientsRepo();
   final _productsRepo = ProductsRepo();
@@ -83,6 +85,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _clientDeleted = false;
     });
 
     try {
@@ -98,9 +101,19 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
           : int.tryParse(rawClientId.toString());
 
       Map<String, dynamic>? client;
+      bool clientDeleted = false;
 
       if (clientId != null && clientId > 0) {
-        client = await _clientsRepo.getClientById(clientId);
+        try {
+          client = await _clientsRepo.getClientById(clientId);
+          if (client == null || client.isEmpty) {
+            clientDeleted = true;
+            client = null;
+          }
+        } catch (_) {
+          clientDeleted = true;
+          client = null;
+        }
       }
 
       final inv = {
@@ -123,11 +136,11 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         'userLastName': currentUser['last_name'] ?? '',
         'userFiscalId': currentUser['fiscal_id'] ?? '',
         'userOrganizationName': currentUser['organization_name'] ?? '',
-          'userPhone': currentUser['phone'] ?? '',
-  'userFax': currentUser['fax'] ?? '',
-  'userAddress': currentUser['address'] ?? '',
-  'userWebsite': currentUser['website'] ?? '',
-  'userEmail': currentUser['email'] ?? '',
+        'userPhone': currentUser['phone'] ?? '',
+        'userFax': currentUser['fax'] ?? '',
+        'userAddress': currentUser['address'] ?? '',
+        'userWebsite': currentUser['website'] ?? '',
+        'userEmail': currentUser['email'] ?? '',
         'currency': currency,
       };
 
@@ -138,6 +151,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         _currency = currency;
         _products = products;
         _items = items;
+        _clientDeleted = clientDeleted;
 
         if (products.isEmpty) {
           _selectedProduct = null;
@@ -166,6 +180,50 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         _loading = false;
       });
     }
+  }
+  Widget _clientDeletedBanner(ColorScheme cs) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.errorContainer.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: cs.error.withOpacity(0.25),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.person_off_outlined,
+            color: cs.onErrorContainer,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Client has been deleted',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: cs.onErrorContainer,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'This invoice still exists, but the client reference is missing.',
+                  style: TextStyle(
+                    color: cs.onErrorContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   double _productPrice() {
@@ -213,7 +271,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     final qty = _qty();
 
     if (qty <= 0) {
-      _toast(l10n.qtyMustBeGreaterThanZero);
+      _toast(l10n.qtyMustBeGreaterThanZero, tone: AlertTone.warning);
       return;
     }
 
@@ -251,7 +309,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     _customPriceCtrl.clear();
 
     await _recomputeAndUpdateInvoiceTotals();
-    _toast(l10n.itemAdded);
+    _toast(l10n.itemAdded, tone: AlertTone.success);
   }
 
   Future<void> _deleteItem(int itemId) async {
@@ -279,7 +337,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
 
     await _invoiceItemsRepo.deleteInvoiceItem(itemId);
     await _recomputeAndUpdateInvoiceTotals();
-    _toast(l10n.itemDeleted);
+    _toast(l10n.itemDeleted, tone: AlertTone.success);
   }
 
   Future<void> _editItem(Map<String, dynamic> item) async {
@@ -374,7 +432,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       );
 
       await _recomputeAndUpdateInvoiceTotals();
-      _toast(l10n.itemUpdated);
+      _toast(l10n.itemUpdated, tone: AlertTone.success);
     }
 
     qtyCtrl.dispose();
@@ -386,12 +444,12 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     if (_invoice == null) {
-      _toast(l10n.invoiceNotFound);
+      _toast(l10n.invoiceNotFound, tone: AlertTone.error);
       return;
     }
 
     if (_items.isEmpty) {
-      _toast(l10n.addAtLeastOneItemBeforePreviewPdf);
+      _toast(l10n.addAtLeastOneItemBeforePreviewPdf, tone: AlertTone.warning);
       return;
     }
 
@@ -459,10 +517,9 @@ final bytes = await InvoicePdfService.buildInvoicePdf(
     );
   }
 
-  void _toast(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
+  void _toast(String msg, {AlertTone tone = AlertTone.info}) {
+    if (!mounted) return;
+    AppAlerts.show(context, message: msg, tone: tone);
   }
 
   Widget _buildSummaryCard(ColorScheme cs) {
@@ -968,6 +1025,10 @@ Widget _buildAddItemCard(ColorScheme cs) {
             children: [
               _buildSummaryCard(cs),
               const SizedBox(height: 12),
+              if (_clientDeleted) ...[
+                _clientDeletedBanner(cs),
+                const SizedBox(height: 12),
+              ],
               _buildAddItemCard(cs),
               const SizedBox(height: 12),
               _buildItemsCard(cs),

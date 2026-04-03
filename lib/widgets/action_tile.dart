@@ -41,9 +41,7 @@ class ActionTile extends StatelessWidget {
               size: 22,
               color: textColor,
             ),
-
             const Spacer(),
-
             Text(
               label,
               maxLines: 2,

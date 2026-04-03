@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/screens/reset_password_screen.dart';
 
@@ -33,16 +34,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _loading = true);
 
     try {
-await _authService.forgotPassword(
-  _emailCtrl.text.trim(),
-  Localizations.localeOf(context).languageCode,
-);
+      await _authService.forgotPassword(
+        _emailCtrl.text.trim(),
+        Localizations.localeOf(context).languageCode,
+      );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.resetCodeSent)),
-      );
+      AppAlerts.success(context, l10n.resetCodeSent);
 
       Navigator.push(
         context,
@@ -54,23 +53,46 @@ await _authService.forgotPassword(
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      AppAlerts.error(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  InputDecoration _decoration({
+  InputDecoration _decoration(
+    BuildContext context, {
     required String label,
     required IconData icon,
     Widget? suffixIcon,
   }) {
+    final cs = Theme.of(context).colorScheme;
+
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon),
       suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: cs.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: cs.outlineVariant.withOpacity(0.35),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: cs.primary,
+          width: 1.5,
+        ),
+      ),
     );
   }
 
@@ -122,6 +144,7 @@ await _authService.forgotPassword(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
                         decoration: _decoration(
+                          context,
                           label: l10n.emailAddress,
                           icon: Icons.mail_outline_rounded,
                         ),
@@ -139,12 +162,12 @@ await _authService.forgotPassword(
                         child: FilledButton(
                           onPressed: _loading ? null : _sendCode,
                           child: _loading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 )
                               : Text(l10n.sendResetCode),

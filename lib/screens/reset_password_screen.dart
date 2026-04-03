@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -80,13 +81,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       _startResendTimer();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.resetCodeSent)),
-      );
+      AppAlerts.success(context, l10n.resetCodeSent);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      AppAlerts.error(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
       );
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -100,23 +100,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final confirmPassword = _confirmPasswordCtrl.text;
 
     if (code.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.enterResetCode)),
-      );
+      AppAlerts.warning(context, l10n.enterResetCode);
       return;
     }
 
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.minimum6Characters)),
-      );
+      AppAlerts.warning(context, l10n.minimum6Characters);
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.passwordsDoNotMatch)),
-      );
+      AppAlerts.warning(context, l10n.passwordsDoNotMatch);
       return;
     }
 
@@ -126,16 +120,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       await _authService.resetPassword(code, password);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.passwordResetSuccessful)),
-      );
+      AppAlerts.success(context, l10n.passwordResetSuccessful);
 
       Navigator.popUntil(context, (route) => route.isFirst);
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      AppAlerts.error(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
       );
     } finally {
       if (mounted) setState(() => _resetting = false);
@@ -307,12 +300,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       child: FilledButton(
                         onPressed: _resetting ? null : _resetPassword,
                         child: _resetting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: cs.onPrimary,
                                 ),
                               )
                             : Text(l10n.resetPassword),

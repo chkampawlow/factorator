@@ -959,4 +959,107 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveButton => 'حفظ';
+
+  @override
+  String get notAuthenticated => 'غير مصادق عليه';
+
+  @override
+  String currencyChangedTo(String currency) {
+    return 'تم تغيير العملة إلى $currency';
+  }
+
+  @override
+  String languageChangedTo(String language) {
+    return 'تم تغيير اللغة إلى $language';
+  }
+
+  @override
+  String get companyInfoIncompleteTitle => 'معلومات الشركة غير مكتملة';
+
+  @override
+  String get companyInfoIncompleteBody => 'يرجى إكمال معلومات شركتك.';
+
+  @override
+  String get googleAuthenticator => 'Google Authenticator';
+
+  @override
+  String get enableTwoFactorAuthentication => 'تفعيل المصادقة الثنائية';
+
+  @override
+  String get monthlyExpenses => 'المصاريف الشهرية';
+
+  @override
+  String get netMonthlyRevenue => 'صافي الدخل الشهري';
+
+  @override
+  String get alertsTitle => 'التنبيهات';
+
+  @override
+  String get alertsSnackbars => 'إشعارات سريعة';
+
+  @override
+  String get alertsBanners => 'لافتات';
+
+  @override
+  String get alertsDialogs => 'حوارات';
+
+  @override
+  String get alertsBottomSheets => 'لوحات سفلية';
+
+  @override
+  String get alertSuccessTitle => 'تم بنجاح';
+
+  @override
+  String get alertSuccessBody => 'تم الحفظ بنجاح.';
+
+  @override
+  String get alertInfoTitle => 'معلومة';
+
+  @override
+  String get alertInfoBody => 'هذه رسالة معلوماتية.';
+
+  @override
+  String get alertWarningTitle => 'تحذير';
+
+  @override
+  String get alertWarningBody => 'تحقق من البيانات قبل المتابعة.';
+
+  @override
+  String get alertErrorTitle => 'خطأ';
+
+  @override
+  String get alertErrorBody => 'حدث خطأ. حاول مرة أخرى.';
+
+  @override
+  String get alertConfirmTitle => 'تأكيد الإجراء';
+
+  @override
+  String get alertConfirmBody => 'هل تريد المتابعة؟';
+
+  @override
+  String get alertBottomSheetTitle => 'يتطلب الانتباه';
+
+  @override
+  String get alertBottomSheetBody => 'راجع التفاصيل قبل الحفظ.';
+
+  @override
+  String get alertSavedBody => 'تم حفظ التغييرات.';
+
+  @override
+  String get alertUndo => 'تراجع';
+
+  @override
+  String get alertDismiss => 'إغلاق';
+
+  @override
+  String get french => 'الفرنسية';
+
+  @override
+  String get english => 'الإنجليزية';
+
+  @override
+  String get arabic => 'العربية';
+
+  @override
+  String get checkingSession => 'جارٍ التحقق من الجلسة...';
 }

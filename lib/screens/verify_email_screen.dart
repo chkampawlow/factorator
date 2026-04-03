@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});
@@ -85,21 +86,20 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     setState(() => _sending = true);
 
     try {
-await _authService.sendVerificationEmail(
-  Localizations.localeOf(context).languageCode,
-);
+      await _authService.sendVerificationEmail(
+        Localizations.localeOf(context).languageCode,
+      );
       _startResendTimer();
 
       if (!mounted) return;
       if (showSuccessMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.verificationEmailSent)),
-        );
+        AppAlerts.success(context, l10n.verificationEmailSent);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      AppAlerts.error(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
       );
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -111,9 +111,7 @@ await _authService.sendVerificationEmail(
     final code = _code.trim();
 
     if (code.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.enterVerificationCode)),
-      );
+      AppAlerts.warning(context, l10n.enterVerificationCode);
       return;
     }
 
@@ -123,15 +121,14 @@ await _authService.sendVerificationEmail(
       await _authService.verifyEmail(code);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.emailVerifiedSuccessfully)),
-      );
+      AppAlerts.success(context, l10n.emailVerifiedSuccessfully);
 
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      AppAlerts.error(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
       );
     } finally {
       if (mounted) setState(() => _verifying = false);
@@ -287,12 +284,12 @@ await _authService.sendVerificationEmail(
                       child: FilledButton(
                         onPressed: _verifying ? null : _verifyNow,
                         child: _verifying
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: cs.onPrimary,
                                 ),
                               )
                             : Text(l10n.verifyNow),

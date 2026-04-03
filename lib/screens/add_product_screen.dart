@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/currency_service.dart';
 
+
+import 'package:my_app/widgets/app_alerts.dart';
+
 import '../services/settings_service.dart';
 import '../storage/products_repo.dart';
 import '../services/exchange_rate_service.dart';
@@ -148,6 +151,30 @@ class _AddProductScreenState extends State<AddProductScreen>
     return CurrencyService.format(base, _currency);
   }
 
+  double _priceTtcBaseTnd() {
+    final ht = _priceBaseTnd();
+    final rate = _tvaValue() / 100.0;
+    return ht * (1.0 + rate);
+  }
+
+  double _tvaAmountBaseTnd() {
+    final ht = _priceBaseTnd();
+    final rate = _tvaValue() / 100.0;
+    return ht * rate;
+  }
+
+  String _priceHtPreview() {
+    return CurrencyService.format(_priceBaseTnd(), _currency);
+  }
+
+  String _tvaAmountPreview() {
+    return CurrencyService.format(_tvaAmountBaseTnd(), _currency);
+  }
+
+  String _priceTtcPreview() {
+    return CurrencyService.format(_priceTtcBaseTnd(), _currency);
+  }
+
   double _tvaValue() {
     return _parseNum(_tvaRate.text) ?? 0.0;
   }
@@ -195,9 +222,7 @@ class _AddProductScreenState extends State<AddProductScreen>
         );
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.productUpdatedSuccessfully)),
-        );
+        AppAlerts.success(context, l10n.productUpdatedSuccessfully);
       } else {
         await _repo.addProduct(
           code: code,
@@ -208,23 +233,14 @@ class _AddProductScreenState extends State<AddProductScreen>
         );
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.productSavedSuccessfully)),
-        );
+        AppAlerts.success(context, l10n.productSavedSuccessfully);
       }
 
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-        ),
-      );
+      AppAlerts.error(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -520,24 +536,48 @@ class _AddProductScreenState extends State<AddProductScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  Row(
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Expanded(
-                                        child: Text(
-                                          _pricePreview(),
-                                          style: t.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.w900,
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              _priceTtcPreview(),
+                                              style: t.titleMedium?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
                                           ),
-                                        ),
+                                          if (_tvaRate.text.trim().isNotEmpty)
+                                            Text(
+                                              'TVA ${_tvaValue().toStringAsFixed(2)}%',
+                                              style: t.bodySmall?.copyWith(
+                                                color: cs.onSurfaceVariant,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                        ],
                                       ),
-                                      if (_tvaRate.text.trim().isNotEmpty)
-                                        Text(
-                                          '${_tvaValue().toStringAsFixed(2)} %',
-                                          style: t.bodySmall?.copyWith(
-                                            color: cs.onSurfaceVariant,
-                                            fontWeight: FontWeight.w700,
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: [
+                                          _PriceChip(
+                                            label: 'HT',
+                                            value: _priceHtPreview(),
                                           ),
-                                        ),
+                                          _PriceChip(
+                                            label: 'TVA',
+                                            value: _tvaAmountPreview(),
+                                          ),
+                                          _PriceChip(
+                                            label: 'TTC',
+                                            value: _priceTtcPreview(),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -586,6 +626,49 @@ class _AddProductScreenState extends State<AddProductScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PriceChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _PriceChip({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label ',
+            style: t.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            value,
+            style: t.bodySmall?.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
       ),
     );
   }

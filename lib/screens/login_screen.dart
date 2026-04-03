@@ -4,6 +4,7 @@ import 'package:my_app/screens/forgot_password_screen.dart';
 import 'package:my_app/screens/two_factor_login_screen.dart';
 import 'package:my_app/screens/verify_email_screen.dart';
 import 'package:my_app/services/auth_service.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -73,15 +74,11 @@ final organizationName =
     (user?['organization_name'] ?? '').toString().trim();
 final emailVerified = user?['email_verified'] == true;
 
-ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    behavior: SnackBarBehavior.floating,
-    content: Text(
-      organizationName.isNotEmpty
-          ? l10n.welcomeUser(organizationName)
-          : l10n.loginSuccess,
-    ),
-  ),
+AppAlerts.success(
+  context,
+  organizationName.isNotEmpty
+      ? l10n.welcomeUser(organizationName)
+      : l10n.loginSuccess,
 );
 
 if (!emailVerified) {
@@ -100,6 +97,7 @@ Navigator.pushReplacementNamed(context, '/dashboard');
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
       });
+      AppAlerts.error(context, _error!);
     } finally {
       if (mounted) {
         setState(() {
@@ -272,12 +270,12 @@ Navigator.pushReplacementNamed(context, '/dashboard');
                               child: FilledButton(
                                 onPressed: _loading ? null : _login,
                                 child: _loading
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         height: 22,
                                         width: 22,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2.4,
-                                          color: Colors.white,
+                                          color: cs.onPrimary,
                                         ),
                                       )
                                     : Text(l10n.login),

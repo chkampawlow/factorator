@@ -959,4 +959,107 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get saveButton => 'Enregistrer';
+
+  @override
+  String get notAuthenticated => 'Non authentifié';
+
+  @override
+  String currencyChangedTo(String currency) {
+    return 'Devise changée vers $currency';
+  }
+
+  @override
+  String languageChangedTo(String language) {
+    return 'Langue changée vers $language';
+  }
+
+  @override
+  String get companyInfoIncompleteTitle => 'Informations de l’entreprise incomplètes';
+
+  @override
+  String get companyInfoIncompleteBody => 'Veuillez compléter les informations de votre entreprise.';
+
+  @override
+  String get googleAuthenticator => 'Google Authenticator';
+
+  @override
+  String get enableTwoFactorAuthentication => 'Activer l’authentification à deux facteurs';
+
+  @override
+  String get monthlyExpenses => 'Dépenses mensuelles';
+
+  @override
+  String get netMonthlyRevenue => 'Revenu mensuel net';
+
+  @override
+  String get alertsTitle => 'Alertes';
+
+  @override
+  String get alertsSnackbars => 'Snackbars';
+
+  @override
+  String get alertsBanners => 'Bannières';
+
+  @override
+  String get alertsDialogs => 'Dialogues';
+
+  @override
+  String get alertsBottomSheets => 'Feuilles';
+
+  @override
+  String get alertSuccessTitle => 'Succès';
+
+  @override
+  String get alertSuccessBody => 'Enregistré avec succès.';
+
+  @override
+  String get alertInfoTitle => 'Information';
+
+  @override
+  String get alertInfoBody => 'Ceci est un message d’information.';
+
+  @override
+  String get alertWarningTitle => 'Avertissement';
+
+  @override
+  String get alertWarningBody => 'Vérifiez vos champs avant de continuer.';
+
+  @override
+  String get alertErrorTitle => 'Erreur';
+
+  @override
+  String get alertErrorBody => 'Une erreur s’est produite. Réessayez.';
+
+  @override
+  String get alertConfirmTitle => 'Confirmer l’action';
+
+  @override
+  String get alertConfirmBody => 'Voulez-vous continuer ?';
+
+  @override
+  String get alertBottomSheetTitle => 'Attention requise';
+
+  @override
+  String get alertBottomSheetBody => 'Vérifiez les détails avant d’enregistrer.';
+
+  @override
+  String get alertSavedBody => 'Modifications enregistrées.';
+
+  @override
+  String get alertUndo => 'Annuler';
+
+  @override
+  String get alertDismiss => 'Fermer';
+
+  @override
+  String get french => 'Français';
+
+  @override
+  String get english => 'Anglais';
+
+  @override
+  String get arabic => 'Arabe';
+
+  @override
+  String get checkingSession => 'Vérification de la session...';
 }

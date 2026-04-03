@@ -478,7 +478,50 @@
   "amount": "المبلغ",
   "description": "الوصف",
   "invalidField": "قيمة غير صالحة",
-  "saveButton": "حفظ"
+  "saveButton": "حفظ",
+  "notAuthenticated": "غير مصادق عليه",
+"currencyChangedTo": "تم تغيير العملة إلى {currency}",
+"@currencyChangedTo": {
+  "placeholders": {
+    "currency": { "type": "String" }
+  }
+},
+"languageChangedTo": "تم تغيير اللغة إلى {language}",
+"@languageChangedTo": {
+  "placeholders": {
+    "language": { "type": "String" }
+  }
+},
+"companyInfoIncompleteTitle": "معلومات الشركة غير مكتملة",
+"companyInfoIncompleteBody": "يرجى إكمال معلومات شركتك.",
+"googleAuthenticator": "Google Authenticator",
+"enableTwoFactorAuthentication": "تفعيل المصادقة الثنائية",
+  "monthlyExpenses": "المصاريف الشهرية",
+  "netMonthlyRevenue": "صافي الدخل الشهري",
+    "alertsTitle": "التنبيهات",
+  "alertsSnackbars": "إشعارات سريعة",
+  "alertsBanners": "لافتات",
+  "alertsDialogs": "حوارات",
+  "alertsBottomSheets": "لوحات سفلية",
+  "alertSuccessTitle": "تم بنجاح",
+  "alertSuccessBody": "تم الحفظ بنجاح.",
+  "alertInfoTitle": "معلومة",
+  "alertInfoBody": "هذه رسالة معلوماتية.",
+  "alertWarningTitle": "تحذير",
+  "alertWarningBody": "تحقق من البيانات قبل المتابعة.",
+  "alertErrorTitle": "خطأ",
+  "alertErrorBody": "حدث خطأ. حاول مرة أخرى.",
+  "alertConfirmTitle": "تأكيد الإجراء",
+  "alertConfirmBody": "هل تريد المتابعة؟",
+  "alertBottomSheetTitle": "يتطلب الانتباه",
+  "alertBottomSheetBody": "راجع التفاصيل قبل الحفظ.",
+  "alertSavedBody": "تم حفظ التغييرات.",
+  "alertUndo": "تراجع",
+  "alertDismiss": "إغلاق",
+  "french": "الفرنسية",
+"english": "الإنجليزية",
+"arabic": "العربية",
+"checkingSession": "جارٍ التحقق من الجلسة..."
 
 
 }

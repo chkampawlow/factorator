@@ -959,4 +959,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveButton => 'Save';
+
+  @override
+  String get notAuthenticated => 'Not authenticated';
+
+  @override
+  String currencyChangedTo(String currency) {
+    return 'Currency changed to $currency';
+  }
+
+  @override
+  String languageChangedTo(String language) {
+    return 'Language changed to $language';
+  }
+
+  @override
+  String get companyInfoIncompleteTitle => 'Company information is incomplete';
+
+  @override
+  String get companyInfoIncompleteBody => 'Please complete your company information.';
+
+  @override
+  String get googleAuthenticator => 'Google Authenticator';
+
+  @override
+  String get enableTwoFactorAuthentication => 'Enable two-factor authentication';
+
+  @override
+  String get monthlyExpenses => 'Monthly expenses';
+
+  @override
+  String get netMonthlyRevenue => 'Net monthly revenue';
+
+  @override
+  String get alertsTitle => 'Alerts';
+
+  @override
+  String get alertsSnackbars => 'Snackbars';
+
+  @override
+  String get alertsBanners => 'Banners';
+
+  @override
+  String get alertsDialogs => 'Dialogs';
+
+  @override
+  String get alertsBottomSheets => 'Bottom sheets';
+
+  @override
+  String get alertSuccessTitle => 'Success';
+
+  @override
+  String get alertSuccessBody => 'Saved successfully.';
+
+  @override
+  String get alertInfoTitle => 'Information';
+
+  @override
+  String get alertInfoBody => 'This is an informational message.';
+
+  @override
+  String get alertWarningTitle => 'Warning';
+
+  @override
+  String get alertWarningBody => 'Check your inputs before continuing.';
+
+  @override
+  String get alertErrorTitle => 'Error';
+
+  @override
+  String get alertErrorBody => 'Something went wrong. Try again.';
+
+  @override
+  String get alertConfirmTitle => 'Confirm action';
+
+  @override
+  String get alertConfirmBody => 'Do you want to continue?';
+
+  @override
+  String get alertBottomSheetTitle => 'Attention required';
+
+  @override
+  String get alertBottomSheetBody => 'Review the details before saving.';
+
+  @override
+  String get alertSavedBody => 'Changes saved.';
+
+  @override
+  String get alertUndo => 'Undo';
+
+  @override
+  String get alertDismiss => 'Dismiss';
+
+  @override
+  String get french => 'French';
+
+  @override
+  String get english => 'English';
+
+  @override
+  String get arabic => 'Arabic';
+
+  @override
+  String get checkingSession => 'Checking session...';
 }

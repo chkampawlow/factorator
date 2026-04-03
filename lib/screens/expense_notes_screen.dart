@@ -5,6 +5,7 @@ import 'package:my_app/screens/edit_expense_note_screen.dart';
 import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/expense_notes_repo.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 
 class ExpenseNotesScreen extends StatefulWidget {
   const ExpenseNotesScreen({super.key});
@@ -121,13 +122,9 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
         _notes = [];
         _loading = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${l10n.loadFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
-          ),
-        ),
+      AppAlerts.error(
+        context,
+        '${l10n.loadFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     }
   }
@@ -188,19 +185,12 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
       setState(() {
         _notes.removeWhere((e) => _toInt(e['id']) == id);
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.expenseNoteDeletedSuccess)),
-      );
+      AppAlerts.success(context, l10n.expenseNoteDeletedSuccess);
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${l10n.deleteFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
-          ),
-        ),
+      AppAlerts.error(
+        context,
+        '${l10n.deleteFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     }
   }
@@ -225,19 +215,12 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
           _notes[index]['status'] = status;
         }
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.expenseStatusUpdated)),
-      );
+      AppAlerts.success(context, l10n.expenseStatusUpdated);
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${l10n.updateFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
-          ),
-        ),
+      AppAlerts.error(
+        context,
+        '${l10n.updateFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     } finally {
       if (mounted) {

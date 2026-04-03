@@ -5,10 +5,11 @@ class ExpenseNotesRepo {
   final ApiClient _api = ApiClient.instance;
 
   Future<List<Map<String, dynamic>>> listExpenseNotes() async {
-    final res = await _api.get(
+    final raw = await _api.get(
       ApiConfig.expenseNotesList,
       authRequired: true,
-    ) as Map<String, dynamic>;
+    );
+    final res = Map<String, dynamic>.from(raw as Map);
 
     if (res['success'] != true) {
       throw Exception(res['message'] ?? 'Failed to load expense notes');
@@ -43,7 +44,7 @@ class ExpenseNotesRepo {
     required String date,
     String receiptPath = '',
   }) async {
-    final res = await _api.post(
+    final raw = await _api.post(
       ApiConfig.expenseNotesAdd,
       authRequired: true,
       body: {
@@ -55,10 +56,12 @@ class ExpenseNotesRepo {
         'receipt_path': receiptPath,
         'status': _backendStatusFromUi(status),
       },
-    ) as Map<String, dynamic>;
+    );
+    final res = Map<String, dynamic>.from(raw as Map);
 
     if (res['success'] != true) {
-      throw Exception(res['message'] ?? 'Failed to add expense note');
+      final msg = (res['message'] ?? '').toString().trim();
+      throw Exception(msg.isEmpty ? 'Failed to add expense note: $res' : msg);
     }
 
     return int.tryParse((res['id'] ?? '0').toString()) ?? 0;
@@ -74,7 +77,7 @@ class ExpenseNotesRepo {
     required String date,
     String receiptPath = '',
   }) async {
-    final res = await _api.post(
+    final raw = await _api.post(
       ApiConfig.expenseNotesUpdate,
       authRequired: true,
       body: {
@@ -87,7 +90,8 @@ class ExpenseNotesRepo {
         'receipt_path': receiptPath,
         'status': _backendStatusFromUi(status),
       },
-    ) as Map<String, dynamic>;
+    );
+    final res = Map<String, dynamic>.from(raw as Map);
 
     if (res['success'] != true) {
       throw Exception(res['message'] ?? 'Failed to update expense note');
@@ -95,13 +99,14 @@ class ExpenseNotesRepo {
   }
 
   Future<void> deleteExpenseNote(int id) async {
-    final res = await _api.post(
+    final raw = await _api.post(
       ApiConfig.expenseNotesDelete,
       authRequired: true,
       body: {
         'id': id,
       },
-    ) as Map<String, dynamic>;
+    );
+    final res = Map<String, dynamic>.from(raw as Map);
 
     if (res['success'] != true) {
       throw Exception(res['message'] ?? 'Failed to delete expense note');
@@ -112,19 +117,36 @@ class ExpenseNotesRepo {
     required int id,
     required String status,
   }) async {
-    final res = await _api.post(
+    final raw = await _api.post(
       ApiConfig.expenseNotesUpdateStatus,
       authRequired: true,
       body: {
         'id': id,
-        'status': _backendStatusFromUi(status),
+        'expense_note_id': id,
+        'status': _backendWorkflowStatusFromUi(status),
+        'new_status': _backendWorkflowStatusFromUi(status),
       },
-    ) as Map<String, dynamic>;
+    );
+    final res = Map<String, dynamic>.from(raw as Map);
 
     if (res['success'] != true) {
       throw Exception(
         res['message'] ?? 'Failed to update expense note status',
       );
+    }
+  }
+
+  String _backendWorkflowStatusFromUi(String status) {
+    switch (status.trim().toLowerCase()) {
+      case 'paid':
+        // Backend workflow accepts: PENDING, APPROVED, REJECTED, REIMBURSED
+        return 'APPROVED';
+      case 'cancelled':
+      case 'canceled':
+        return 'REJECTED';
+      case 'unpaid':
+      default:
+        return 'PENDING';
     }
   }
 
@@ -144,9 +166,12 @@ class ExpenseNotesRepo {
   String _uiStatusFromBackend(String status) {
     switch (status.trim().toUpperCase()) {
       case 'PAID':
+      case 'APPROVED':
+      case 'REIMBURSED':
         return 'paid';
       case 'CANCELLED':
       case 'CANCELED':
+      case 'REJECTED':
         return 'cancelled';
       case 'PENDING':
       default:

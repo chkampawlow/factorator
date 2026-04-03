@@ -1,8 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/storage/clients_repo.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 
 class AddClientScreen extends StatefulWidget {
   final Map<String, dynamic>? client;
@@ -33,6 +35,7 @@ class _AddClientScreenState extends State<AddClientScreen>
   final _cin = TextEditingController();
 
   bool _loading = false;
+
 
   late final AnimationController _animController;
   late final Animation<double> _fade;
@@ -192,9 +195,7 @@ class _AddClientScreenState extends State<AddClientScreen>
 
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.clientAddedSuccessfully)),
-        );
+        AppAlerts.success(context, l10n.clientAddedSuccessfully);
 
         Navigator.pop(context, true);
       } else {
@@ -210,22 +211,20 @@ class _AddClientScreenState extends State<AddClientScreen>
 
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result > 0
-                  ? l10n.clientAddedSuccessfullyWithId(result.toString())
-                  : l10n.clientAddedSuccessfully,
-            ),
-          ),
+        AppAlerts.success(
+          context,
+          result > 0
+              ? l10n.clientAddedSuccessfullyWithId(result.toString())
+              : l10n.clientAddedSuccessfully,
         );
 
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l10n.saveFailed}: $e')),
+      AppAlerts.error(
+        context,
+        '${l10n.saveFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -436,10 +435,20 @@ class _AddClientScreenState extends State<AddClientScreen>
                                       const SizedBox(height: 12),
                                       TextFormField(
                                         controller: _name,
+                                        textCapitalization: isCompany
+                                            ? TextCapitalization.words
+                                            : TextCapitalization.characters,
+                                        inputFormatters: isCompany
+                                            ? null
+                                            : <TextInputFormatter>[UpperCaseTextFormatter()],
                                         decoration: _dec(
                                           context,
-                                          isCompany ? l10n.companyName : l10n.fullName,
-                                          icon: isCompany ? Icons.business_outlined : Icons.person_outline,
+                                          isCompany
+                                              ? l10n.companyName
+                                              : l10n.fullName.toUpperCase(),
+                                          icon: isCompany
+                                              ? Icons.business_outlined
+                                              : Icons.person_outline,
                                         ),
                                       ),
                                       const SizedBox(height: 12),
@@ -573,6 +582,20 @@ class _AddClientScreenState extends State<AddClientScreen>
           ),
         ),
       ),
+    );
+  }
+}
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final upper = newValue.text.toUpperCase();
+    return newValue.copyWith(
+      text: upper,
+      selection: newValue.selection,
+      composing: TextRange.empty,
     );
   }
 }

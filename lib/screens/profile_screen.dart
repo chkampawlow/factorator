@@ -1,17 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/api_config.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path/path.dart' as p;
-import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/enable_2fa_screen.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/location_service.dart';
 import 'package:my_app/services/settings_service.dart';
+import 'package:my_app/widgets/app_alerts.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -141,9 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _profileImagePath = savedFile.path;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.profileImageUpdated)),
-    );
+    AppAlerts.success(context, l10n.profileImageUpdated);
   }
 
   Future<void> _updateCompanyInfo({
@@ -155,7 +155,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = await _authService.getAccessToken();
 
     if (token == null || token.isEmpty) {
-      throw Exception('Not authenticated');
+      final l10n = AppLocalizations.of(context)!;
+      throw Exception(l10n.notAuthenticated);
     }
 
     final uri = Uri.parse(ApiConfig.updateProfile);
@@ -163,10 +164,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final response = await http.post(
       uri,
       headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Authorization': 'Bearer ${ApiConfig.staticToken}',
-    'X-Access-Token': token,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ${ApiConfig.staticToken}',
+        'X-Access-Token': token,
       },
       body: jsonEncode({
         'organization_name': organizationName,
@@ -179,7 +180,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final data = jsonDecode(response.body);
 
     if (response.statusCode != 200 || data['success'] != true) {
-      throw Exception(data['message'] ?? 'Update failed');
+      final l10n = AppLocalizations.of(context)!;
+      throw Exception(data['message'] ?? l10n.updateFailed);
     }
   }
 
@@ -267,13 +269,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await _loadProfileData();
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.profileUpdated)),
-        );
+        AppAlerts.success(context, l10n.profileUpdated);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        AppAlerts.error(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
         );
       }
     }
@@ -282,6 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _changeCurrency(String? value) async {
     if (value == null) return;
 
+    final l10n = AppLocalizations.of(context)!;
     await _settingsService.setCurrency(value);
 
     if (!mounted) return;
@@ -290,14 +292,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _currency = value;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Currency changed to $value')),
-    );
+    AppAlerts.success(context, l10n.currencyChangedTo(value));
   }
 
   Future<void> _changeLanguage(String? value) async {
     if (value == null) return;
 
+    final l10n = AppLocalizations.of(context)!;
     final normalized = value.toLowerCase();
 
     await _settingsService.setLanguage(normalized);
@@ -310,9 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     widget.onChangeLanguage(normalized);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Language changed to $normalized')),
-    );
+    AppAlerts.success(context, l10n.languageChangedTo(normalized));
   }
 
   Future<void> _logout() async {
@@ -362,6 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildColorCircle(Color color) {
+    final cs = Theme.of(context).colorScheme;
     final isSelected = widget.currentPrimaryColor.value == color.value;
 
     return GestureDetector(
@@ -373,13 +373,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           color: color,
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? Colors.black : Colors.transparent,
+            color: isSelected ? cs.primary : Colors.transparent,
             width: 3,
           ),
         ),
-        child: isSelected
-            ? const Icon(Icons.check, color: Colors.white, size: 20)
-            : null,
+        child: isSelected ? Icon(Icons.check, color: cs.onPrimary, size: 20) : null,
       ),
     );
   }
@@ -423,7 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Informations de l’entreprise incomplètes',
+                  l10n.companyInfoIncompleteTitle,
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     color: cs.onTertiaryContainer,
@@ -431,7 +429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Veuillez compléter les informations de votre entreprise depuis le menu en haut à droite.',
+                  l10n.companyInfoIncompleteBody,
                   style: TextStyle(
                     color: cs.onTertiaryContainer,
                   ),
@@ -453,6 +451,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _surfaceCard(
+    BuildContext context, {
+    required Widget child,
+    EdgeInsets padding = const EdgeInsets.all(16),
+  }) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: cs.outlineVariant.withOpacity(isDark ? 0.28 : 0.18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(isDark ? 0.22 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _headerCard(BuildContext context, {required Widget child}) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.primaryContainer.withOpacity(0.45),
+            cs.surface,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -470,7 +520,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             onPressed: _loadProfileData,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: l10n.refresh,
           ),
         ],
       ),
@@ -489,217 +539,221 @@ class _ProfileScreenState extends State<ProfileScreen> {
               : _user == null
                   ? Center(child: Text(l10n.noUserData))
                   : ListView(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                       children: [
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              children: [
-                                Align(
-                                  alignment: Alignment.topRight,
-                                  child: PopupMenuButton<String>(
-                                    onSelected: (value) {
-                                      if (value == 'company') {
-                                        _showCompanyInfoDialog();
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'company',
-                                        child: Text(l10n.companyInformation),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: _pickProfileImage,
-                                  child: Stack(
-                                    alignment: Alignment.bottomRight,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 42,
-                                        backgroundColor: cs.primaryContainer,
-                                        backgroundImage: _profileImagePath != null
-                                            ? FileImage(File(_profileImagePath!))
-                                            : null,
-                                        child: _profileImagePath == null
-                                            ? Icon(
-                                                Icons.person,
-                                                size: 40,
-                                                color: cs.onPrimaryContainer,
-                                              )
-                                            : null,
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: cs.primary,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: cs.surface,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.camera_alt,
-                                          size: 16,
-                                          color: cs.onPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  '${_user?['organization_name'] ?? ''}'.trim(),
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                                                const SizedBox(height: 16),
-                        if (_hasMissingCompanyInfo()) ...[
-                          _buildCompanyInfoWarning(context),
-                          const SizedBox(height: 16),
-                        ],
-                        Card(
+                        _headerCard(
+                          context,
                           child: Column(
                             children: [
-                              _infoTile(
-                                icon: Icons.location_on_outlined,
-                                label: l10n.region,
-                                value: _region,
+                              GestureDetector(
+                                onTap: _pickProfileImage,
+                                child: Stack(
+                                  alignment: Alignment.bottomRight,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 42,
+                                      backgroundColor: cs.primaryContainer,
+                                      backgroundImage: _profileImagePath != null
+                                          ? FileImage(File(_profileImagePath!))
+                                          : null,
+                                      child: _profileImagePath == null
+                                          ? Icon(
+                                              Icons.person,
+                                              size: 40,
+                                              color: cs.onPrimaryContainer,
+                                            )
+                                          : null,
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: cs.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.camera_alt,
+                                        size: 16,
+                                        color: cs.onPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                '${_user?['organization_name'] ?? ''}'.trim(),
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.currency,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w900,
+                        if (_hasMissingCompanyInfo()) ...[
+                          _buildCompanyInfoWarning(context),
+                          const SizedBox(height: 16),
+                        ],
+                        _surfaceCard(
+                          context,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.currency,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<String>(
+                                value: _currency,
+                                decoration: InputDecoration(
+                                  labelText: l10n.selectCurrency,
+                                  prefixIcon: const Icon(Icons.attach_money),
+                                  filled: true,
+                                  fillColor: cs.surface,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: cs.outlineVariant.withOpacity(0.35),
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: cs.primary,
+                                      width: 1.5,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 14),
-                                DropdownButtonFormField<String>(
-                                  value: _currency,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.selectCurrency,
-                                    prefixIcon: const Icon(Icons.attach_money),
-                                    border: const OutlineInputBorder(),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'TND',
+                                    child: Text('TND'),
                                   ),
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: 'TND',
-                                      child: Text('TND - Tunisian Dinar'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'EUR',
-                                      child: Text('EUR - Euro'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'USD',
-                                      child: Text('USD - US Dollar'),
-                                    ),
-                                  ],
-                                  onChanged: _changeCurrency,
-                                ),
-                              ],
-                            ),
+                                  DropdownMenuItem(
+                                    value: 'EUR',
+                                    child: Text('EUR'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'USD',
+                                    child: Text('USD'),
+                                  ),
+                                ],
+                                onChanged: _changeCurrency,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.language,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w900,
+                        _surfaceCard(
+                          context,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.language,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<String>(
+                                value: dropdownLanguage,
+                                decoration: InputDecoration(
+                                  labelText: l10n.selectLanguage,
+                                  prefixIcon: const Icon(Icons.language),
+                                  filled: true,
+                                  fillColor: cs.surface,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: cs.outlineVariant.withOpacity(0.35),
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: cs.primary,
+                                      width: 1.5,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 14),
-                                DropdownButtonFormField<String>(
-                                  value: dropdownLanguage,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.selectLanguage,
-                                    prefixIcon: const Icon(Icons.language),
-                                    border: const OutlineInputBorder(),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'fr',
+                                    child: Text(l10n.french),
                                   ),
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: 'fr',
-                                      child: Text('Français'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'en',
-                                      child: Text('English'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'ar',
-                                      child: Text('العربية'),
-                                    ),
-                                  ],
-                                  onChanged: _changeLanguage,
-                                ),
-                              ],
-                            ),
+                                  DropdownMenuItem(
+                                    value: 'en',
+                                    child: Text(l10n.english),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'ar',
+                                    child: Text(l10n.arabic),
+                                  ),
+                                ],
+                                onChanged: _changeLanguage,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.appColor,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                        _surfaceCard(
+                          context,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.appColor,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w900,
                                 ),
-                                const SizedBox(height: 14),
-                                Wrap(
-                                  spacing: 12,
-                                  runSpacing: 12,
-                                  children: _colors
-                                      .map((color) => _buildColorCircle(color))
-                                      .toList(),
-                                ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: 14),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children:
+                                    _colors.map((c) => _buildColorCircle(c)).toList(),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Card(
+                        _surfaceCard(
+                          context,
+                          padding: EdgeInsets.zero,
                           child: Column(
                             children: [
-                              ListTile(
-                                leading: const Icon(Icons.palette_outlined),
+                              SwitchListTile.adaptive(
+                                secondary: const Icon(Icons.dark_mode_outlined),
                                 title: Text(l10n.toggleTheme),
+                                value: Theme.of(context).brightness == Brightness.dark,
+                                onChanged: (_) => widget.onToggleTheme(),
+                              ),
+                              const Divider(height: 1),
+                              ListTile(
+                                leading: const Icon(Icons.business_outlined),
+                                title: Text(l10n.companyInformation),
                                 trailing: const Icon(Icons.chevron_right),
-                                onTap: widget.onToggleTheme,
+                                onTap: _showCompanyInfoDialog,
                               ),
                               const Divider(height: 1),
                               ListTile(
                                 leading: const Icon(Icons.shield_outlined),
-                                title: const Text('Google Authenticator'),
-                                subtitle: const Text('Enable two-factor authentication'),
+                                title: Text(l10n.googleAuthenticator),
+                                subtitle: Text(l10n.enableTwoFactorAuthentication),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: () {
                                   Navigator.push(
@@ -709,6 +763,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   );
                                 },
+                              ),
+                              const Divider(height: 1),
+                              ListTile(
+                                leading: const Icon(Icons.location_on_outlined),
+                                title: Text(l10n.region),
+                                subtitle: Text(_region.isEmpty ? '-' : _region),
                               ),
                               const Divider(height: 1),
                               ListTile(

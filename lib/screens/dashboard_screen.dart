@@ -1,14 +1,16 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
-import 'package:my_app/screens/add_client_screen.dart';
+import 'package:my_app/screens/create_invoice_screen.dart';
+import 'package:my_app/screens/create_expense_note_screen.dart';
 import 'package:my_app/screens/clients_screen.dart';
 
 import '../services/auth_service.dart';
-import '../services/currency_service.dart';
+import 'package:my_app/services/currency_service.dart';
 import '../services/settings_service.dart';
 import '../storage/clients_repo.dart';
 import '../storage/dashboard_repo.dart';
+import '../storage/expense_notes_repo.dart';
 import '../widgets/action_tile.dart';
 
 
@@ -26,6 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _clientsRepo = ClientsRepo();
   final _authService = AuthService();
   final _settingsService = SettingsService();
+  final _expenseRepo = ExpenseNotesRepo();
 
   bool _loading = true;
 
@@ -35,6 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _currency = 'TND';
   double _totalRevenue = 0;
   double _pendingAmount = 0;
+  double _monthlyExpenses = 0;
   int _paidCount = 0;
   int _unpaidCount = 0;
   List<double> _monthlyRevenue = List.filled(6, 0);
@@ -143,11 +147,36 @@ Future<void> _load() async {
     final customers = await _countCustomers();
     final currency = await _settingsService.getCurrency();
 
+    final expenses = await _expenseRepo.listExpenseNotes();
+
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    final startOfNextMonth = DateTime(now.year, now.month + 1, 1);
+
+    double monthlyExpenses = 0.0;
+    for (final e in expenses) {
+      final rawDate = (e['expense_date'] ?? e['date'] ?? '').toString();
+      final d = DateTime.tryParse(rawDate);
+      if (d == null) continue;
+      if (d.isBefore(startOfMonth) || !d.isBefore(startOfNextMonth)) continue;
+
+      final st = (e['status'] ?? '').toString().trim().toLowerCase();
+      if (st == 'cancelled' || st == 'canceled' || st == 'rejected') continue;
+
+      final amt = (e['amount'] is num)
+          ? (e['amount'] as num).toDouble()
+          : double.tryParse(e['amount'].toString().replaceAll(',', '.'));
+      if (amt == null) continue;
+
+      monthlyExpenses += amt;
+    }
+
     setState(() {
       _allInvoices = invoices;
       _customersCount = customers;
       _currency = currency;
       _computeStats(invoices);
+      _monthlyExpenses = monthlyExpenses;
       _loading = false;
     });
   } catch (e) {
@@ -257,23 +286,18 @@ Future<void> _logout() async {
                         label: l10n.createInvoice,
                         icon: Icons.add_circle_outline,
                         bg: cs.primaryContainer.withOpacity(.40),
-onTap: () => _go(AddClientScreen()),                      ),
+                        onTap: () => _go(const CreateInvoiceScreen()),
+                      ),
                       ActionTile(
-                        label: l10n.advanceInvoice,
-                        icon: Icons.request_quote_outlined,
-                        bg: const Color(0xFFFFF3CD),
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.advanceInvoiceComingSoon),
-                            ),
-                          );
-                        },
+                        label: l10n.createExpenseNoteTitle,
+                        icon: Icons.account_balance_wallet_outlined,
+                        bg: cs.tertiaryContainer.withOpacity(.40),
+                        onTap: () => _go(const CreateExpenseNoteScreen()),
                       ),
                       ActionTile(
                         label: '${l10n.customers} ($_customersCount)',
                         icon: Icons.people_alt_outlined,
-                        bg: const Color(0xFFEAF2FF),
+                        bg: cs.secondaryContainer.withOpacity(.40),
                         onTap: () => _go(const ClientsScreen()),
                       ),
                     ],
@@ -293,11 +317,24 @@ onTap: () => _go(AddClientScreen()),                      ),
                     childAspectRatio: statsColumns == 1 ? 2.2 : (statsColumns == 2 ? 1.25 : 1.0),
                     children: [
                       _StatCard(
-                        title: l10n.monthlyRevenue,
-                        value: CurrencyService.format(_monthlyRevenue.isNotEmpty ? _monthlyRevenue.last : 0, _currency),
+                        title: l10n.netMonthlyRevenue,
+                        value: CurrencyService.format(
+                          (_monthlyRevenue.isNotEmpty ? _monthlyRevenue.last : 0) - _monthlyExpenses,
+                          _currency,
+                        ),
                         subtitle: _currency,
                         icon: Icons.payments_outlined,
                         color: cs.primary,
+                      ),
+                      _StatCard(
+                        title: l10n.monthlyRevenue,
+                        value: CurrencyService.format(
+                          _monthlyRevenue.isNotEmpty ? _monthlyRevenue.last : 0,
+                          _currency,
+                        ),
+                        subtitle: _currency,
+                        icon: Icons.payments_outlined,
+                        color: cs.primaryContainer,
                       ),
                       _StatCard(
                         title: l10n.pending,
@@ -305,6 +342,13 @@ onTap: () => _go(AddClientScreen()),                      ),
                         subtitle: _currency,
                         icon: Icons.hourglass_bottom_rounded,
                         color: cs.tertiary,
+                      ),
+                      _StatCard(
+                        title: l10n.createExpenseNoteTitle,
+                        value: CurrencyService.format(_monthlyExpenses, _currency),
+                        subtitle: _currency,
+                        icon: Icons.account_balance_wallet_outlined,
+                        color: cs.tertiaryContainer,
                       ),
                       _StatCard(
                         title: l10n.invoices,

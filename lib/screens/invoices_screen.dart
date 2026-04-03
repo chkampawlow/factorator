@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/screens/create_invoice_screen.dart';
 import 'package:my_app/screens/invoice_edit_screen.dart';
 import 'package:my_app/services/currency_service.dart';
@@ -143,12 +144,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         _loading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${l10n.loadFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
-          ),
-        ),
+      AppAlerts.error(
+        context,
+        '${l10n.loadFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     }
   }
@@ -256,19 +254,14 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       await _repo.updateInvoiceStatus(invoiceId, status);
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.invoiceStatusUpdated)),
-      );
+      AppAlerts.success(context, l10n.invoiceStatusUpdated);
 
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${l10n.updateFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
-          ),
-        ),
+      AppAlerts.error(
+        context,
+        '${l10n.updateFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     } finally {
       if (mounted) {
@@ -506,8 +499,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.04),
-                                              blurRadius: 14,
+                                              color: Theme.of(context).shadowColor.withOpacity(
+                                                Theme.of(context).brightness == Brightness.dark ? 0.22 : 0.08,
+                                              ),
+                                              blurRadius: 20,
                                               offset: const Offset(0, 6),
                                             ),
                                           ],
@@ -610,35 +605,45 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                                         : cs.surfaceContainerHighest.withOpacity(0.45)),
                                                 borderRadius: BorderRadius.circular(16),
                                               ),
-                                              child: Row(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  Icon(
-                                                    overdue
-                                                        ? Icons.warning_amber_rounded
-                                                        : (dueSoon
-                                                            ? Icons.schedule_rounded
-                                                            : Icons.event_note_rounded),
-                                                    size: 18,
-                                                    color: overdue
-                                                        ? cs.onErrorContainer
-                                                        : (dueSoon
-                                                            ? cs.onTertiaryContainer
-                                                            : cs.onSurfaceVariant),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      _daysLeftText(due),
-                                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                                        fontWeight: FontWeight.w800,
+                                                  Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Icon(
+                                                        overdue
+                                                            ? Icons.warning_amber_rounded
+                                                            : (dueSoon
+                                                                ? Icons.schedule_rounded
+                                                                : Icons.event_note_rounded),
+                                                        size: 18,
+                                                        color: overdue
+                                                            ? cs.onErrorContainer
+                                                            : (dueSoon
+                                                                ? cs.onTertiaryContainer
+                                                                : cs.onSurfaceVariant),
                                                       ),
-                                                    ),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _daysLeftText(due),
+                                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                                            fontWeight: FontWeight.w800,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  Text(
-                                                    'HT $subtotal • TVA $vatAmount',
-                                                    style: theme.textTheme.bodySmall?.copyWith(
-                                                      color: cs.onSurfaceVariant,
-                                                      fontWeight: FontWeight.w700,
+                                                  const SizedBox(height: 8),
+                                                  Align(
+                                                    alignment: Alignment.centerRight,
+                                                    child: Text(
+                                                      'HT $subtotal • TVA $vatAmount',
+                                                      style: theme.textTheme.bodySmall?.copyWith(
+                                                        color: cs.onSurfaceVariant,
+                                                        fontWeight: FontWeight.w700,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],

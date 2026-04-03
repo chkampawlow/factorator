@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/screens/login_screen.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
-import 'package:my_app/themes/app_theme.dart';
 
 class AuthGateScreen extends StatefulWidget {
   final Widget home;
@@ -57,7 +57,8 @@ class _AuthGateScreenState extends State<AuthGateScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Center(
@@ -68,27 +69,27 @@ class _AuthGateScreenState extends State<AuthGateScreen> {
               height: 76,
               width: 76,
               decoration: BoxDecoration(
-                color: AppTheme.mintSoft.withOpacity(isDark ? 0.15 : 1),
+                color: cs.primaryContainer.withOpacity(0.60),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.verified_user_outlined,
-                color: AppTheme.mint,
+                color: cs.primary,
                 size: 34,
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              'Checking session...',
+              l10n.checkingSession,
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 14),
-            const SizedBox(
+            SizedBox(
               height: 26,
               width: 26,
               child: CircularProgressIndicator(
                 strokeWidth: 2.6,
-                color: AppTheme.mint,
+                color: cs.primary,
               ),
             ),
           ],

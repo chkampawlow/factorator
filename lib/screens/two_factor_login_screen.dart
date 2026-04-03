@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/verify_email_screen.dart';
 import 'package:my_app/services/auth_service.dart';
+import 'package:my_app/widgets/app_alerts.dart';
 
 class TwoFactorLoginScreen extends StatefulWidget {
   final String email;
@@ -57,15 +58,11 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
       final organizationName =
           (user?['organization_name'] ?? '').toString().trim();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            organizationName.isNotEmpty
-                ? l10n.welcomeUser(organizationName)
-                : l10n.twoFactorSuccess,
-          ),
-        ),
+      AppAlerts.success(
+        context,
+        organizationName.isNotEmpty
+            ? l10n.welcomeUser(organizationName)
+            : l10n.twoFactorSuccess,
       );
 
       if (!emailVerified) {
@@ -84,6 +81,7 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
       });
+      AppAlerts.error(context, _error!);
     } finally {
       if (mounted) {
         setState(() {
@@ -210,12 +208,12 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
                               child: FilledButton(
                                 onPressed: _loading ? null : _submit,
                                 child: _loading
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         height: 22,
                                         width: 22,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2.4,
-                                          color: Colors.white,
+                                          color: cs.onPrimary,
                                         ),
                                       )
                                     : Text(l10n.twoFactorVerify),
