@@ -481,22 +481,39 @@ class _AddProductScreenState extends State<AddProductScreen>
                                           label: l10n.unitOptional,
                                           icon: Icons.straighten,
                                         ),
-                                        items: const [
+                                        items: [
                                           DropdownMenuItem(
-                                              value: 'pcs', child: Text('pcs (Pieces)')),
+                                            value: 'pcs',
+                                            child: Text(l10n.unitPcs),
+                                          ),
                                           DropdownMenuItem(
-                                              value: 'kg', child: Text('kg (Kilogram)')),
+                                            value: 'kg',
+                                            child: Text(l10n.unitKg),
+                                          ),
                                           DropdownMenuItem(
-                                              value: 'g', child: Text('g (Gram)')),
+                                            value: 'g',
+                                            child: Text(l10n.unitG),
+                                          ),
                                           DropdownMenuItem(
-                                              value: 'L', child: Text('L (Liter)')),
+                                            value: 'L',
+                                            child: Text(l10n.unitL),
+                                          ),
                                           DropdownMenuItem(
-                                              value: 'm', child: Text('m (Meter)')),
+                                            value: 'm',
+                                            child: Text(l10n.unitM),
+                                          ),
                                           DropdownMenuItem(
-                                              value: 'h', child: Text('h (Hour)')),
-                                          DropdownMenuItem(value: 'day', child: Text('day')),
+                                            value: 'h',
+                                            child: Text(l10n.unitH),
+                                          ),
                                           DropdownMenuItem(
-                                              value: 'service', child: Text('service')),
+                                            value: 'day',
+                                            child: Text(l10n.unitDay),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'service',
+                                            child: Text(l10n.unitService),
+                                          ),
                                         ],
                                         onChanged: (v) {
                                           if (v == null) return;

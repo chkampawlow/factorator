@@ -373,7 +373,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get overdue => 'Overdue';
 
   @override
-  String get code => 'Code';
+  String get code => 'Indicatif';
 
   @override
   String get type => 'Type';
@@ -1062,4 +1062,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkingSession => 'Checking session...';
+
+  @override
+  String get unitPcs => 'pcs (Pieces)';
+
+  @override
+  String get unitKg => 'kg (Kilogram)';
+
+  @override
+  String get unitG => 'g (Gram)';
+
+  @override
+  String get unitL => 'L (Liter)';
+
+  @override
+  String get unitM => 'm (Meter)';
+
+  @override
+  String get unitH => 'h (Hour)';
+
+  @override
+  String get unitDay => 'day';
+
+  @override
+  String get unitService => 'service';
+
+  @override
+  String get invalidPhoneNumber => 'Numéro invalide. Exemple : +216 20123456';
 }

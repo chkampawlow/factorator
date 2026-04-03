@@ -808,7 +808,7 @@ abstract class AppLocalizations {
   /// No description provided for @code.
   ///
   /// In en, this message translates to:
-  /// **'Code'**
+  /// **'Indicatif'**
   String get code;
 
   /// No description provided for @type.
@@ -2154,6 +2154,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checking session...'**
   String get checkingSession;
+
+  /// No description provided for @unitPcs.
+  ///
+  /// In en, this message translates to:
+  /// **'pcs (Pieces)'**
+  String get unitPcs;
+
+  /// No description provided for @unitKg.
+  ///
+  /// In en, this message translates to:
+  /// **'kg (Kilogram)'**
+  String get unitKg;
+
+  /// No description provided for @unitG.
+  ///
+  /// In en, this message translates to:
+  /// **'g (Gram)'**
+  String get unitG;
+
+  /// No description provided for @unitL.
+  ///
+  /// In en, this message translates to:
+  /// **'L (Liter)'**
+  String get unitL;
+
+  /// No description provided for @unitM.
+  ///
+  /// In en, this message translates to:
+  /// **'m (Meter)'**
+  String get unitM;
+
+  /// No description provided for @unitH.
+  ///
+  /// In en, this message translates to:
+  /// **'h (Hour)'**
+  String get unitH;
+
+  /// No description provided for @unitDay.
+  ///
+  /// In en, this message translates to:
+  /// **'day'**
+  String get unitDay;
+
+  /// No description provided for @unitService.
+  ///
+  /// In en, this message translates to:
+  /// **'service'**
+  String get unitService;
+
+  /// No description provided for @invalidPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Numéro invalide. Exemple : +216 20123456'**
+  String get invalidPhoneNumber;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

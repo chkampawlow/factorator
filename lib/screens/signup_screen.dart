@@ -277,6 +277,7 @@ class _SignupScreenState extends State<SignupScreen> {
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: children,
         ),
       ),
@@ -563,19 +564,23 @@ class _SignupScreenState extends State<SignupScreen> {
                     });
                   },
                   children: [
-                    Padding(
+                    SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
                       child: _buildStep0(theme),
                     ),
-                    Padding(
+                    SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
                       child: _buildStep1(theme),
                     ),
-                    Padding(
+                    SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
                       child: _buildStep2(theme),
                     ),
-                    Padding(
+                    SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
                       child: _buildStep3(theme),
                     ),

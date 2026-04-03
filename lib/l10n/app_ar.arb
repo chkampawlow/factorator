@@ -521,7 +521,17 @@
   "french": "الفرنسية",
 "english": "الإنجليزية",
 "arabic": "العربية",
-"checkingSession": "جارٍ التحقق من الجلسة..."
+"checkingSession": "جارٍ التحقق من الجلسة...",
+  "unitPcs": "قطعة (pcs)",
+  "unitKg": "كغ (Kilogram)",
+  "unitG": "غ (Gram)",
+  "unitL": "لتر (L)",
+  "unitM": "متر (m)",
+  "unitH": "ساعة (h)",
+  "unitDay": "يوم",
+  "unitService": "خدمة",
+    "code": "رمز الدولة",
+  "invalidPhoneNumber": "رقم الهاتف غير صالح. مثال: +216 20123456رقم الهاتف غير صالح. مثال: +216 "
 
 
 }

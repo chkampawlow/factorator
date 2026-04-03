@@ -1062,4 +1062,31 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get checkingSession => 'Vérification de la session...';
+
+  @override
+  String get unitPcs => 'pcs (Pièces)';
+
+  @override
+  String get unitKg => 'kg (Kilogramme)';
+
+  @override
+  String get unitG => 'g (Gramme)';
+
+  @override
+  String get unitL => 'L (Litre)';
+
+  @override
+  String get unitM => 'm (Mètre)';
+
+  @override
+  String get unitH => 'h (Heure)';
+
+  @override
+  String get unitDay => 'jour';
+
+  @override
+  String get unitService => 'service';
+
+  @override
+  String get invalidPhoneNumber => 'Invalid phone number. Example: +216 20123456';
 }

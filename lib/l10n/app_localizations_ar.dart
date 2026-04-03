@@ -373,7 +373,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get overdue => 'متأخرة';
 
   @override
-  String get code => 'الرمز';
+  String get code => 'رمز الدولة';
 
   @override
   String get type => 'النوع';
@@ -1062,4 +1062,31 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get checkingSession => 'جارٍ التحقق من الجلسة...';
+
+  @override
+  String get unitPcs => 'قطعة (pcs)';
+
+  @override
+  String get unitKg => 'كغ (Kilogram)';
+
+  @override
+  String get unitG => 'غ (Gram)';
+
+  @override
+  String get unitL => 'لتر (L)';
+
+  @override
+  String get unitM => 'متر (m)';
+
+  @override
+  String get unitH => 'ساعة (h)';
+
+  @override
+  String get unitDay => 'يوم';
+
+  @override
+  String get unitService => 'خدمة';
+
+  @override
+  String get invalidPhoneNumber => 'رقم الهاتف غير صالح. مثال: +216 20123456رقم الهاتف غير صالح. مثال: +216 ';
 }

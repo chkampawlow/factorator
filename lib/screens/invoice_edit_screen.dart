@@ -512,6 +512,7 @@ final bytes = await InvoicePdfService.buildInvoicePdf(
         builder: (_) => PdfPreviewScreen(
           pdfBytes: bytes,
           title: (_invoice!['invoiceNumber'] ?? l10n.invoice).toString(),
+          clientEmail: (_invoice!['clientEmail'] ?? '').toString().trim(),
         ),
       ),
     );

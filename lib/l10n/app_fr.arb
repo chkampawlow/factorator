@@ -565,7 +565,17 @@
   "french": "Français",
 "english": "Anglais",
 "arabic": "Arabe",
-"checkingSession": "Vérification de la session..."
+"checkingSession": "Vérification de la session...",
+  "unitPcs": "pcs (Pièces)",
+  "unitKg": "kg (Kilogramme)",
+  "unitG": "g (Gramme)",
+  "unitL": "L (Litre)",
+  "unitM": "m (Mètre)",
+  "unitH": "h (Heure)",
+  "unitDay": "jour",
+  "unitService": "service",
+    "code": "Code",
+  "invalidPhoneNumber": "Invalid phone number. Example: +216 20123456"
 
 }
 

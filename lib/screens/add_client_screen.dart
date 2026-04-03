@@ -29,6 +29,7 @@ class _AddClientScreenState extends State<AddClientScreen>
 
   final _name = TextEditingController();
   final _email = TextEditingController();
+  final _phoneCode = TextEditingController(text: '+216');
   final _phone = TextEditingController();
   final _address = TextEditingController();
   final _fiscalId = TextEditingController();
@@ -69,8 +70,12 @@ class _AddClientScreenState extends State<AddClientScreen>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _fade = CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic);
-    _slide = Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero).animate(
+    _fade =
+        CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
 
@@ -79,7 +84,21 @@ class _AddClientScreenState extends State<AddClientScreen>
 
     _name.text = (c?['name'] ?? '').toString();
     _email.text = (c?['email'] ?? '').toString();
-    _phone.text = (c?['phone'] ?? '').toString();
+
+    final rawPhone = (c?['phone'] ?? '').toString().trim();
+    if (rawPhone.isNotEmpty) {
+      final compact = rawPhone.replaceAll(RegExp(r'\s+'), '');
+      // Accept: +21612345678, 21612345678, +216 12345678, 12345678
+      final m = RegExp(r'^\+?(\d{1,3})(\d{6,12})$').firstMatch(compact);
+      if (m != null) {
+        _phoneCode.text = '+${m.group(1)}';
+        _phone.text = m.group(2) ?? '';
+      } else {
+        // fallback: keep digits only in local field
+        _phone.text = compact.replaceAll(RegExp(r'\D'), '');
+      }
+    }
+
     _address.text = (c?['address'] ?? '').toString();
     _fiscalId.text = (c?['fiscalId'] ?? c?['fiscal_id'] ?? '').toString();
     _cin.text = (c?['cin'] ?? '').toString();
@@ -102,6 +121,7 @@ class _AddClientScreenState extends State<AddClientScreen>
   void dispose() {
     _name.dispose();
     _email.dispose();
+    _phoneCode.dispose();
     _phone.dispose();
     _address.dispose();
     _fiscalId.dispose();
@@ -124,12 +144,24 @@ class _AddClientScreenState extends State<AddClientScreen>
     }
   }
 
-  InputDecoration _dec(BuildContext context, String label, {IconData? icon, String? hint}) {
+  InputDecoration _dec(
+    BuildContext context,
+    String label, {
+    IconData? icon,
+    String? hint,
+    String? prefixText,
+  }) {
     final cs = Theme.of(context).colorScheme;
+
     return InputDecoration(
       labelText: label,
       hintText: hint,
       prefixIcon: icon == null ? null : Icon(icon),
+      prefixText: prefixText,
+      prefixStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: cs.onSurfaceVariant,
+          ),
       filled: true,
       fillColor: cs.surface,
       border: OutlineInputBorder(
@@ -159,7 +191,11 @@ class _AddClientScreenState extends State<AddClientScreen>
 
     final rawName = _name.text.trim();
     final email = _email.text.trim().isEmpty ? null : _email.text.trim();
-    final phone = _phone.text.trim().isEmpty ? null : _phone.text.trim();
+
+    final code = _phoneCode.text.trim().isEmpty ? '+216' : _phoneCode.text.trim();
+    final localPhone = _phone.text.trim();
+    final phone = localPhone.isEmpty ? null : '$code $localPhone';
+
     final address = _address.text.trim().isEmpty ? null : _address.text.trim();
 
     final fiscalId = _type == 'company'
@@ -196,7 +232,6 @@ class _AddClientScreenState extends State<AddClientScreen>
         if (!mounted) return;
 
         AppAlerts.success(context, l10n.clientAddedSuccessfully);
-
         Navigator.pop(context, true);
       } else {
         final result = await _repo.addClient(
@@ -251,7 +286,8 @@ class _AddClientScreenState extends State<AddClientScreen>
               onTap: () => _setType('individual'),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 decoration: BoxDecoration(
                   color: !isCompany ? cs.primaryContainer : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
@@ -262,7 +298,9 @@ class _AddClientScreenState extends State<AddClientScreen>
                     Icon(
                       Icons.credit_card,
                       size: 18,
-                      color: !isCompany ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                      color: !isCompany
+                          ? cs.onPrimaryContainer
+                          : cs.onSurfaceVariant,
                     ),
                     const SizedBox(width: 8),
                     Flexible(
@@ -272,7 +310,9 @@ class _AddClientScreenState extends State<AddClientScreen>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
-                          color: !isCompany ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                          color: !isCompany
+                              ? cs.onPrimaryContainer
+                              : cs.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -287,7 +327,8 @@ class _AddClientScreenState extends State<AddClientScreen>
               onTap: () => _setType('company'),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 decoration: BoxDecoration(
                   color: isCompany ? cs.primaryContainer : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
@@ -298,7 +339,9 @@ class _AddClientScreenState extends State<AddClientScreen>
                     Icon(
                       Icons.business,
                       size: 18,
-                      color: isCompany ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                      color: isCompany
+                          ? cs.onPrimaryContainer
+                          : cs.onSurfaceVariant,
                     ),
                     const SizedBox(width: 8),
                     Flexible(
@@ -308,7 +351,9 @@ class _AddClientScreenState extends State<AddClientScreen>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
-                          color: isCompany ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                          color: isCompany
+                              ? cs.onPrimaryContainer
+                              : cs.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -379,28 +424,37 @@ class _AddClientScreenState extends State<AddClientScreen>
                                       color: cs.surface.withOpacity(0.7),
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: cs.outlineVariant.withOpacity(0.18),
+                                        color: cs.outlineVariant.withOpacity(
+                                          0.18,
+                                        ),
                                       ),
                                     ),
                                     child: Icon(
-                                      isCompany ? Icons.business_outlined : Icons.person_outline,
+                                      isCompany
+                                          ? Icons.business_outlined
+                                          : Icons.person_outline,
                                       color: cs.primary,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isEdit ? l10n.editCustomer : l10n.addCustomer,
+                                          isEdit
+                                              ? l10n.editCustomer
+                                              : l10n.addCustomer,
                                           style: t.titleLarge?.copyWith(
                                             fontWeight: FontWeight.w900,
                                           ),
                                         ),
                                         const SizedBox(height: 6),
                                         Text(
-                                          isCompany ? l10n.companyName : l10n.fullName,
+                                          isCompany
+                                              ? l10n.companyName
+                                              : l10n.fullName,
                                           style: t.bodyMedium?.copyWith(
                                             color: cs.onSurfaceVariant,
                                             fontWeight: FontWeight.w600,
@@ -412,18 +466,20 @@ class _AddClientScreenState extends State<AddClientScreen>
                                 ],
                               ),
                             ),
-
                             const SizedBox(height: 14),
-
                             ClipRRect(
                               borderRadius: BorderRadius.circular(22),
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                filter: ImageFilter.blur(
+                                  sigmaX: 12,
+                                  sigmaY: 12,
+                                ),
                                 child: Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: cs.surfaceContainerHighest.withOpacity(0.55),
+                                    color: cs.surfaceContainerHighest
+                                        .withOpacity(0.55),
                                     borderRadius: BorderRadius.circular(22),
                                     border: Border.all(
                                       color: cs.outlineVariant.withOpacity(0.28),
@@ -440,7 +496,9 @@ class _AddClientScreenState extends State<AddClientScreen>
                                             : TextCapitalization.characters,
                                         inputFormatters: isCompany
                                             ? null
-                                            : <TextInputFormatter>[UpperCaseTextFormatter()],
+                                            : <TextInputFormatter>[
+                                                UpperCaseTextFormatter()
+                                              ],
                                         decoration: _dec(
                                           context,
                                           isCompany
@@ -453,7 +511,8 @@ class _AddClientScreenState extends State<AddClientScreen>
                                       ),
                                       const SizedBox(height: 12),
                                       AnimatedSwitcher(
-                                        duration: const Duration(milliseconds: 280),
+                                        duration:
+                                            const Duration(milliseconds: 280),
                                         switchInCurve: Curves.easeOutCubic,
                                         switchOutCurve: Curves.easeInCubic,
                                         transitionBuilder: (child, anim) {
@@ -466,7 +525,10 @@ class _AddClientScreenState extends State<AddClientScreen>
 
                                           return FadeTransition(
                                             opacity: anim,
-                                            child: SlideTransition(position: slide, child: child),
+                                            child: SlideTransition(
+                                              position: slide,
+                                              child: child,
+                                            ),
                                           );
                                         },
                                         child: isCompany
@@ -479,8 +541,11 @@ class _AddClientScreenState extends State<AddClientScreen>
                                                   icon: Icons.badge_outlined,
                                                 ),
                                                 validator: (v) {
-                                                  if (_type != 'company') return null;
-                                                  if (v == null || v.trim().isEmpty) {
+                                                  if (_type != 'company') {
+                                                    return null;
+                                                  }
+                                                  if (v == null ||
+                                                      v.trim().isEmpty) {
                                                     return l10n.mfRequired;
                                                   }
                                                   return null;
@@ -494,10 +559,14 @@ class _AddClientScreenState extends State<AddClientScreen>
                                                   l10n.cin,
                                                   icon: Icons.credit_card_outlined,
                                                 ),
-                                                keyboardType: TextInputType.number,
+                                                keyboardType:
+                                                    TextInputType.number,
                                                 validator: (v) {
-                                                  if (_type != 'individual') return null;
-                                                  if (v == null || v.trim().isEmpty) {
+                                                  if (_type != 'individual') {
+                                                    return null;
+                                                  }
+                                                  if (v == null ||
+                                                      v.trim().isEmpty) {
                                                     return l10n.cinRequired;
                                                   }
                                                   if (v.trim().length < 6) {
@@ -517,13 +586,63 @@ class _AddClientScreenState extends State<AddClientScreen>
                                         ),
                                       ),
                                       const SizedBox(height: 12),
-                                      TextFormField(
-                                        controller: _phone,
-                                        decoration: _dec(
-                                          context,
-                                          l10n.phoneOptional,
-                                          icon: Icons.phone_outlined,
-                                        ),
+                                      Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 110,
+                                            child: TextFormField(
+                                              controller: _phoneCode,
+                                              keyboardType: TextInputType.phone,
+                                              inputFormatters: <TextInputFormatter>[
+                                                FilteringTextInputFormatter.allow(RegExp(r'[+0-9]')),
+                                                LengthLimitingTextInputFormatter(4),
+                                              ],
+                                              decoration: _dec(
+                                                context,
+                                                l10n.code,
+                                                icon: Icons.public_rounded,
+                                              ),
+                                              validator: (v) {
+                                                final s = (v ?? '').trim();
+                                                if (s.isEmpty) return null; // empty => default +216
+                                                if (!RegExp(r'^\+\d{1,3}$').hasMatch(s)) {
+                                                  return l10n.invalidPhoneNumber;
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: TextFormField(
+                                              controller: _phone,
+                                              keyboardType: TextInputType.phone,
+                                              inputFormatters: <TextInputFormatter>[
+                                                FilteringTextInputFormatter.digitsOnly,
+                                                LengthLimitingTextInputFormatter(12),
+                                              ],
+                                              decoration: _dec(
+                                                context,
+                                                l10n.phoneOptional,
+                                                icon: Icons.phone_outlined,
+                                              ),
+                                              validator: (v) {
+                                                final s = (v ?? '').trim();
+                                                if (s.isEmpty) return null;
+
+                                                final code = _phoneCode.text.trim();
+                                                // Tunisia default: exactly 8 digits when +216 or empty
+                                                if (code.isEmpty || code == '+216') {
+                                                  if (s.length != 8) return l10n.invalidPhoneNumber;
+                                                } else {
+                                                  // Generic: 6..12 digits
+                                                  if (s.length < 6 || s.length > 12) return l10n.invalidPhoneNumber;
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       const SizedBox(height: 12),
                                       TextFormField(
@@ -540,14 +659,14 @@ class _AddClientScreenState extends State<AddClientScreen>
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 16),
-
                             Row(
                               children: [
                                 Expanded(
                                   child: OutlinedButton(
-                                    onPressed: _loading ? null : () => Navigator.pop(context),
+                                    onPressed: _loading
+                                        ? null
+                                        : () => Navigator.pop(context),
                                     child: Text(l10n.cancelButton),
                                   ),
                                 ),
@@ -563,10 +682,16 @@ class _AddClientScreenState extends State<AddClientScreen>
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2,
                                               valueColor:
-                                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                                                  AlwaysStoppedAnimation<Color>(
+                                                cs.onPrimary,
+                                              ),
                                             ),
                                           )
-                                        : Text(isEdit ? l10n.saveChanges : l10n.saveCustomer),
+                                        : Text(
+                                            isEdit
+                                                ? l10n.saveChanges
+                                                : l10n.saveCustomer,
+                                          ),
                                   ),
                                 ),
                               ],
@@ -585,6 +710,7 @@ class _AddClientScreenState extends State<AddClientScreen>
     );
   }
 }
+
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

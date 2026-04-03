@@ -544,7 +544,17 @@
   "french": "French",
 "english": "English",
 "arabic": "Arabic",
-"checkingSession": "Checking session..."
+"checkingSession": "Checking session...",
+  "unitPcs": "pcs (Pieces)",
+  "unitKg": "kg (Kilogram)",
+  "unitG": "g (Gram)",
+  "unitL": "L (Liter)",
+  "unitM": "m (Meter)",
+  "unitH": "h (Hour)",
+  "unitDay": "day",
+  "unitService": "service",
+    "code": "Indicatif",
+  "invalidPhoneNumber": "Numéro invalide. Exemple : +216 20123456"
 }
 
 
