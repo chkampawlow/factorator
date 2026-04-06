@@ -28,6 +28,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Timer? _resendTimer;
   int _secondsLeft = 0;
 
+  Timer? _autoVerifyTimer;
+  bool _autoVerifyLocked = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +45,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   void dispose() {
     _resendTimer?.cancel();
+    _autoVerifyTimer?.cancel();
     for (final controller in _controllers) {
       controller.dispose();
     }
@@ -109,6 +113,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Future<void> _verifyNow() async {
     final l10n = AppLocalizations.of(context)!;
     final code = _code.trim();
+    if (_verifying) return;
 
     if (code.length != 6) {
       AppAlerts.warning(context, l10n.enterVerificationCode);
@@ -135,7 +140,32 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
   }
 
+  void _scheduleAutoVerify() {
+    if (_autoVerifyLocked) return;
+    if (_verifying) return;
+
+    final code = _code.trim();
+    if (code.length != 6) return;
+
+    _autoVerifyTimer?.cancel();
+    _autoVerifyTimer = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      if (_autoVerifyLocked || _verifying) return;
+
+      final c = _code.trim();
+      if (c.length != 6) return;
+
+      _autoVerifyLocked = true;
+      FocusScope.of(context).unfocus();
+      _verifyNow().whenComplete(() {
+        if (!mounted) return;
+        // Keep locked until user changes a digit again.
+      });
+    });
+  }
+
   void _onDigitChanged(int index, String value) {
+    _autoVerifyLocked = false;
     if (value.length > 1) {
       value = value.characters.last;
       _controllers[index].text = value;
@@ -148,10 +178,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       _focusNodes[index + 1].requestFocus();
     }
 
-    if (_code.length == 6) {
-      FocusScope.of(context).unfocus();
-      _verifyNow();
-    }
+    _scheduleAutoVerify();
 
     if (mounted) setState(() {});
   }
@@ -161,6 +188,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       _focusNodes[index - 1].requestFocus();
       _controllers[index - 1].clear();
       if (mounted) setState(() {});
+      _autoVerifyLocked = false;
+      _autoVerifyTimer?.cancel();
     }
   }
 
