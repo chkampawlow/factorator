@@ -358,7 +358,7 @@ abstract class AppLocalizations {
   /// No description provided for @pleaseChooseClient.
   ///
   /// In en, this message translates to:
-  /// **'Please choose a client.'**
+  /// **'Choose a client'**
   String get pleaseChooseClient;
 
   /// No description provided for @chooseClient.
@@ -2208,6 +2208,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Numéro invalide. Exemple : +216 20123456'**
   String get invalidPhoneNumber;
+
+  /// No description provided for @personalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal details'**
+  String get personalDetails;
+
+  /// No description provided for @addYourPersonalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your personal information'**
+  String get addYourPersonalInfo;
+
+  /// No description provided for @individual.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual'**
+  String get individual;
+
+  /// No description provided for @organizationNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization name is required.'**
+  String get organizationNameRequired;
+
+  /// No description provided for @fullNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name is required.'**
+  String get fullNameRequired;
+
+  /// No description provided for @connectionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your connections and invitations'**
+  String get connectionsSubtitle;
+
+  /// No description provided for @invite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get invite;
+
+  /// No description provided for @accepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get accepted;
+
+  /// No description provided for @requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get requests;
+
+  /// No description provided for @sentInvites.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get sentInvites;
+
+  /// No description provided for @noAcceptedConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'No accepted connections yet'**
+  String get noAcceptedConnections;
+
+  /// No description provided for @noRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get noRequests;
+
+  /// No description provided for @noSentInvites.
+  ///
+  /// In en, this message translates to:
+  /// **'No sent invitations'**
+  String get noSentInvites;
+
+  /// No description provided for @inviteUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite a user'**
+  String get inviteUser;
+
+  /// No description provided for @searchUsersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search users'**
+  String get searchUsersHint;
+
+  /// No description provided for @noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get noResults;
+
+  /// No description provided for @invitationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation sent'**
+  String get invitationSent;
+
+  /// No description provided for @updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get updated;
+
+  /// No description provided for @removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed'**
+  String get removed;
+
+  /// No description provided for @accept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get accept;
+
+  /// No description provided for @decline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get decline;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
+  /// No description provided for @areYouSure.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get areYouSure;
+
+  /// No description provided for @chooseFromConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from connections'**
+  String get chooseFromConnections;
+
+  /// No description provided for @manualClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get manualClient;
+
+  /// No description provided for @connectedUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected user'**
+  String get connectedUser;
+
+  /// No description provided for @invalidSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid selection'**
+  String get invalidSelection;
+
+  /// No description provided for @enterClientNameOrEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a client name or an email'**
+  String get enterClientNameOrEmail;
+
+  /// No description provided for @noClientSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No client selected'**
+  String get noClientSelected;
+
+  /// No description provided for @clientNameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Client name (optional)'**
+  String get clientNameOptional;
+
+  /// No description provided for @clientEmailOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Client email (optional)'**
+  String get clientEmailOptional;
+
+  /// No description provided for @createInvoiceSetupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a client and set the due date'**
+  String get createInvoiceSetupSubtitle;
+
+  /// No description provided for @searchUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search users'**
+  String get searchUsers;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @totalExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Total expenses'**
+  String get totalExpenses;
+
+  /// No description provided for @recentlySearched.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently searched'**
+  String get recentlySearched;
+
+  /// No description provided for @clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// No description provided for @markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get markAllRead;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get noNotifications;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

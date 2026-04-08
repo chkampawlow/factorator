@@ -1,9 +1,11 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/storage/connections_repo.dart';
 import 'package:my_app/widgets/app_alerts.dart';
-import '../storage/clients_repo.dart';
+
 import '../storage/invoices_repo.dart';
-import 'add_client_screen.dart';
 import 'invoice_edit_screen.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
@@ -13,11 +15,24 @@ class CreateInvoiceScreen extends StatefulWidget {
   State<CreateInvoiceScreen> createState() => _CreateInvoiceScreenState();
 }
 
-class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
-  final _clientsRepo = ClientsRepo();
+class _CreateInvoiceScreenState extends State<CreateInvoiceScreen>
+    with SingleTickerProviderStateMixin {
+  final _connectionsRepo = ConnectionsRepo();
   final _invoicesRepo = InvoicesRepo();
 
-  Map<String, dynamic>? _selectedClient;
+  // Mode
+  // - connection: store user id in custom_code
+  // - manual: store name/email in custom_name/custom_email
+  String _mode = 'connection'; // connection | manual
+
+  // Connection selection
+  String? _clientUserId;
+  String _clientDisplay = '';
+  String _clientEmail = '';
+
+  // Manual entry
+  final _manualNameCtrl = TextEditingController();
+  final _manualEmailCtrl = TextEditingController();
 
   final DateTime _issueDate = DateTime.now();
   DateTime _dueDate = DateTime.now().add(const Duration(days: 7));
@@ -26,22 +41,19 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
   String _fmtDate(DateTime d) => d.toLocal().toString().split(' ')[0];
 
-  int _toInt(dynamic v, [int fallback = 0]) {
-    if (v == null) return fallback;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? fallback;
-  }
-
-  String _clientLabel(BuildContext context, Map<String, dynamic> c) {
-    final l10n = AppLocalizations.of(context)!;
-    final type = (c['type'] ?? 'individual').toString();
-
-    if (type == 'company') {
-      final mf = (c['fiscalId'] ?? c['fiscal_id'] ?? '-').toString();
-      return '${c['name']} • ${l10n.mfLabel}: $mf';
-    }
-
-    return '${c['name']} • ${l10n.cin}: ${c['cin'] ?? '-'}';
+  void _setMode(String mode) {
+    if (_mode == mode) return;
+    setState(() {
+      _mode = mode;
+      if (_mode == 'manual') {
+        _clientUserId = null;
+        _clientDisplay = '';
+        _clientEmail = '';
+      } else {
+        _manualNameCtrl.clear();
+        _manualEmailCtrl.clear();
+      }
+    });
   }
 
   Future<void> _pickDueDate() async {
@@ -59,54 +71,135 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     });
   }
 
-  Future<void> _chooseClient() async {
+  Future<void> _openConnectionPicker() async {
     final l10n = AppLocalizations.of(context)!;
 
     try {
+      final items = await _connectionsRepo.accepted();
+      if (!mounted) return;
+
       final selected = await showModalBottomSheet<Map<String, dynamic>>(
         context: context,
+        showDragHandle: true,
         isScrollControlled: true,
-        builder: (_) => _ClientPickerSheet(
-          clientsRepo: _clientsRepo,
-          clientLabel: (c) => _clientLabel(context, c),
-        ),
+        builder: (ctx) {
+          final cs = Theme.of(ctx).colorScheme;
+          final t = Theme.of(ctx).textTheme;
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.chooseFromConnections,
+                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 12),
+                  if (items.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 28),
+                      child: Center(
+                        child: Text(
+                          l10n.noAcceptedConnections,
+                          style: t.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (ctx, i) {
+                          final u = items[i];
+                          return _ConnectionTile(
+                            data: u,
+                            onTap: () => Navigator.pop(ctx, u),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
       );
 
-      if (selected != null && mounted) {
-        setState(() => _selectedClient = selected);
+      if (selected == null || !mounted) return;
+
+      final id = int.tryParse((selected['other_user_id'] ?? '0').toString()) ?? 0;
+      final name = (selected['other_display_name'] ?? '').toString().trim();
+      final email = (selected['other_email'] ?? '').toString().trim();
+
+      if (id <= 0) {
+        AppAlerts.error(context, l10n.invalidSelection);
+        return;
       }
+
+      setState(() {
+        _mode = 'connection';
+        _clientUserId = id.toString();
+        _clientDisplay = name.isEmpty ? '${l10n.connectedUser} #$id' : name;
+        _clientEmail = email;
+        _manualNameCtrl.clear();
+        _manualEmailCtrl.clear();
+      });
     } catch (e) {
       if (!mounted) return;
       AppAlerts.error(
         context,
-        '${l10n.clientSelectionFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
+        '${l10n.loadFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     }
+  }
+
+  bool _manualHasAny() {
+    return _manualNameCtrl.text.trim().isNotEmpty ||
+        _manualEmailCtrl.text.trim().isNotEmpty;
   }
 
   Future<void> _saveInvoice() async {
     final l10n = AppLocalizations.of(context)!;
 
-    if (_selectedClient == null) {
-      AppAlerts.warning(context, l10n.pleaseChooseClient);
-      return;
-    }
-
     if (_saving) return;
+
+    final manualName = _manualNameCtrl.text.trim();
+    final manualEmail = _manualEmailCtrl.text.trim();
+
+    if (_mode == 'connection') {
+      if (_clientUserId == null || _clientUserId!.isEmpty) {
+        AppAlerts.warning(context, l10n.pleaseChooseClient);
+        return;
+      }
+    } else {
+      if (!_manualHasAny()) {
+        AppAlerts.warning(context, l10n.enterClientNameOrEmail);
+        return;
+      }
+    }
 
     setState(() => _saving = true);
 
     try {
-      final clientId = _toInt(_selectedClient!['id']);
-
       final invoiceId = await _invoicesRepo.createInvoiceHeader(
-        clientId: clientId,
+        clientId: 0,
         issueDate: _issueDate,
         dueDate: _dueDate,
         status: 'open',
         subtotal: 0,
         totalVat: 0,
         total: 0,
+        customCode: _mode == 'connection' ? _clientUserId : null,
+        customName: _mode == 'manual' ? manualName : null,
+        customEmail: _mode == 'manual' ? manualEmail : null,
       );
 
       if (!mounted) return;
@@ -119,22 +212,287 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-
       AppAlerts.error(
         context,
         '${l10n.saveFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
       );
     } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
+      if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Widget _modeSelector(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.35)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _setMode('connection'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _mode == 'connection' ? cs.primaryContainer : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.people_alt_outlined,
+                      size: 18,
+                      color: _mode == 'connection' ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        l10n.chooseFromConnections,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: _mode == 'connection' ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _setMode('manual'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _mode == 'manual' ? cs.primaryContainer : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: _mode == 'manual' ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        l10n.manualClient,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: _mode == 'manual' ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _dec(BuildContext context, String label, {IconData? icon}) {
+    final cs = Theme.of(context).colorScheme;
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: icon == null ? null : Icon(icon),
+      filled: true,
+      fillColor: cs.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.35)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.primary, width: 1.5),
+      ),
+    );
+  }
+
+  Widget _clientCard(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: cs.outlineVariant.withOpacity(0.28)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.client,
+                style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 12),
+              _modeSelector(context),
+              const SizedBox(height: 12),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, anim) {
+                  final slide = Tween<Offset>(
+                    begin: const Offset(0, 0.06),
+                    end: Offset.zero,
+                  ).animate(anim);
+                  return FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(position: slide, child: child),
+                  );
+                },
+                child: _mode == 'connection'
+                    ? Column(
+                        key: const ValueKey('connection'),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: FilledButton.icon(
+                              onPressed: _openConnectionPicker,
+                              icon: const Icon(Icons.people_alt_outlined),
+                              label: Text(l10n.chooseFromConnections),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_clientUserId == null)
+                            Text(
+                              l10n.noClientSelected,
+                              style: t.bodyMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          else
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: cs.primaryContainer.withOpacity(0.45),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: cs.outlineVariant.withOpacity(0.22),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.verified_user_outlined, color: cs.primary),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _clientDisplay,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: t.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                        if (_clientEmail.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 3),
+                                            child: Text(
+                                              _clientEmail,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: t.bodySmall?.copyWith(
+                                                color: cs.onSurfaceVariant,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: l10n.remove,
+                                    onPressed: () => setState(() => _clientUserId = null),
+                                    icon: const Icon(Icons.close),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      )
+                    : Column(
+                        key: const ValueKey('manual'),
+                        children: [
+                          TextField(
+                            controller: _manualNameCtrl,
+                            decoration: _dec(
+                              context,
+                              l10n.clientNameOptional,
+                              icon: Icons.person_outline,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _manualEmailCtrl,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: _dec(
+                              context,
+                              l10n.clientEmailOptional,
+                              icon: Icons.email_outlined,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _manualNameCtrl.dispose();
+    _manualEmailCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.newInvoice)),
@@ -145,9 +503,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
           child: SizedBox(
             height: 52,
             child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: cs.primary,
-              ),
               onPressed: _saving ? null : _saveInvoice,
               child: Text(
                 _saving ? l10n.saving : l10n.createInvoice,
@@ -162,19 +517,65 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 90),
           children: [
-            Card(
-              child: ListTile(
-                title: Text(l10n.client),
-                subtitle: Text(
-                  _selectedClient == null
-                      ? l10n.chooseClientOrAddNew
-                      : _clientLabel(context, _selectedClient!),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    cs.primaryContainer.withOpacity(0.45),
+                    cs.surface,
+                  ],
                 ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _chooseClient,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: cs.outlineVariant.withOpacity(isDark ? 0.28 : 0.18),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    height: 44,
+                    width: 44,
+                    decoration: BoxDecoration(
+                      color: cs.surface.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: cs.outlineVariant.withOpacity(0.18),
+                      ),
+                    ),
+                    child: Icon(Icons.receipt_long_outlined, color: cs.primary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.newInvoice,
+                          style: t.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          l10n.createInvoiceSetupSubtitle,
+                          style: t.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
+            _clientCard(context),
+            const SizedBox(height: 12),
             Card(
               child: ListTile(
                 title: Text(l10n.dueDate),
@@ -190,213 +591,73 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   }
 }
 
-class _ClientPickerSheet extends StatefulWidget {
-  final ClientsRepo clientsRepo;
-  final String Function(Map<String, dynamic>) clientLabel;
+class _ConnectionTile extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final VoidCallback onTap;
 
-  const _ClientPickerSheet({
-    required this.clientsRepo,
-    required this.clientLabel,
+  const _ConnectionTile({
+    required this.data,
+    required this.onTap,
   });
 
   @override
-  State<_ClientPickerSheet> createState() => _ClientPickerSheetState();
-}
-
-class _ClientPickerSheetState extends State<_ClientPickerSheet> {
-  final _searchCtrl = TextEditingController();
-
-  List<Map<String, dynamic>> _clients = [];
-  List<Map<String, dynamic>> _filtered = [];
-
-  bool _loading = true;
-  String? _error;
-
-  bool _clientExists(String value) {
-    final v = value.toLowerCase();
-
-    return _clients.any((c) {
-      final mf =
-          (c['fiscalId'] ?? c['fiscal_id'] ?? '').toString().toLowerCase();
-      final cin = (c['cin'] ?? '').toString().toLowerCase();
-      return mf == v || cin == v;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-
-    _searchCtrl.addListener(() {
-      final q = _searchCtrl.text.trim().toLowerCase();
-
-      setState(() {
-        _filtered = q.isEmpty
-            ? _clients
-            : _clients.where((c) {
-                final name = (c['name'] ?? '').toString().toLowerCase();
-                final mf = (c['fiscalId'] ?? c['fiscal_id'] ?? '')
-                    .toString()
-                    .toLowerCase();
-                final cin = (c['cin'] ?? '').toString().toLowerCase();
-
-                return name.contains(q) ||
-                    mf.contains(q) ||
-                    cin.contains(q);
-              }).toList();
-      });
-    });
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      final data = await widget.clientsRepo.getAllClientsarchived();
-
-      if (!mounted) return;
-
-      setState(() {
-        _clients = data;
-        _filtered = data;
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
 
-    final searchValue = _searchCtrl.text.trim();
+    final id = int.tryParse((data['other_user_id'] ?? '0').toString()) ?? 0;
+    final name = (data['other_display_name'] ?? '').toString().trim();
+    final email = (data['other_email'] ?? '').toString().trim();
 
-    final showAddButton =
-        searchValue.isNotEmpty &&
-        !_clientExists(searchValue) &&
-        _filtered.isEmpty;
-
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottom),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * .75,
-          child: Column(
-            children: [
-              const SizedBox(height: 10),
-              Text(
-                l10n.chooseClient,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withOpacity(0.55),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: cs.outlineVariant.withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 44,
+              width: 44,
+              decoration: BoxDecoration(
+                color: cs.surface.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: cs.outlineVariant.withOpacity(0.18)),
               ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: _searchCtrl,
-                  decoration: InputDecoration(
-                    hintText: l10n.searchNameMfCin,
-                    prefixIcon: const Icon(Icons.search),
+              child: Icon(Icons.verified_user_outlined, color: cs.primary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name.isEmpty ? '${l10n.connectedUser} #$id' : name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (showAddButton)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton.icon(
-                      icon: const Icon(Icons.person_add),
-                      label: Text('${l10n.addNewClient}: $searchValue'),
-                      onPressed: () async {
-                        final saved = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AddClientScreen(
-                              prefilledId: searchValue,
-                            ),
-                          ),
-                        );
-
-                        if (saved == true) {
-                          await _load();
-                        }
-                      },
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _error != null
-                        ? Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.55),
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.error.withOpacity(0.25),
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.error_rounded,
-                                    color: Theme.of(context).colorScheme.onErrorContainer,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      '${l10n.loadFailed}: ${_error ?? ''}',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onErrorContainer,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: _filtered.length,
-                            itemBuilder: (_, i) {
-                              final c = _filtered[i];
-
-                              return ListTile(
-                                title: Text((c['name'] ?? '').toString()),
-                                subtitle: Text(widget.clientLabel(c)),
-                                onTap: () => Navigator.pop(context, c),
-                              );
-                            },
-                          ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Icon(Icons.chevron_right, size: 26, color: cs.onSurface.withOpacity(0.55)),
+          ],
         ),
       ),
     );

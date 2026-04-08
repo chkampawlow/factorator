@@ -146,7 +146,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get clientSelectionFailed => 'Échec de la sélection du client';
 
   @override
-  String get pleaseChooseClient => 'Veuillez choisir un client.';
+  String get pleaseChooseClient => 'Choisissez un client';
 
   @override
   String get chooseClient => 'Choisir un client';
@@ -1089,4 +1089,124 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get invalidPhoneNumber => 'Invalid phone number. Example: +216 20123456';
+
+  @override
+  String get personalDetails => 'Informations personnelles';
+
+  @override
+  String get addYourPersonalInfo => 'Ajoutez vos informations personnelles';
+
+  @override
+  String get individual => 'Individu';
+
+  @override
+  String get organizationNameRequired => 'Le nom de l\'organisation est obligatoire.';
+
+  @override
+  String get fullNameRequired => 'Le nom complet est obligatoire.';
+
+  @override
+  String get connectionsSubtitle => 'Gérez vos connexions et invitations';
+
+  @override
+  String get invite => 'Inviter';
+
+  @override
+  String get accepted => 'Connecté';
+
+  @override
+  String get requests => 'Demandes';
+
+  @override
+  String get sentInvites => 'Envoyées';
+
+  @override
+  String get noAcceptedConnections => 'Aucune connexion acceptée';
+
+  @override
+  String get noRequests => 'Aucune demande en attente';
+
+  @override
+  String get noSentInvites => 'Aucune invitation envoyée';
+
+  @override
+  String get inviteUser => 'Inviter un utilisateur';
+
+  @override
+  String get searchUsersHint => 'Rechercher des utilisateurs';
+
+  @override
+  String get noResults => 'Aucun résultat';
+
+  @override
+  String get invitationSent => 'Invitation envoyée';
+
+  @override
+  String get updated => 'Mis à jour';
+
+  @override
+  String get removed => 'Supprimé';
+
+  @override
+  String get accept => 'Accepter';
+
+  @override
+  String get decline => 'Refuser';
+
+  @override
+  String get remove => 'Supprimer';
+
+  @override
+  String get areYouSure => 'Êtes-vous sûr ?';
+
+  @override
+  String get chooseFromConnections => 'Choisir depuis les connexions';
+
+  @override
+  String get manualClient => 'Manuel';
+
+  @override
+  String get connectedUser => 'Utilisateur connecté';
+
+  @override
+  String get invalidSelection => 'Sélection invalide';
+
+  @override
+  String get enterClientNameOrEmail => 'Saisissez un nom de client ou un email';
+
+  @override
+  String get noClientSelected => 'Aucun client sélectionné';
+
+  @override
+  String get clientNameOptional => 'Nom du client (optionnel)';
+
+  @override
+  String get clientEmailOptional => 'Email du client (optionnel)';
+
+  @override
+  String get createInvoiceSetupSubtitle => 'Choisissez un client et la date d’échéance';
+
+  @override
+  String get searchUsers => 'Rechercher des utilisateurs';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get totalExpenses => 'Total des dépenses';
+
+  @override
+  String get recentlySearched => 'Recherches récentes';
+
+  @override
+  String get clear => 'Effacer';
+
+  @override
+  String get markAllRead => 'Tout marquer comme lu';
+
+  @override
+  String get noNotifications => 'Aucune notification';
+
+  @override
+  String get close => 'Fermer';
 }

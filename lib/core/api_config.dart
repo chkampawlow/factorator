@@ -1,5 +1,5 @@
 class ApiConfig {
-  static String baseUrl = 'http://192.168.1.144/backend';
+  static String baseUrl = 'https://parts-banana-hampshire-legislative.trycloudflare.com/backend';
 
   // 🔐 STATIC TOKEN
   static const String staticToken = 'a3Jmk8xjRHe443zusjKxAaE7PkHqrFPq';
@@ -17,11 +17,6 @@ class ApiConfig {
   static String get refresh => '$baseUrl/auth/refresh.php';
 
   // Clients
-  static String get getClients => '$baseUrl/clients/get_clients.php';
-  static String get getClientsevenarchived => '$baseUrl/clients/get_clients_all_with_archieved.php';
-  static String get addClient => '$baseUrl/clients/add_client.php';
-  static String get updateClient => '$baseUrl/clients/update_client.php';
-  static String get deleteClient => '$baseUrl/clients/delete_client.php';
 
   // Products
   static String get getProducts => '$baseUrl/products/get_products.php';
@@ -51,7 +46,7 @@ class ApiConfig {
 
   // User
   static String get updateProfile => '$baseUrl/user/update_profile.php';
-
+  static String get usersById => '$baseUrl/users/by_id.php';
 
 
 //mailing services
@@ -84,4 +79,21 @@ static String get expenseNotesAdd => '$baseUrl/expense_notes/add.php';
 static String get expenseNotesUpdate => '$baseUrl/expense_notes/update.php';
 static String get expenseNotesDelete => '$baseUrl/expense_notes/delete.php';
 static String get expenseNotesUpdateStatus => '$baseUrl/expense_notes/update_status.php'; 
-    }
+
+// ===== Connections =====
+// Connections
+static String get connectionsSearch => '$baseUrl/connections/search.php';
+static String get connectionsAccepted => '$baseUrl/connections/accepted.php';
+static String get connectionsInbox => '$baseUrl/connections/inbox.php';
+static String get connectionsSent => '$baseUrl/connections/sent.php';
+
+static String get connectionsSend => '$baseUrl/connections/send.php';
+static String get connectionsRespond => '$baseUrl/connections/respond.php';
+static String get connectionsRemove => '$baseUrl/connections/remove.php';
+// optional
+static String get connectionsMarkViewed => '$baseUrl/connections/mark_viewed.php';
+
+// ===== Notifications =====
+static String get notificationsList => '$baseUrl/notifications/list.php';
+static String get notificationsMarkRead => '$baseUrl/notifications/mark_read.php';
+}

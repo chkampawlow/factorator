@@ -36,7 +36,9 @@ class AppAlerts {
       ),
     };
 
-    final messenger = ScaffoldMessenger.of(context);
+    // Use the root navigator context so SnackBars appear above modal bottom sheets.
+    final rootContext = Navigator.of(context, rootNavigator: true).context;
+    final messenger = ScaffoldMessenger.maybeOf(rootContext) ?? ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(

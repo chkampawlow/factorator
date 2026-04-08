@@ -36,6 +36,9 @@ class InvoicesRepo {
     required double subtotal,
     required double totalVat,
     required double total,
+    String? customCode,
+    String? customName,
+    String? customEmail,
   }) async {
     final response = await _api.post(
       ApiConfig.addInvoice,
@@ -51,6 +54,9 @@ class InvoicesRepo {
         'total': total,
         'invoice_type': 'FACTURE',
         'notes': '',
+        'custom_code': (customCode ?? '').trim(),
+        'custom_name': (customName ?? '').trim(),
+        'custom_email': (customEmail ?? '').trim(),
       },
     ) as Map<String, dynamic>;
 

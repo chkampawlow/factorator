@@ -146,7 +146,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clientSelectionFailed => 'Client selection failed';
 
   @override
-  String get pleaseChooseClient => 'Please choose a client.';
+  String get pleaseChooseClient => 'Choose a client';
 
   @override
   String get chooseClient => 'Choose Client';
@@ -1089,4 +1089,124 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidPhoneNumber => 'Numéro invalide. Exemple : +216 20123456';
+
+  @override
+  String get personalDetails => 'Personal details';
+
+  @override
+  String get addYourPersonalInfo => 'Add your personal information';
+
+  @override
+  String get individual => 'Individual';
+
+  @override
+  String get organizationNameRequired => 'Organization name is required.';
+
+  @override
+  String get fullNameRequired => 'Full name is required.';
+
+  @override
+  String get connectionsSubtitle => 'Manage your connections and invitations';
+
+  @override
+  String get invite => 'Invite';
+
+  @override
+  String get accepted => 'Connected';
+
+  @override
+  String get requests => 'Requests';
+
+  @override
+  String get sentInvites => 'Sent';
+
+  @override
+  String get noAcceptedConnections => 'No accepted connections yet';
+
+  @override
+  String get noRequests => 'No pending requests';
+
+  @override
+  String get noSentInvites => 'No sent invitations';
+
+  @override
+  String get inviteUser => 'Invite a user';
+
+  @override
+  String get searchUsersHint => 'Search users';
+
+  @override
+  String get noResults => 'No results';
+
+  @override
+  String get invitationSent => 'Invitation sent';
+
+  @override
+  String get updated => 'Updated';
+
+  @override
+  String get removed => 'Removed';
+
+  @override
+  String get accept => 'Accept';
+
+  @override
+  String get decline => 'Decline';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get areYouSure => 'Are you sure?';
+
+  @override
+  String get chooseFromConnections => 'Choose from connections';
+
+  @override
+  String get manualClient => 'Manual';
+
+  @override
+  String get connectedUser => 'Connected user';
+
+  @override
+  String get invalidSelection => 'Invalid selection';
+
+  @override
+  String get enterClientNameOrEmail => 'Enter a client name or an email';
+
+  @override
+  String get noClientSelected => 'No client selected';
+
+  @override
+  String get clientNameOptional => 'Client name (optional)';
+
+  @override
+  String get clientEmailOptional => 'Client email (optional)';
+
+  @override
+  String get createInvoiceSetupSubtitle => 'Select a client and set the due date';
+
+  @override
+  String get searchUsers => 'Search users';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get totalExpenses => 'Total expenses';
+
+  @override
+  String get recentlySearched => 'Recently searched';
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get markAllRead => 'Mark all read';
+
+  @override
+  String get noNotifications => 'No notifications';
+
+  @override
+  String get close => 'Close';
 }

@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/api_config.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/enable_2fa_screen.dart';
+import 'package:my_app/screens/connections_screen.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/location_service.dart';
 import 'package:my_app/services/settings_service.dart';
@@ -543,49 +544,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         _headerCard(
                           context,
-                          child: Column(
+                          child: Stack(
                             children: [
-                              GestureDetector(
-                                onTap: _pickProfileImage,
-                                child: Stack(
-                                  alignment: Alignment.bottomRight,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 42,
-                                      backgroundColor: cs.primaryContainer,
-                                      backgroundImage: _profileImagePath != null
-                                          ? FileImage(File(_profileImagePath!))
-                                          : null,
-                                      child: _profileImagePath == null
-                                          ? Icon(
-                                              Icons.person,
-                                              size: 40,
-                                              color: cs.onPrimaryContainer,
-                                            )
-                                          : null,
+                              Column(
+                                children: [
+                                  GestureDetector(
+                                    onTap: _pickProfileImage,
+                                    child: Stack(
+                                      alignment: Alignment.bottomRight,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 42,
+                                          backgroundColor: cs.primaryContainer,
+                                          backgroundImage: _profileImagePath != null
+                                              ? FileImage(File(_profileImagePath!))
+                                              : null,
+                                          child: _profileImagePath == null
+                                              ? Icon(
+                                                  Icons.person,
+                                                  size: 40,
+                                                  color: cs.onPrimaryContainer,
+                                                )
+                                              : null,
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: cs.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.camera_alt,
+                                            size: 16,
+                                            color: cs.onPrimary,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: cs.primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.camera_alt,
-                                        size: 16,
-                                        color: cs.onPrimary,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    '${_user?['organization_name'] ?? ''}'.trim(),
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w900,
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                '${_user?['organization_name'] ?? ''}'.trim(),
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                ),
-                                textAlign: TextAlign.center,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton.tonalIcon(
+                                      icon: const Icon(Icons.people_alt_outlined),
+                                      label: Text(l10n.customers),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => const ConnectionsScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -748,6 +769,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: Text(l10n.companyInformation),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: _showCompanyInfoDialog,
+                              ),
+                              const Divider(height: 1),
+                              ListTile(
+                                leading: const Icon(Icons.people_alt_outlined),
+                                title: Text(l10n.customers),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ConnectionsScreen(),
+                                    ),
+                                  );
+                                },
                               ),
                               const Divider(height: 1),
                               ListTile(

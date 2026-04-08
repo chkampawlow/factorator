@@ -5,7 +5,6 @@ import 'package:my_app/screens/expense_notes_screen.dart';
 import 'package:my_app/screens/profile_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
-import 'screens/clients_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/invoices_screen.dart';
 import 'screens/login_screen.dart';
@@ -270,7 +269,6 @@ class _MainShellState extends State<MainShell> {
 
     final pages = [
       DashboardScreen(onToggleTheme: widget.onToggleTheme),
-      const ClientsScreen(),
       const ProductsScreen(),
       const InvoicesScreen(),
       const ExpenseNotesScreen(),
@@ -342,11 +340,6 @@ class _MainShellState extends State<MainShell> {
                       icon: const Icon(Icons.dashboard_outlined),
                       selectedIcon: const Icon(Icons.dashboard_rounded),
                       label: l10n.dashboard,
-                    ),
-                    NavigationDestination(
-                      icon: const Icon(Icons.people_outline),
-                      selectedIcon: const Icon(Icons.people_rounded),
-                      label: l10n.clients,
                     ),
                     NavigationDestination(
                       icon: const Icon(Icons.inventory_2_outlined),

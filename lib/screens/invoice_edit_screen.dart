@@ -6,7 +6,6 @@ import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/invoice_pdf_service.dart';
 import 'package:my_app/services/settings_service.dart';
-import 'package:my_app/storage/clients_repo.dart';
 import 'package:my_app/storage/invoice_items_repo.dart';
 import 'package:my_app/storage/invoices_repo.dart';
 import 'package:my_app/storage/products_repo.dart';
@@ -29,7 +28,6 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   String? _error;
   bool _clientDeleted = false;
 
-  final _clientsRepo = ClientsRepo();
   final _productsRepo = ProductsRepo();
   final _invoiceItemsRepo = InvoiceItemsRepo();
   final _invoicesRepo = InvoicesRepo();
@@ -95,26 +93,49 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       final currentUser = await _authService.me();
       final currency = await _settingsService.getCurrency();
 
-      final rawClientId = remoteInv['custom_code'];
-      final clientId = rawClientId is int
-          ? rawClientId
-          : int.tryParse(rawClientId.toString());
+      // New backend model:
+      // - If invoice is linked to a connected user, API returns `user` object (and convenience fields).
+      // - If invoice is manual, API returns `manual_contact` (and convenience fields).
+      final manualName = (remoteInv['custom_name'] ?? remoteInv['customName'] ?? '').toString().trim();
+      final manualEmail = (remoteInv['custom_email'] ?? remoteInv['customEmail'] ?? '').toString().trim();
 
-      Map<String, dynamic>? client;
-      bool clientDeleted = false;
+      final userRaw = remoteInv['user'];
+      final Map<String, dynamic>? user = (userRaw is Map)
+          ? Map<String, dynamic>.from(userRaw)
+          : null;
 
-      if (clientId != null && clientId > 0) {
-        try {
-          client = await _clientsRepo.getClientById(clientId);
-          if (client == null || client.isEmpty) {
-            clientDeleted = true;
-            client = null;
-          }
-        } catch (_) {
-          clientDeleted = true;
-          client = null;
-        }
-      }
+      final userLabel = (remoteInv['user_label'] ?? user?['label'] ?? '').toString().trim();
+      final userEmail = (remoteInv['user_email'] ?? user?['email'] ?? '').toString().trim();
+      final userAddress = (remoteInv['user_address'] ?? user?['address'] ?? '').toString().trim();
+      final userType = (remoteInv['user_account_type'] ?? user?['account_type'] ?? '').toString().trim();
+
+      final hasConnection = user != null;
+      final hasManual = manualName.isNotEmpty || manualEmail.isNotEmpty;
+
+      // Only show banner if neither connected user nor manual contact exists.
+      final clientDeleted = !hasConnection && !hasManual;
+
+      // Prefer connected user label; otherwise fallback to manual name/email.
+      final clientName = userLabel.isNotEmpty
+          ? userLabel
+          : (manualName.isNotEmpty
+              ? manualName
+              : (manualEmail.isNotEmpty ? manualEmail : 'Client'));
+
+      final clientEmail = userEmail.isNotEmpty ? userEmail : manualEmail;
+      final clientAddress = userAddress;
+
+      // Normalize type for the PDF and UI.
+      // - organization | individual | manual
+      final normalizedType = hasConnection
+          ? (userType.isNotEmpty
+              ? userType
+              : ((user?['organization_name'] ?? '').toString().trim().isNotEmpty
+                  ? 'organization'
+                  : 'individual'))
+          : (hasManual ? 'manual' : '');
+
+      final connectedUserId = hasConnection ? _toInt(user?['id']) : 0;
 
       final inv = {
         'id': remoteInv['id'],
@@ -125,13 +146,21 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         'totalVat': remoteInv['montant_tva'],
         'total': remoteInv['total'],
         'status': remoteInv['status'],
-        'clientName': client?['name'] ?? 'Client',
-        'clientEmail': client?['email'] ?? '',
-        'clientPhone': client?['phone'] ?? '',
-        'clientAddress': client?['address'] ?? '',
-        'clientType': client?['type'] ?? 'individual',
-        'clientFiscalId': client?['fiscalId'] ?? client?['fiscal_id'] ?? '',
-        'clientCin': client?['cin'] ?? '',
+
+        // Client (manual or connected)
+        'clientName': clientName,
+        'clientEmail': clientEmail,
+        'clientPhone': (user?['phone'] ?? '').toString(),
+        'clientAddress': clientAddress,
+        'clientType': normalizedType,
+        'clientFiscalId': '',
+        'clientCin': '',
+
+        // Connected user info
+        'connectedUserId': connectedUserId,
+        'hasConnection': hasConnection,
+
+        // Current user (issuer)
         'userFirstName': currentUser['first_name'] ?? '',
         'userLastName': currentUser['last_name'] ?? '',
         'userFiscalId': currentUser['fiscal_id'] ?? '',
@@ -205,7 +234,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Client has been deleted',
+                  'Client is missing',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     color: cs.onErrorContainer,
@@ -213,7 +242,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'This invoice still exists, but the client reference is missing.',
+                  'This invoice exists, but no client was selected.',
                   style: TextStyle(
                     color: cs.onErrorContainer,
                   ),
@@ -527,7 +556,7 @@ final bytes = await InvoicePdfService.buildInvoicePdf(
     final l10n = AppLocalizations.of(context)!;
 
     final invNum = (_invoice!['invoiceNumber'] ?? '').toString();
-    final status = (_invoice!['status'] ?? 'UNPAID').toString();
+    final status = (_invoice!['status'] ?? 'UNPAID').toString().trim();
     final clientName = (_invoice!['clientName'] ?? l10n.client).toString();
 
     final subtotal = _toD(_invoice!['subtotal']);

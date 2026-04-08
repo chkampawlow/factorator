@@ -146,7 +146,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get clientSelectionFailed => 'فشل اختيار العميل';
 
   @override
-  String get pleaseChooseClient => 'يرجى اختيار عميل.';
+  String get pleaseChooseClient => 'اختر عميلًا';
 
   @override
   String get chooseClient => 'اختر العميل';
@@ -555,7 +555,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reviewBeforeCreate => 'تأكد من صحة كل شيء قبل إنشاء الحساب.';
 
   @override
-  String get organization => 'المؤسسة';
+  String get organization => 'مؤسسة';
 
   @override
   String get fiscalIdLabel => 'المعرف الجبائي';
@@ -989,7 +989,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get monthlyExpenses => 'المصاريف الشهرية';
 
   @override
-  String get netMonthlyRevenue => 'صافي الدخل الشهري';
+  String get netMonthlyRevenue => 'صافي الإيراد الشهري';
 
   @override
   String get alertsTitle => 'التنبيهات';
@@ -1089,4 +1089,124 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get invalidPhoneNumber => 'رقم الهاتف غير صالح. مثال: +216 20123456رقم الهاتف غير صالح. مثال: +216 ';
+
+  @override
+  String get personalDetails => 'المعلومات الشخصية';
+
+  @override
+  String get addYourPersonalInfo => 'أضف معلوماتك الشخصية';
+
+  @override
+  String get individual => 'فرد';
+
+  @override
+  String get organizationNameRequired => 'اسم المؤسسة مطلوب.';
+
+  @override
+  String get fullNameRequired => 'الاسم الكامل مطلوب.';
+
+  @override
+  String get connectionsSubtitle => 'إدارة الاتصالات والدعوات';
+
+  @override
+  String get invite => 'دعوة';
+
+  @override
+  String get accepted => 'متصل';
+
+  @override
+  String get requests => 'الطلبات';
+
+  @override
+  String get sentInvites => 'مرسلة';
+
+  @override
+  String get noAcceptedConnections => 'لا توجد اتصالات مقبولة بعد';
+
+  @override
+  String get noRequests => 'لا توجد طلبات معلّقة';
+
+  @override
+  String get noSentInvites => 'لا توجد دعوات مرسلة';
+
+  @override
+  String get inviteUser => 'دعوة مستخدم';
+
+  @override
+  String get searchUsersHint => 'ابحث عن مستخدمين';
+
+  @override
+  String get noResults => 'لا توجد نتائج';
+
+  @override
+  String get invitationSent => 'تم إرسال الدعوة';
+
+  @override
+  String get updated => 'تم التحديث';
+
+  @override
+  String get removed => 'تمت الإزالة';
+
+  @override
+  String get accept => 'قبول';
+
+  @override
+  String get decline => 'رفض';
+
+  @override
+  String get remove => 'إزالة';
+
+  @override
+  String get areYouSure => 'هل أنت متأكد؟';
+
+  @override
+  String get chooseFromConnections => 'اختر من الاتصالات';
+
+  @override
+  String get manualClient => 'يدوي';
+
+  @override
+  String get connectedUser => 'مستخدم متصل';
+
+  @override
+  String get invalidSelection => 'اختيار غير صالح';
+
+  @override
+  String get enterClientNameOrEmail => 'أدخل اسم العميل أو البريد الإلكتروني';
+
+  @override
+  String get noClientSelected => 'لم يتم اختيار عميل';
+
+  @override
+  String get clientNameOptional => 'اسم العميل (اختياري)';
+
+  @override
+  String get clientEmailOptional => 'بريد العميل (اختياري)';
+
+  @override
+  String get createInvoiceSetupSubtitle => 'اختر عميلًا وحدد تاريخ الاستحقاق';
+
+  @override
+  String get searchUsers => 'بحث عن مستخدمين';
+
+  @override
+  String get notifications => 'الإشعارات';
+
+  @override
+  String get totalExpenses => 'إجمالي المصروفات';
+
+  @override
+  String get recentlySearched => 'عمليات البحث الأخيرة';
+
+  @override
+  String get clear => 'مسح';
+
+  @override
+  String get markAllRead => 'تحديد الكل كمقروء';
+
+  @override
+  String get noNotifications => 'لا توجد إشعارات';
+
+  @override
+  String get close => 'إغلاق';
 }

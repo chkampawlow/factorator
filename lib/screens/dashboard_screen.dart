@@ -1,18 +1,20 @@
+// lib/screens/dashboard_screen.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/screens/app_top_bar.dart';
+import 'package:my_app/screens/connections_search_sheet.dart';
 import 'package:my_app/screens/create_invoice_screen.dart';
 import 'package:my_app/screens/create_expense_note_screen.dart';
-import 'package:my_app/screens/clients_screen.dart';
+import 'package:my_app/screens/connections_screen.dart';
+import 'package:my_app/screens/notifications.dart';
 
-import '../services/auth_service.dart';
 import 'package:my_app/services/currency_service.dart';
 import '../services/settings_service.dart';
-import '../storage/clients_repo.dart';
 import '../storage/dashboard_repo.dart';
 import '../storage/expense_notes_repo.dart';
+import '../storage/connections_repo.dart';
 import '../widgets/action_tile.dart';
-
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -25,10 +27,9 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _repo = DashboardRepo();
-  final _clientsRepo = ClientsRepo();
-  final _authService = AuthService();
   final _settingsService = SettingsService();
   final _expenseRepo = ExpenseNotesRepo();
+  final _connectionsRepo = ConnectionsRepo();
 
   bool _loading = true;
 
@@ -48,20 +49,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double _avgInvoice = 0;
   List<MapEntry<String, double>> _topClients = [];
 
-bool _didLoadOnce = false;
+  bool _didLoadOnce = false;
 
-@override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  if (!_didLoadOnce) {
-    _didLoadOnce = true;
-    _load();
-  }
-}
-
-  Future<int> _countCustomers() async {
-    final clients = await _clientsRepo.getAllClients();
-    return clients.length;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didLoadOnce) {
+      _didLoadOnce = true;
+      _load();
+    }
   }
 
   void _computeStats(List<Map<String, dynamic>> invoices) {
@@ -79,7 +75,7 @@ void didChangeDependencies() {
     }
 
     for (final inv in invoices) {
-      final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase();
+      final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase().trim();
       final total = double.tryParse((inv['total'] ?? '0').toString()) ?? 0.0;
       final invoiceDate = _parseDate((inv['invoice_date'] ?? '').toString());
       final key = '${invoiceDate.year}-${invoiceDate.month.toString().padLeft(2, '0')}';
@@ -107,10 +103,9 @@ void didChangeDependencies() {
     final totalInvoices = paidCount + unpaidCount;
     _paymentRate = totalInvoices == 0 ? 0 : (paidCount / totalInvoices) * 100;
 
-    // avg invoice
-    _avgInvoice = invoices.isEmpty ? 0 : (totalRevenue + pendingAmount) / invoices.length;
+    _avgInvoice =
+        invoices.isEmpty ? 0 : (totalRevenue + pendingAmount) / invoices.length;
 
-    // top clients (by revenue)
     final clientTotals = <String, double>{};
     for (final inv in invoices) {
       final client = (inv['client_name'] ?? 'Unknown').toString();
@@ -126,11 +121,9 @@ void didChangeDependencies() {
 
   void _computeGrowth() {
     _growth = [];
-
     for (int i = 1; i < _monthlyRevenue.length; i++) {
       final prev = _monthlyRevenue[i - 1];
       final current = _monthlyRevenue[i];
-
       if (prev == 0) {
         _growth.add(0);
       } else {
@@ -139,127 +132,97 @@ void didChangeDependencies() {
     }
   }
 
-Future<void> _load() async {
-  setState(() => _loading = true);
+  Future<void> _load() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
 
-  try {
-    final invoices = await _repo.getRecentInvoices(limit: 500);
-    final customers = await _countCustomers();
-    final currency = await _settingsService.getCurrency();
+    try {
+      final invoices = await _repo.getRecentInvoices(limit: 500);
+      if (!mounted) return;
 
-    final expenses = await _expenseRepo.listExpenseNotes();
+      final currency = await _settingsService.getCurrency();
+      if (!mounted) return;
 
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final startOfNextMonth = DateTime(now.year, now.month + 1, 1);
+      final expenses = await _expenseRepo.listExpenseNotes();
+      if (!mounted) return;
 
-    double monthlyExpenses = 0.0;
-    for (final e in expenses) {
-      final rawDate = (e['expense_date'] ?? e['date'] ?? '').toString();
-      final d = DateTime.tryParse(rawDate);
-      if (d == null) continue;
-      if (d.isBefore(startOfMonth) || !d.isBefore(startOfNextMonth)) continue;
+      int acceptedCount = 0;
+      try {
+        final accepted = await _connectionsRepo.accepted();
+        acceptedCount = accepted.length;
+      } catch (_) {
+        acceptedCount = 0;
+      }
+      if (!mounted) return;
 
-      final st = (e['status'] ?? '').toString().trim().toLowerCase();
-      if (st == 'cancelled' || st == 'canceled' || st == 'rejected') continue;
+      final now = DateTime.now();
+      final startOfMonth = DateTime(now.year, now.month, 1);
+      final startOfNextMonth = DateTime(now.year, now.month + 1, 1);
 
-      final amt = (e['amount'] is num)
-          ? (e['amount'] as num).toDouble()
-          : double.tryParse(e['amount'].toString().replaceAll(',', '.'));
-      if (amt == null) continue;
+      double monthlyExpenses = 0.0;
+      for (final e in expenses) {
+        final rawDate = (e['expense_date'] ?? e['date'] ?? '').toString();
+        final d = DateTime.tryParse(rawDate);
+        if (d == null) continue;
+        if (d.isBefore(startOfMonth) || !d.isBefore(startOfNextMonth)) continue;
 
-      monthlyExpenses += amt;
+        final st = (e['status'] ?? '').toString().trim().toLowerCase();
+        if (st == 'cancelled' || st == 'canceled' || st == 'rejected') continue;
+
+        final amt = (e['amount'] is num)
+            ? (e['amount'] as num).toDouble()
+            : double.tryParse(e['amount'].toString().replaceAll(',', '.'));
+        if (amt == null) continue;
+
+        monthlyExpenses += amt;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _allInvoices = invoices;
+        _currency = currency;
+        _computeStats(invoices);
+        _monthlyExpenses = monthlyExpenses;
+        _customersCount = acceptedCount;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
     }
-
-    setState(() {
-      _allInvoices = invoices;
-      _customersCount = customers;
-      _currency = currency;
-      _computeStats(invoices);
-      _monthlyExpenses = monthlyExpenses;
-      _loading = false;
-    });
-  } catch (e) {
-    setState(() {
-      _loading = false;
-    });
   }
-}
 
-DateTime _parseDate(String s) => DateTime.tryParse(s) ?? DateTime.now();
+  DateTime _parseDate(String s) => DateTime.tryParse(s) ?? DateTime.now();
 
-String _dateOnly(DateTime d) => d.toLocal().toString().split(' ')[0];
-
-Future<void> _go(Widget page) async {
-  final res = await Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => page),
-  );
-  if (res == true) await _load();
-}
-
-Future<void> _logout() async {
-  final l10n = AppLocalizations.of(context)!;
-
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(l10n.logout),
-      content: Text(l10n.logoutQuestion),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(l10n.logout),
-        ),
-      ],
-    ),
-  );
-
-  if (confirm != true) return;
-
-  await _authService.logout();
-
-  if (!mounted) return;
-
-  Navigator.pushNamedAndRemoveUntil(
-    context,
-    '/login',
-    (route) => false,
-  );
-}
-
+  Future<void> _go(Widget page) async {
+    final res = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
+    if (!mounted) return;
+    if (res == true) await _load();
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
     final statsColumns = screenWidth < 360 ? 1 : (screenWidth < 520 ? 2 : 3);
     final stackCharts = screenWidth < 700;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.dashboard,
-          style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-        ),
+      appBar: AppTopBar(
+        title: l10n.dashboard,
+        subtitle: l10n.quickActions,
         actions: [
           IconButton(
-            onPressed: widget.onToggleTheme,
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            tooltip: l10n.toggleTheme,
+            onPressed: () => showConnectionsSearchSheet(context),
+            icon: const Icon(Icons.search),
+            tooltip: l10n.searchUsers,
           ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-            tooltip: l10n.logout,
-          ),
+          const NotificationsBellButton(),
           const SizedBox(width: 6),
         ],
       ),
@@ -271,8 +234,6 @@ Future<void> _logout() async {
                 padding: const EdgeInsets.all(16),
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  const SizedBox(height: 18),
-                  Text(l10n.quickActions, style: t.headlineSmall),
                   const SizedBox(height: 12),
                   GridView.count(
                     shrinkWrap: true,
@@ -298,7 +259,7 @@ Future<void> _logout() async {
                         label: '${l10n.customers} ($_customersCount)',
                         icon: Icons.people_alt_outlined,
                         bg: cs.secondaryContainer.withOpacity(.40),
-                        onTap: () => _go(const ClientsScreen()),
+                        onTap: () => _go(const ConnectionsScreen()),
                       ),
                     ],
                   ),
@@ -314,12 +275,15 @@ Future<void> _logout() async {
                     crossAxisCount: statsColumns,
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
-                    childAspectRatio: statsColumns == 1 ? 2.2 : (statsColumns == 2 ? 1.25 : 1.0),
+                    childAspectRatio: statsColumns == 1
+                        ? 2.2
+                        : (statsColumns == 2 ? 1.25 : 1.0),
                     children: [
                       _StatCard(
                         title: l10n.netMonthlyRevenue,
                         value: CurrencyService.format(
-                          (_monthlyRevenue.isNotEmpty ? _monthlyRevenue.last : 0) - _monthlyExpenses,
+                          (_monthlyRevenue.isNotEmpty ? _monthlyRevenue.last : 0) -
+                              _monthlyExpenses,
                           _currency,
                         ),
                         subtitle: _currency,
@@ -344,7 +308,7 @@ Future<void> _logout() async {
                         color: cs.tertiary,
                       ),
                       _StatCard(
-                        title: l10n.createExpenseNoteTitle,
+                        title: l10n.totalExpenses,
                         value: CurrencyService.format(_monthlyExpenses, _currency),
                         subtitle: _currency,
                         icon: Icons.account_balance_wallet_outlined,
@@ -367,8 +331,6 @@ Future<void> _logout() async {
                     ],
                   ),
                   const SizedBox(height: 18),
-
-                  // ===== NEW STATS SECTION =====
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -380,31 +342,33 @@ Future<void> _logout() async {
                             style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
                           ),
                           const SizedBox(height: 12),
-                          ..._topClients.map((e) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        e.key,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: t.bodyMedium,
-                                      ),
+                          ..._topClients.map(
+                            (e) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      e.key,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: t.bodyMedium,
                                     ),
-                                    Text(
-                                      CurrencyService.format(e.value, _currency),
-                                      style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                  Text(
+                                    CurrencyService.format(e.value, _currency),
+                                    style: t.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w800,
                                     ),
-                                  ],
-                                ),
-                              )),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   stackCharts
                       ? Column(
                           children: [
@@ -416,7 +380,9 @@ Future<void> _logout() async {
                                   children: [
                                     Text(
                                       l10n.growthCurve,
-                                      style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                                      style: t.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                     ),
                                     const SizedBox(height: 12),
                                     SizedBox(
@@ -436,7 +402,8 @@ Future<void> _logout() async {
                                                 values: _growth,
                                                 lineColor: cs.primary,
                                                 fillColor: cs.primary.withOpacity(0.10),
-                                                gridColor: cs.outlineVariant.withOpacity(0.25),
+                                                gridColor:
+                                                    cs.outlineVariant.withOpacity(0.25),
                                               ),
                                               child: const SizedBox.expand(),
                                             ),
@@ -454,7 +421,9 @@ Future<void> _logout() async {
                                   children: [
                                     Text(
                                       l10n.paymentRate,
-                                      style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                                      style: t.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                     ),
                                     const SizedBox(height: 12),
                                     SizedBox(
@@ -462,11 +431,6 @@ Future<void> _logout() async {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            l10n.paymentRate,
-                                            style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
-                                          ),
-                                          const SizedBox(height: 12),
                                           LinearProgressIndicator(
                                             value: _paymentRate / 100,
                                             minHeight: 10,
@@ -475,7 +439,9 @@ Future<void> _logout() async {
                                           const SizedBox(height: 8),
                                           Text(
                                             '${_paymentRate.toStringAsFixed(1)}%',
-                                            style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                                            style: t.titleMedium?.copyWith(
+                                              fontWeight: FontWeight.w900,
+                                            ),
                                           ),
                                           Text(
                                             '$_paidCount ${l10n.paidLabel} / $_unpaidCount ${l10n.unpaidLabel}',
@@ -501,7 +467,9 @@ Future<void> _logout() async {
                                     children: [
                                       Text(
                                         l10n.growthCurve,
-                                        style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                                        style: t.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                        ),
                                       ),
                                       const SizedBox(height: 12),
                                       SizedBox(
@@ -521,7 +489,8 @@ Future<void> _logout() async {
                                                   values: _growth,
                                                   lineColor: cs.primary,
                                                   fillColor: cs.primary.withOpacity(0.10),
-                                                  gridColor: cs.outlineVariant.withOpacity(0.25),
+                                                  gridColor:
+                                                      cs.outlineVariant.withOpacity(0.25),
                                                 ),
                                                 child: const SizedBox.expand(),
                                               ),
@@ -541,7 +510,9 @@ Future<void> _logout() async {
                                     children: [
                                       Text(
                                         l10n.paymentRate,
-                                        style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                                        style: t.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                        ),
                                       ),
                                       const SizedBox(height: 12),
                                       SizedBox(
@@ -549,11 +520,6 @@ Future<void> _logout() async {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              l10n.paymentRate,
-                                              style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
-                                            ),
-                                            const SizedBox(height: 12),
                                             LinearProgressIndicator(
                                               value: _paymentRate / 100,
                                               minHeight: 10,
@@ -562,7 +528,9 @@ Future<void> _logout() async {
                                             const SizedBox(height: 8),
                                             Text(
                                               '${_paymentRate.toStringAsFixed(1)}%',
-                                              style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                                              style: t.titleMedium?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                              ),
                                             ),
                                             Text(
                                               '$_paidCount ${l10n.paidLabel} / $_unpaidCount ${l10n.unpaidLabel}',
@@ -615,6 +583,7 @@ class _StatCard extends StatelessWidget {
           final padding = ultraCompact ? 10.0 : (compact ? 12.0 : 14.0);
           final iconPad = ultraCompact ? 6.0 : (compact ? 8.0 : 10.0);
           final iconSize = ultraCompact ? 16.0 : (compact ? 20.0 : 24.0);
+
           final titleStyle = (ultraCompact ? t.labelSmall : t.bodySmall)?.copyWith(
             color: cs.onSurfaceVariant,
             fontWeight: FontWeight.w700,
@@ -693,24 +662,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _LegendDot extends StatelessWidget {
-  final Color color;
-
-  const _LegendDot({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}
-
 class _RevenueLineChartPainter extends CustomPainter {
   final List<double> values;
   final Color lineColor;
@@ -781,11 +732,11 @@ class _RevenueLineChartPainter extends CustomPainter {
       final x = leftPad + (dx * i);
       final y = chartHeight - ((values[i] / maxValue) * (chartHeight - 8));
       canvas.drawCircle(Offset(x, y), 3.8, pointPaint);
+
       final textPainter = TextPainter(
         text: TextSpan(
           text: '${values[i].toStringAsFixed(0)}%',
-          style: TextStyle(
-            color: values[i] >= 0 ? Colors.green : Colors.red,
+          style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
@@ -806,67 +757,5 @@ class _RevenueLineChartPainter extends CustomPainter {
         oldDelegate.lineColor != lineColor ||
         oldDelegate.fillColor != fillColor ||
         oldDelegate.gridColor != gridColor;
-  }
-}
-
-class _InvoiceDonutPainter extends CustomPainter {
-  final int paidCount;
-  final int unpaidCount;
-  final Color paidColor;
-  final Color unpaidColor;
-  final Color trackColor;
-
-  _InvoiceDonutPainter({
-    required this.paidCount,
-    required this.unpaidCount,
-    required this.paidColor,
-    required this.unpaidColor,
-    required this.trackColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final total = paidCount + unpaidCount;
-    if (total <= 0) return;
-
-    final strokeWidth = 18.0;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - strokeWidth;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    final trackPaint = Paint()
-      ..color = trackColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final paidPaint = Paint()
-      ..color = paidColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final unpaidPaint = Paint()
-      ..color = unpaidColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, trackPaint);
-
-    final paidSweep = (paidCount / total) * math.pi * 2;
-    final unpaidSweep = (unpaidCount / total) * math.pi * 2;
-
-    canvas.drawArc(rect, -math.pi / 2, paidSweep, false, paidPaint);
-    canvas.drawArc(rect, -math.pi / 2 + paidSweep, unpaidSweep, false, unpaidPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _InvoiceDonutPainter oldDelegate) {
-    return oldDelegate.paidCount != paidCount ||
-        oldDelegate.unpaidCount != unpaidCount ||
-        oldDelegate.paidColor != paidColor ||
-        oldDelegate.unpaidColor != unpaidColor ||
-        oldDelegate.trackColor != trackColor;
   }
 }
