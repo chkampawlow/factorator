@@ -621,7 +621,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get region => 'المنطقة';
 
   @override
-  String get name => 'Name';
+  String get name => 'الاسم';
 
   @override
   String get identifier => 'Identifier';
@@ -633,7 +633,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get subtotal => 'Subtotal';
 
   @override
-  String get total => 'Total';
+  String get total => 'الإجمالي';
 
   @override
   String get verifyEmail => 'تحقق من بريدك الإلكتروني';
@@ -1209,4 +1209,55 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get close => 'إغلاق';
+
+  @override
+  String get clientDashboard => 'لوحة العميل';
+
+  @override
+  String get clientDashboardSubtitle => 'مساحتك';
+
+  @override
+  String get clientDashboardHint => 'هنا يمكنك مشاهدة الفواتير المستلمة وإدارة ملفك الشخصي.';
+
+  @override
+  String get receivedInvoices => 'الفواتير المستلمة';
+
+  @override
+  String get receivedInvoicesSubtitle => 'الفواتير التي تم إرسالها إليك';
+
+  @override
+  String get profileSubtitle => 'إدارة معلوماتك والإعدادات';
+
+  @override
+  String get openInvoicesFromNav => 'افتح صفحة الفواتير من شريط التنقل بالأسفل.';
+
+  @override
+  String get openProfileFromNav => 'افتح صفحة الملف الشخصي من شريط التنقل بالأسفل.';
+
+  @override
+  String get invoiceDetails => 'تفاصيل الفاتورة';
+
+  @override
+  String get unknown => 'غير معروف';
+
+  @override
+  String get date => 'التاريخ';
+
+  @override
+  String get sender => 'المرسل';
+
+  @override
+  String get receiver => 'المستلم';
+
+  @override
+  String get accountType => 'نوع الحساب';
+
+  @override
+  String get receivedInvoicesListTitle => 'قائمة الفواتير المستلمة';
+
+  @override
+  String get filter => 'تصفية';
+
+  @override
+  String get searchReceivedInvoicesHint => 'ابحث عن فاتورة، عميل، بريد...';
 }

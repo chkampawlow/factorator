@@ -132,7 +132,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chooseClientOrAddNew => 'Choisir un client ou en ajouter un';
 
   @override
-  String get dueDate => 'Date d\'échéance';
+  String get dueDate => 'Date d’échéance';
 
   @override
   String get nextStep => 'Étape suivante';
@@ -1209,4 +1209,55 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get close => 'Fermer';
+
+  @override
+  String get clientDashboard => 'Espace client';
+
+  @override
+  String get clientDashboardSubtitle => 'Votre espace';
+
+  @override
+  String get clientDashboardHint => 'Ici, vous pouvez consulter les factures reçues et gérer votre profil.';
+
+  @override
+  String get receivedInvoices => 'Factures reçues';
+
+  @override
+  String get receivedInvoicesSubtitle => 'Factures qui vous ont été envoyées';
+
+  @override
+  String get profileSubtitle => 'Gérer vos informations et paramètres';
+
+  @override
+  String get openInvoicesFromNav => 'Ouvrez Factures depuis la barre de navigation.';
+
+  @override
+  String get openProfileFromNav => 'Ouvrez Profil depuis la barre de navigation.';
+
+  @override
+  String get invoiceDetails => 'Détails de la facture';
+
+  @override
+  String get unknown => 'Inconnu';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get sender => 'Émetteur';
+
+  @override
+  String get receiver => 'Récepteur';
+
+  @override
+  String get accountType => 'Type de compte';
+
+  @override
+  String get receivedInvoicesListTitle => 'Liste des factures reçues';
+
+  @override
+  String get filter => 'Filtre';
+
+  @override
+  String get searchReceivedInvoicesHint => 'Rechercher facture, client, email...';
 }

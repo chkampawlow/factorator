@@ -1,5 +1,5 @@
 class ApiConfig {
-  static String baseUrl = 'https://parts-banana-hampshire-legislative.trycloudflare.com/backend';
+  static String baseUrl = 'https://titles-erik-loans-documents.trycloudflare.com/backend';
 
   // 🔐 STATIC TOKEN
   static const String staticToken = 'a3Jmk8xjRHe443zusjKxAaE7PkHqrFPq';
@@ -16,7 +16,11 @@ class ApiConfig {
   static String get me => '$baseUrl/auth/me.php';
   static String get refresh => '$baseUrl/auth/refresh.php';
 
-  // Clients
+  // Clients endpoints
+
+static String get invoicesReceivedList => '$baseUrl/invoices/received.php';
+static String get invoicesReceivedById => '$baseUrl/invoices/get_received_by_id.php';
+
 
   // Products
   static String get getProducts => '$baseUrl/products/get_products.php';

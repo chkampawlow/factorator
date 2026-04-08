@@ -2448,6 +2448,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get close;
+
+  /// No description provided for @clientDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Client Dashboard'**
+  String get clientDashboard;
+
+  /// No description provided for @clientDashboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your space'**
+  String get clientDashboardSubtitle;
+
+  /// No description provided for @clientDashboardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Here you can view invoices you received and manage your profile.'**
+  String get clientDashboardHint;
+
+  /// No description provided for @receivedInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Received invoices'**
+  String get receivedInvoices;
+
+  /// No description provided for @receivedInvoicesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoices sent to you'**
+  String get receivedInvoicesSubtitle;
+
+  /// No description provided for @profileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your info and settings'**
+  String get profileSubtitle;
+
+  /// No description provided for @openInvoicesFromNav.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Invoices from the bottom navigation bar.'**
+  String get openInvoicesFromNav;
+
+  /// No description provided for @openProfileFromNav.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Profile from the bottom navigation bar.'**
+  String get openProfileFromNav;
+
+  /// No description provided for @invoiceDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice details'**
+  String get invoiceDetails;
+
+  /// No description provided for @unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknown;
+
+  /// No description provided for @date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get date;
+
+  /// No description provided for @sender.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender'**
+  String get sender;
+
+  /// No description provided for @receiver.
+  ///
+  /// In en, this message translates to:
+  /// **'Receiver'**
+  String get receiver;
+
+  /// No description provided for @accountType.
+  ///
+  /// In en, this message translates to:
+  /// **'Account type'**
+  String get accountType;
+
+  /// No description provided for @receivedInvoicesListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Received invoices list'**
+  String get receivedInvoicesListTitle;
+
+  /// No description provided for @filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filter;
+
+  /// No description provided for @searchReceivedInvoicesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search invoice, client, email...'**
+  String get searchReceivedInvoicesHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

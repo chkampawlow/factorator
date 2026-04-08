@@ -1209,4 +1209,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get close => 'Close';
+
+  @override
+  String get clientDashboard => 'Client Dashboard';
+
+  @override
+  String get clientDashboardSubtitle => 'Your space';
+
+  @override
+  String get clientDashboardHint => 'Here you can view invoices you received and manage your profile.';
+
+  @override
+  String get receivedInvoices => 'Received invoices';
+
+  @override
+  String get receivedInvoicesSubtitle => 'Invoices sent to you';
+
+  @override
+  String get profileSubtitle => 'Manage your info and settings';
+
+  @override
+  String get openInvoicesFromNav => 'Open Invoices from the bottom navigation bar.';
+
+  @override
+  String get openProfileFromNav => 'Open Profile from the bottom navigation bar.';
+
+  @override
+  String get invoiceDetails => 'Invoice details';
+
+  @override
+  String get unknown => 'Unknown';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get sender => 'Sender';
+
+  @override
+  String get receiver => 'Receiver';
+
+  @override
+  String get accountType => 'Account type';
+
+  @override
+  String get receivedInvoicesListTitle => 'Received invoices list';
+
+  @override
+  String get filter => 'Filter';
+
+  @override
+  String get searchReceivedInvoicesHint => 'Search invoice, client, email...';
 }
