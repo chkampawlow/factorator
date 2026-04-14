@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/widgets/app_alerts.dart';
+import 'package:my_app/widgets/app_top_bar.dart';
 import 'package:my_app/services/currency_service.dart';
 import '../services/settings_service.dart';
 import '../storage/products_repo.dart';
 import 'add_product_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
-  const ProductsScreen({super.key});
+  final VoidCallback onToggleTheme;
+  final void Function(Color color) onChangePrimaryColor;
+  final void Function(String code) onChangeLanguage;
+  final Color currentPrimaryColor;
+
+  const ProductsScreen({
+    super.key,
+    required this.onToggleTheme,
+    required this.onChangePrimaryColor,
+    required this.onChangeLanguage,
+    required this.currentPrimaryColor,
+  });
 
   @override
   State<ProductsScreen> createState() => _ProductsScreenState();
@@ -28,30 +40,32 @@ class _ProductsScreenState extends State<ProductsScreen> {
     super.initState();
     _loadProducts();
 
-    _searchCtrl.addListener(() {
-      final q = _searchCtrl.text.trim().toLowerCase();
-      setState(() {
-        _filtered = q.isEmpty
-            ? _products
-            : _products.where((p) {
-                final name = (p['name'] ?? '').toString().toLowerCase();
-                final unit = (p['unit'] ?? '').toString().toLowerCase();
-                final tvaRate = (p['tva_rate'] ?? '').toString().toLowerCase();
-                final code = (p['code'] ?? '').toString().toLowerCase();
-
-                return name.contains(q) ||
-                    unit.contains(q) ||
-                    tvaRate.contains(q) ||
-                    code.contains(q);
-              }).toList();
-      });
-    });
+    _searchCtrl.addListener(_applyFilter);
   }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _applyFilter() {
+    final q = _searchCtrl.text.trim().toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty
+          ? List<Map<String, dynamic>>.from(_products)
+          : _products.where((p) {
+              final name = (p['name'] ?? '').toString().toLowerCase();
+              final unit = (p['unit'] ?? '').toString().toLowerCase();
+              final tvaRate = (p['tva_rate'] ?? '').toString().toLowerCase();
+              final code = (p['code'] ?? '').toString().toLowerCase();
+
+              return name.contains(q) ||
+                  unit.contains(q) ||
+                  tvaRate.contains(q) ||
+                  code.contains(q);
+            }).toList();
+    });
   }
 
   Future<void> _loadProducts() async {
@@ -67,10 +81,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
       setState(() {
         _products = data;
-        _filtered = data;
         _currency = currency;
         _loading = false;
       });
+      // Re-apply filter after state is updated
+      if (mounted) {
+        _applyFilter();
+      }
     } catch (e) {
       if (!mounted) return;
 
@@ -87,14 +104,36 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<void> _editProduct(Map<String, dynamic> product) async {
-    final saved = await Navigator.push(
+    final res = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => AddProductScreen(product: product),
       ),
     );
 
-    if (saved == true) {
+    // New behavior: Add/Edit screen can return the updated product map.
+    if (res is Map) {
+      final updated = Map<String, dynamic>.from(res);
+      final rawId = updated['id'] ?? product['id'];
+      final id = rawId is int ? rawId : int.tryParse(rawId.toString()) ?? 0;
+
+      if (!mounted) return;
+      setState(() {
+        final idx =
+            _products.indexWhere((p) => p['id'].toString() == id.toString());
+        if (idx >= 0) {
+          _products[idx] = updated;
+        } else {
+          // If not found, insert at top (rare case)
+          _products.insert(0, updated);
+        }
+      });
+      _applyFilter();
+      return;
+    }
+
+    // Backward compatibility: if it returns true, we reload.
+    if (res == true) {
       await _loadProducts();
     }
   }
@@ -227,7 +266,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(isDark ? 0.22 : 0.08),
+            color:
+                Theme.of(context).shadowColor.withOpacity(isDark ? 0.22 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -304,26 +344,35 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.productsServices),
-        actions: [
-          IconButton(
-            onPressed: _loadProducts,
-            icon: const Icon(Icons.refresh),
-            tooltip: l10n.refresh,
-          ),
-        ],
+      appBar: AppTopBar(
+        title: l10n.productsServices,
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final saved = await Navigator.push(
+          final res = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddProductScreen()),
           );
-          if (saved == true) {
+
+          // If AddProductScreen returns the created product map, insert it immediately.
+          if (res is Map) {
+            final created = Map<String, dynamic>.from(res);
+            if (!mounted) return;
+            setState(() {
+              _products.insert(0, created);
+            });
+            _applyFilter();
+            return;
+          }
+
+          // Backward compatibility
+          if (res == true) {
             await _loadProducts();
           }
         },
@@ -346,7 +395,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           : IconButton(
                               onPressed: () {
                                 _searchCtrl.clear();
-                                setState(() {});
+                                _applyFilter();
                               },
                               icon: const Icon(Icons.close),
                             ),
@@ -374,20 +423,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   const SizedBox(height: 14),
                   Expanded(
                     child: _filtered.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              const SizedBox(height: 80),
-                              Center(
-                                child: Text(
-                                  l10n.noProductsYet,
-                                  style: t.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
+                        ? _emptyProductsState(context)
                         : RefreshIndicator(
                             onRefresh: _loadProducts,
                             child: ListView.builder(
@@ -395,17 +431,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
                               itemCount: _filtered.length,
                               itemBuilder: (context, index) {
                                 final p = _filtered[index];
-                                final id = int.tryParse(p['id'].toString()) ?? 0;
+                                final id =
+                                    int.tryParse(p['id'].toString()) ?? 0;
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: Dismissible(
                                     key: ValueKey('product_$id'),
                                     confirmDismiss: (direction) async {
-                                      if (direction == DismissDirection.startToEnd) {
+                                      if (direction ==
+                                          DismissDirection.startToEnd) {
                                         await _editProduct(p);
                                         return false;
                                       }
-                                      if (direction == DismissDirection.endToStart) {
+                                      if (direction ==
+                                          DismissDirection.endToStart) {
                                         final deleted = await _confirmDelete(p);
                                         return deleted;
                                       }
@@ -441,6 +480,81 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _emptyProductsState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: 90),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.inventory_2_outlined,
+                  color: cs.primary,
+                  size: 54,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  l10n.noProductsYet,
+                  textAlign: TextAlign.center,
+                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.createYourFirstProduct,
+                  textAlign: TextAlign.center,
+                  style: t.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: 220,
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      final res = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddProductScreen(),
+                        ),
+                      );
+
+                      if (res is Map) {
+                        final created = Map<String, dynamic>.from(res);
+                        if (!mounted) return;
+                        setState(() {
+                          _products.insert(0, created);
+                        });
+                        _applyFilter();
+                        return;
+                      }
+
+                      if (res == true) {
+                        await _loadProducts();
+                      }
+                    },
+                    icon: const Icon(Icons.add),
+                    label: Text(l10n.add),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }

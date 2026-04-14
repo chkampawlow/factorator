@@ -63,7 +63,8 @@ import 'app_localizations_fr.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -71,7 +72,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -83,7 +85,8 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -358,13 +361,13 @@ abstract class AppLocalizations {
   /// No description provided for @pleaseChooseClient.
   ///
   /// In en, this message translates to:
-  /// **'Choose a client'**
+  /// **'Please choose a client.'**
   String get pleaseChooseClient;
 
   /// No description provided for @chooseClient.
   ///
   /// In en, this message translates to:
-  /// **'Choose Client'**
+  /// **'Choose a client'**
   String get chooseClient;
 
   /// No description provided for @addNewClient.
@@ -418,7 +421,7 @@ abstract class AppLocalizations {
   /// No description provided for @addProduct.
   ///
   /// In en, this message translates to:
-  /// **'Add Product'**
+  /// **'Add product'**
   String get addProduct;
 
   /// No description provided for @saveProduct.
@@ -504,6 +507,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dashboard'**
   String get dashboard;
+
+  /// No description provided for @scanInvoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan invoice'**
+  String get scanInvoiceTitle;
+
+  /// No description provided for @scanInvoiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Place the invoice inside the frame. This is the camera UI preview.'**
+  String get scanInvoiceSubtitle;
+
+  /// No description provided for @scanInvoiceMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice'**
+  String get scanInvoiceMode;
+
+  /// No description provided for @scanInvoiceAlign.
+  ///
+  /// In en, this message translates to:
+  /// **'Align the invoice inside the frame'**
+  String get scanInvoiceAlign;
+
+  /// No description provided for @scanInvoiceGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan guide'**
+  String get scanInvoiceGuideTitle;
+
+  /// No description provided for @scanInvoiceGuideLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Use good light and avoid shadows on the paper.'**
+  String get scanInvoiceGuideLight;
+
+  /// No description provided for @scanInvoiceGuideEdges.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep all invoice corners visible in the frame.'**
+  String get scanInvoiceGuideEdges;
+
+  /// No description provided for @scanInvoiceGuideReadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure totals and supplier details are readable.'**
+  String get scanInvoiceGuideReadable;
 
   /// No description provided for @quickActions.
   ///
@@ -622,7 +673,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchNameMfCin.
   ///
   /// In en, this message translates to:
-  /// **'Search (name / MF / CIN)...'**
+  /// **'Search by name, MF or CIN'**
   String get searchNameMfCin;
 
   /// No description provided for @allCustomers.
@@ -1675,6 +1726,12 @@ abstract class AppLocalizations {
   /// **'Unpaid'**
   String get unpaidLabel;
 
+  /// No description provided for @draftLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get draftLabel;
+
   /// No description provided for @paymentRate.
   ///
   /// In en, this message translates to:
@@ -1722,6 +1779,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mark as unpaid'**
   String get markAsUnpaid;
+
+  /// No description provided for @validateInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Validate invoice'**
+  String get validateInvoice;
+
+  /// No description provided for @confirmValidateInvoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Validate this invoice?'**
+  String get confirmValidateInvoiceTitle;
+
+  /// No description provided for @confirmValidateInvoiceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to validate this invoice? You cannot modify it after validating.'**
+  String get confirmValidateInvoiceBody;
+
+  /// No description provided for @invoiceLockedAfterValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'This invoice is validated. You can no longer modify, add, or delete items.'**
+  String get invoiceLockedAfterValidation;
 
   /// No description provided for @markAsCancelled.
   ///
@@ -2209,350 +2290,63 @@ abstract class AppLocalizations {
   /// **'Numéro invalide. Exemple : +216 20123456'**
   String get invalidPhoneNumber;
 
-  /// No description provided for @personalDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Personal details'**
-  String get personalDetails;
-
-  /// No description provided for @addYourPersonalInfo.
-  ///
-  /// In en, this message translates to:
-  /// **'Add your personal information'**
-  String get addYourPersonalInfo;
-
-  /// No description provided for @individual.
-  ///
-  /// In en, this message translates to:
-  /// **'Individual'**
-  String get individual;
-
-  /// No description provided for @organizationNameRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Organization name is required.'**
-  String get organizationNameRequired;
-
-  /// No description provided for @fullNameRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Full name is required.'**
-  String get fullNameRequired;
-
-  /// No description provided for @connectionsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage your connections and invitations'**
-  String get connectionsSubtitle;
-
-  /// No description provided for @invite.
-  ///
-  /// In en, this message translates to:
-  /// **'Invite'**
-  String get invite;
-
-  /// No description provided for @accepted.
-  ///
-  /// In en, this message translates to:
-  /// **'Connected'**
-  String get accepted;
-
-  /// No description provided for @requests.
-  ///
-  /// In en, this message translates to:
-  /// **'Requests'**
-  String get requests;
-
-  /// No description provided for @sentInvites.
-  ///
-  /// In en, this message translates to:
-  /// **'Sent'**
-  String get sentInvites;
-
-  /// No description provided for @noAcceptedConnections.
-  ///
-  /// In en, this message translates to:
-  /// **'No accepted connections yet'**
-  String get noAcceptedConnections;
-
-  /// No description provided for @noRequests.
-  ///
-  /// In en, this message translates to:
-  /// **'No pending requests'**
-  String get noRequests;
-
-  /// No description provided for @noSentInvites.
-  ///
-  /// In en, this message translates to:
-  /// **'No sent invitations'**
-  String get noSentInvites;
-
-  /// No description provided for @inviteUser.
-  ///
-  /// In en, this message translates to:
-  /// **'Invite a user'**
-  String get inviteUser;
-
-  /// No description provided for @searchUsersHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Search users'**
-  String get searchUsersHint;
-
   /// No description provided for @noResults.
   ///
   /// In en, this message translates to:
   /// **'No results'**
   String get noResults;
 
-  /// No description provided for @invitationSent.
+  /// No description provided for @newCustomer.
   ///
   /// In en, this message translates to:
-  /// **'Invitation sent'**
-  String get invitationSent;
+  /// **'New Customer'**
+  String get newCustomer;
 
-  /// No description provided for @updated.
+  /// No description provided for @createCustomer.
   ///
   /// In en, this message translates to:
-  /// **'Updated'**
-  String get updated;
+  /// **'Create Customer'**
+  String get createCustomer;
 
-  /// No description provided for @removed.
+  /// No description provided for @createFirstCustomerToSeeHere.
   ///
   /// In en, this message translates to:
-  /// **'Removed'**
-  String get removed;
+  /// **'Create your first customer to see it here.'**
+  String get createFirstCustomerToSeeHere;
 
-  /// No description provided for @accept.
+  /// No description provided for @searchCustomerNameIdEmail.
   ///
   /// In en, this message translates to:
-  /// **'Accept'**
-  String get accept;
+  /// **'Search customer, ID, email...'**
+  String get searchCustomerNameIdEmail;
 
-  /// No description provided for @decline.
+  /// No description provided for @companies.
   ///
   /// In en, this message translates to:
-  /// **'Decline'**
-  String get decline;
+  /// **'Companies'**
+  String get companies;
 
-  /// No description provided for @remove.
+  /// No description provided for @createYourFirstProduct.
   ///
   /// In en, this message translates to:
-  /// **'Remove'**
-  String get remove;
+  /// **'Create your first product to start adding items to this invoice.'**
+  String get createYourFirstProduct;
 
-  /// No description provided for @areYouSure.
+  /// No description provided for @individuals.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure?'**
-  String get areYouSure;
+  /// **'Individuals'**
+  String get individuals;
 
-  /// No description provided for @chooseFromConnections.
+  /// No description provided for @productAdded.
   ///
   /// In en, this message translates to:
-  /// **'Choose from connections'**
-  String get chooseFromConnections;
-
-  /// No description provided for @manualClient.
-  ///
-  /// In en, this message translates to:
-  /// **'Manual'**
-  String get manualClient;
-
-  /// No description provided for @connectedUser.
-  ///
-  /// In en, this message translates to:
-  /// **'Connected user'**
-  String get connectedUser;
-
-  /// No description provided for @invalidSelection.
-  ///
-  /// In en, this message translates to:
-  /// **'Invalid selection'**
-  String get invalidSelection;
-
-  /// No description provided for @enterClientNameOrEmail.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a client name or an email'**
-  String get enterClientNameOrEmail;
-
-  /// No description provided for @noClientSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'No client selected'**
-  String get noClientSelected;
-
-  /// No description provided for @clientNameOptional.
-  ///
-  /// In en, this message translates to:
-  /// **'Client name (optional)'**
-  String get clientNameOptional;
-
-  /// No description provided for @clientEmailOptional.
-  ///
-  /// In en, this message translates to:
-  /// **'Client email (optional)'**
-  String get clientEmailOptional;
-
-  /// No description provided for @createInvoiceSetupSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Select a client and set the due date'**
-  String get createInvoiceSetupSubtitle;
-
-  /// No description provided for @searchUsers.
-  ///
-  /// In en, this message translates to:
-  /// **'Search users'**
-  String get searchUsers;
-
-  /// No description provided for @notifications.
-  ///
-  /// In en, this message translates to:
-  /// **'Notifications'**
-  String get notifications;
-
-  /// No description provided for @totalExpenses.
-  ///
-  /// In en, this message translates to:
-  /// **'Total expenses'**
-  String get totalExpenses;
-
-  /// No description provided for @recentlySearched.
-  ///
-  /// In en, this message translates to:
-  /// **'Recently searched'**
-  String get recentlySearched;
-
-  /// No description provided for @clear.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear'**
-  String get clear;
-
-  /// No description provided for @markAllRead.
-  ///
-  /// In en, this message translates to:
-  /// **'Mark all read'**
-  String get markAllRead;
-
-  /// No description provided for @noNotifications.
-  ///
-  /// In en, this message translates to:
-  /// **'No notifications'**
-  String get noNotifications;
-
-  /// No description provided for @close.
-  ///
-  /// In en, this message translates to:
-  /// **'Close'**
-  String get close;
-
-  /// No description provided for @clientDashboard.
-  ///
-  /// In en, this message translates to:
-  /// **'Client Dashboard'**
-  String get clientDashboard;
-
-  /// No description provided for @clientDashboardSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your space'**
-  String get clientDashboardSubtitle;
-
-  /// No description provided for @clientDashboardHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Here you can view invoices you received and manage your profile.'**
-  String get clientDashboardHint;
-
-  /// No description provided for @receivedInvoices.
-  ///
-  /// In en, this message translates to:
-  /// **'Received invoices'**
-  String get receivedInvoices;
-
-  /// No description provided for @receivedInvoicesSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Invoices sent to you'**
-  String get receivedInvoicesSubtitle;
-
-  /// No description provided for @profileSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage your info and settings'**
-  String get profileSubtitle;
-
-  /// No description provided for @openInvoicesFromNav.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Invoices from the bottom navigation bar.'**
-  String get openInvoicesFromNav;
-
-  /// No description provided for @openProfileFromNav.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Profile from the bottom navigation bar.'**
-  String get openProfileFromNav;
-
-  /// No description provided for @invoiceDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Invoice details'**
-  String get invoiceDetails;
-
-  /// No description provided for @unknown.
-  ///
-  /// In en, this message translates to:
-  /// **'Unknown'**
-  String get unknown;
-
-  /// No description provided for @date.
-  ///
-  /// In en, this message translates to:
-  /// **'Date'**
-  String get date;
-
-  /// No description provided for @sender.
-  ///
-  /// In en, this message translates to:
-  /// **'Sender'**
-  String get sender;
-
-  /// No description provided for @receiver.
-  ///
-  /// In en, this message translates to:
-  /// **'Receiver'**
-  String get receiver;
-
-  /// No description provided for @accountType.
-  ///
-  /// In en, this message translates to:
-  /// **'Account type'**
-  String get accountType;
-
-  /// No description provided for @receivedInvoicesListTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Received invoices list'**
-  String get receivedInvoicesListTitle;
-
-  /// No description provided for @filter.
-  ///
-  /// In en, this message translates to:
-  /// **'Filter'**
-  String get filter;
-
-  /// No description provided for @searchReceivedInvoicesHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Search invoice, client, email...'**
-  String get searchReceivedInvoicesHint;
+  /// **'Product added'**
+  String get productAdded;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -2561,26 +2355,27 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['ar', 'en', 'fr'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['ar', 'en', 'fr'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar': return AppLocalizationsAr();
-    case 'en': return AppLocalizationsEn();
-    case 'fr': return AppLocalizationsFr();
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'fr':
+      return AppLocalizationsFr();
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

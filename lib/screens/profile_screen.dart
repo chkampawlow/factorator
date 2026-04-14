@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/api_config.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/enable_2fa_screen.dart';
-import 'package:my_app/screens/connections_screen.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/location_service.dart';
 import 'package:my_app/services/settings_service.dart';
@@ -383,63 +382,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  bool _isClientUser() {
-    final role = (_user?['role'] ?? '').toString().toUpperCase().trim();
-    return role == 'CLIENT';
-  }
-
-  String _displayHeaderName() {
-    final org = (_user?['organization_name'] ?? '').toString().trim();
-    if (org.isNotEmpty) return org;
-    final dn = (_user?['display_name'] ?? '').toString().trim();
-    if (dn.isNotEmpty) return dn;
-    final email = (_user?['email'] ?? '').toString().trim();
-    return email.isNotEmpty ? email : '—';
-  }
-
-  String _lbl(String fr, String en, String ar) {
-    final code = Localizations.localeOf(context).languageCode.toLowerCase();
-    if (code == 'ar') return ar;
-    if (code == 'fr') return fr;
-    return en;
-  }
-
-  String _infoTitleLabel(AppLocalizations l10n) {
-    if (_isClientUser()) {
-      return _lbl('Infos personnelles', 'Personal information', 'معلومات شخصية');
-    }
-    return l10n.companyInformation;
-  }
-
-  String _infoIncompleteTitleLabel(AppLocalizations l10n) {
-    if (_isClientUser()) {
-      return _lbl('Infos personnelles incomplètes', 'Personal info incomplete', 'معلومات شخصية غير مكتملة');
-    }
-    return l10n.companyInfoIncompleteTitle;
-  }
-
-  String _infoIncompleteBodyLabel(AppLocalizations l10n) {
-    if (_isClientUser()) {
-      return _lbl('Veuillez compléter vos informations personnelles pour utiliser toutes les fonctionnalités.', 'Please complete your personal information to unlock all features.', 'يرجى إكمال معلوماتك الشخصية لتفعيل كل الميزات.');
-    }
-    return l10n.companyInfoIncompleteBody;
-  }
-
   bool _hasMissingCompanyInfo() {
-    final isClient = _isClientUser();
-
-    if (isClient) {
-      final displayName = (_user?['display_name'] ?? '').toString().trim();
-      final address = (_user?['address'] ?? '').toString().trim();
-      return displayName.isEmpty || address.isEmpty;
-    }
-
-    final organizationName = (_user?['organization_name'] ?? '').toString().trim();
+    final organizationName =
+        (_user?['organization_name'] ?? '').toString().trim();
     final address = (_user?['address'] ?? '').toString().trim();
     final website = (_user?['website'] ?? '').toString().trim();
     final fax = (_user?['fax'] ?? '').toString().trim();
 
-    return organizationName.isEmpty || address.isEmpty || website.isEmpty || fax.isEmpty;
+    return organizationName.isEmpty ||
+        address.isEmpty ||
+        website.isEmpty ||
+        fax.isEmpty;
   }
 
   Widget _buildCompanyInfoWarning(BuildContext context) {
@@ -468,7 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _infoIncompleteTitleLabel(l10n),
+                  l10n.companyInfoIncompleteTitle,
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     color: cs.onTertiaryContainer,
@@ -476,7 +429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _infoIncompleteBodyLabel(l10n),
+                  l10n.companyInfoIncompleteBody,
                   style: TextStyle(
                     color: cs.onTertiaryContainer,
                   ),
@@ -487,7 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: FilledButton.tonalIcon(
                     onPressed: _showCompanyInfoDialog,
                     icon: const Icon(Icons.edit_outlined),
-                    label: Text(_infoTitleLabel(l10n)),
+                    label: Text(l10n.companyInformation),
                   ),
                 ),
               ],
@@ -590,55 +543,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         _headerCard(
                           context,
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: _pickProfileImage,
-                                  child: Stack(
-                                    alignment: Alignment.bottomRight,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 42,
-                                        backgroundColor: cs.primaryContainer,
-                                        backgroundImage: _profileImagePath != null
-                                            ? FileImage(File(_profileImagePath!))
-                                            : null,
-                                        child: _profileImagePath == null
-                                            ? Icon(
-                                                Icons.person,
-                                                size: 40,
-                                                color: cs.onPrimaryContainer,
-                                              )
-                                            : null,
+                          child: Column(
+                            children: [
+                              GestureDetector(
+                                onTap: _pickProfileImage,
+                                child: Stack(
+                                  alignment: Alignment.bottomRight,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 42,
+                                      backgroundColor: cs.primaryContainer,
+                                      backgroundImage: _profileImagePath != null
+                                          ? FileImage(File(_profileImagePath!))
+                                          : null,
+                                      child: _profileImagePath == null
+                                          ? Icon(
+                                              Icons.person,
+                                              size: 40,
+                                              color: cs.onPrimaryContainer,
+                                            )
+                                          : null,
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: cs.primary,
+                                        shape: BoxShape.circle,
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: cs.primary,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.camera_alt,
-                                          size: 16,
-                                          color: cs.onPrimary,
-                                        ),
+                                      child: Icon(
+                                        Icons.camera_alt,
+                                        size: 16,
+                                        color: cs.onPrimary,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  _displayHeaderName(),
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                  textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                '${_user?['organization_name'] ?? ''}'.trim(),
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
                                 ),
-                                const SizedBox(height: 10),
-                              ],
-                            ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -646,24 +595,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _buildCompanyInfoWarning(context),
                           const SizedBox(height: 16),
                         ],
-                        _surfaceCard(
-                          context,
-                          padding: EdgeInsets.zero,
-                          child: ListTile(
-                            leading: const Icon(Icons.people_alt_outlined),
-                            title: Text(_lbl('Connexions', 'Connections', 'الاتصالات')),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ConnectionsScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 16),
                         _surfaceCard(
                           context,
                           child: Column(
@@ -814,7 +745,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const Divider(height: 1),
                               ListTile(
                                 leading: const Icon(Icons.business_outlined),
-                                title: Text(_infoTitleLabel(l10n)),
+                                title: Text(l10n.companyInformation),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: _showCompanyInfoDialog,
                               ),

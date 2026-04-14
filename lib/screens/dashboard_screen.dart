@@ -1,25 +1,33 @@
-// lib/screens/dashboard_screen.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
-import 'package:my_app/screens/app_top_bar.dart';
-import 'package:my_app/screens/connections_search_sheet.dart';
-import 'package:my_app/screens/create_invoice_screen.dart';
 import 'package:my_app/screens/create_expense_note_screen.dart';
-import 'package:my_app/screens/connections_screen.dart';
-import 'package:my_app/screens/notifications.dart';
+import 'package:my_app/screens/clients_screen.dart';
+import 'package:my_app/screens/invoice_edit_screen.dart';
+
+import '../storage/invoices_repo.dart';
 
 import 'package:my_app/services/currency_service.dart';
 import '../services/settings_service.dart';
+import '../storage/clients_repo.dart';
 import '../storage/dashboard_repo.dart';
 import '../storage/expense_notes_repo.dart';
-import '../storage/connections_repo.dart';
 import '../widgets/action_tile.dart';
+import '../widgets/app_top_bar.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
+  final void Function(Color color) onChangePrimaryColor;
+  final void Function(String code) onChangeLanguage;
+  final Color currentPrimaryColor;
 
-  const DashboardScreen({super.key, required this.onToggleTheme});
+  const DashboardScreen({
+    super.key,
+    required this.onToggleTheme,
+    required this.onChangePrimaryColor,
+    required this.onChangeLanguage,
+    required this.currentPrimaryColor,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -27,9 +35,10 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _repo = DashboardRepo();
+  final _clientsRepo = ClientsRepo();
   final _settingsService = SettingsService();
   final _expenseRepo = ExpenseNotesRepo();
-  final _connectionsRepo = ConnectionsRepo();
+  final _invoicesRepo = InvoicesRepo();
 
   bool _loading = true;
 
@@ -60,6 +69,187 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<int> _countCustomers() async {
+    final clients = await _clientsRepo.getAllClients();
+    return clients.length;
+  }
+
+  Future<Map<String, dynamic>?> _pickClientForNewInvoice() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    try {
+      final clients = await _clientsRepo.getAllClients();
+      if (!mounted) return null;
+
+      if (clients.isEmpty) {
+        // No clients to select
+        return null;
+      }
+
+      return await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) {
+          final searchCtrl = TextEditingController();
+          List<Map<String, dynamic>> filtered =
+              List<Map<String, dynamic>>.from(clients);
+
+          return StatefulBuilder(
+            builder: (ctx, setModalState) {
+              void applySearch(String q) {
+                final query = q.trim().toLowerCase();
+                setModalState(() {
+                  filtered = query.isEmpty
+                      ? List<Map<String, dynamic>>.from(clients)
+                      : clients.where((c) {
+                          final name =
+                              (c['name'] ?? '').toString().toLowerCase();
+                          final email =
+                              (c['email'] ?? '').toString().toLowerCase();
+                          final address =
+                              (c['address'] ?? '').toString().toLowerCase();
+                          return name.contains(query) ||
+                              email.contains(query) ||
+                              address.contains(query);
+                        }).toList();
+                });
+              }
+
+              return SafeArea(
+                top: false,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                    left: 16,
+                    right: 16,
+                    top: 8,
+                  ),
+                  child: SizedBox(
+                    height: MediaQuery.of(ctx).size.height * 0.72,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 6),
+                        Text(
+                          l10n.chooseClient,
+                          style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: searchCtrl,
+                          onChanged: applySearch,
+                          decoration: InputDecoration(
+                            hintText: l10n.searchNameMfCin,
+                            prefixIcon: const Icon(Icons.search),
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: filtered.isEmpty
+                              ? Center(child: Text(l10n.noResults))
+                              : ListView.separated(
+                                  itemCount: filtered.length,
+                                  separatorBuilder: (_, __) =>
+                                      const Divider(height: 1),
+                                  itemBuilder: (_, i) {
+                                    final c = filtered[i];
+                                    final name = (c['name'] ?? '').toString();
+                                    final email = (c['email'] ?? '').toString();
+                                    final address =
+                                        (c['address'] ?? '').toString();
+
+                                    return ListTile(
+                                      title: Text(
+                                        name.isEmpty ? l10n.client : name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      subtitle: Text(
+                                        [
+                                          if (email.isNotEmpty) email,
+                                          if (address.isNotEmpty) address,
+                                        ].join(' • '),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      trailing: const Icon(Icons.chevron_right),
+                                      onTap: () => Navigator.pop(ctx, c),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _createInvoiceAndOpenEditor() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final selectedClient = await _pickClientForNewInvoice();
+    if (!mounted) return;
+
+    if (selectedClient == null) {
+      // Either no clients or user dismissed
+      return;
+    }
+
+    final clientId =
+        int.tryParse((selectedClient['id'] ?? '0').toString()) ?? 0;
+    if (clientId <= 0) return;
+
+    try {
+      final now = DateTime.now();
+      final draftId = await _invoicesRepo.createInvoiceHeader(
+        clientId: clientId,
+        issueDate: now,
+        dueDate: now.add(const Duration(days: 7)),
+        status: 'DRAFT',
+        subtotal: 0,
+        totalVat: 0,
+        total: 0,
+      );
+
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InvoiceEditScreen(
+            invoiceId: draftId,
+            onToggleTheme: widget.onToggleTheme,
+            onChangePrimaryColor: widget.onChangePrimaryColor,
+            onChangeLanguage: widget.onChangeLanguage,
+            currentPrimaryColor: widget.currentPrimaryColor,
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      // Keep it simple: show backend message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                '${l10n.saveFailed}: ${e.toString().replaceFirst('Exception: ', '')}')),
+      );
+    }
+  }
+
   void _computeStats(List<Map<String, dynamic>> invoices) {
     double totalRevenue = 0;
     double pendingAmount = 0;
@@ -75,10 +265,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     for (final inv in invoices) {
-      final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase().trim();
+      final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase();
       final total = double.tryParse((inv['total'] ?? '0').toString()) ?? 0.0;
       final invoiceDate = _parseDate((inv['invoice_date'] ?? '').toString());
-      final key = '${invoiceDate.year}-${invoiceDate.month.toString().padLeft(2, '0')}';
+      final key =
+          '${invoiceDate.year}-${invoiceDate.month.toString().padLeft(2, '0')}';
 
       if (status == 'PAID') {
         totalRevenue += total;
@@ -103,9 +294,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final totalInvoices = paidCount + unpaidCount;
     _paymentRate = totalInvoices == 0 ? 0 : (paidCount / totalInvoices) * 100;
 
+    // avg invoice
     _avgInvoice =
         invoices.isEmpty ? 0 : (totalRevenue + pendingAmount) / invoices.length;
 
+    // top clients (by revenue)
     final clientTotals = <String, double>{};
     for (final inv in invoices) {
       final client = (inv['client_name'] ?? 'Unknown').toString();
@@ -121,9 +314,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _computeGrowth() {
     _growth = [];
+
     for (int i = 1; i < _monthlyRevenue.length; i++) {
       final prev = _monthlyRevenue[i - 1];
       final current = _monthlyRevenue[i];
+
       if (prev == 0) {
         _growth.add(0);
       } else {
@@ -133,27 +328,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _load() async {
-    if (!mounted) return;
     setState(() => _loading = true);
 
     try {
       final invoices = await _repo.getRecentInvoices(limit: 500);
-      if (!mounted) return;
-
+      final customers = await _countCustomers();
       final currency = await _settingsService.getCurrency();
-      if (!mounted) return;
 
       final expenses = await _expenseRepo.listExpenseNotes();
-      if (!mounted) return;
-
-      int acceptedCount = 0;
-      try {
-        final accepted = await _connectionsRepo.accepted();
-        acceptedCount = accepted.length;
-      } catch (_) {
-        acceptedCount = 0;
-      }
-      if (!mounted) return;
 
       final now = DateTime.now();
       final startOfMonth = DateTime(now.year, now.month, 1);
@@ -177,29 +359,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         monthlyExpenses += amt;
       }
 
-      if (!mounted) return;
       setState(() {
         _allInvoices = invoices;
+        _customersCount = customers;
         _currency = currency;
         _computeStats(invoices);
         _monthlyExpenses = monthlyExpenses;
-        _customersCount = acceptedCount;
         _loading = false;
       });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loading = false);
+    } catch (e) {
+      setState(() {
+        _loading = false;
+      });
     }
   }
 
   DateTime _parseDate(String s) => DateTime.tryParse(s) ?? DateTime.now();
+
+  String _dateOnly(DateTime d) => d.toLocal().toString().split(' ')[0];
 
   Future<void> _go(Widget page) async {
     final res = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => page),
     );
-    if (!mounted) return;
     if (res == true) await _load();
   }
 
@@ -215,16 +398,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppTopBar(
         title: l10n.dashboard,
-        subtitle: l10n.quickActions,
-        actions: [
-          IconButton(
-            onPressed: () => showConnectionsSearchSheet(context),
-            icon: const Icon(Icons.search),
-            tooltip: l10n.searchUsers,
-          ),
-          const NotificationsBellButton(),
-          const SizedBox(width: 6),
-        ],
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -234,6 +411,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
+                  const SizedBox(height: 18),
+                  Text(l10n.quickActions, style: t.headlineSmall),
                   const SizedBox(height: 12),
                   GridView.count(
                     shrinkWrap: true,
@@ -247,7 +426,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         label: l10n.createInvoice,
                         icon: Icons.add_circle_outline,
                         bg: cs.primaryContainer.withOpacity(.40),
-                        onTap: () => _go(const CreateInvoiceScreen()),
+                        onTap: _createInvoiceAndOpenEditor,
                       ),
                       ActionTile(
                         label: l10n.createExpenseNoteTitle,
@@ -259,7 +438,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         label: '${l10n.customers} ($_customersCount)',
                         icon: Icons.people_alt_outlined,
                         bg: cs.secondaryContainer.withOpacity(.40),
-                        onTap: () => _go(const ConnectionsScreen()),
+                        onTap: () => _go(
+                          ClientsScreen(
+                            onToggleTheme: widget.onToggleTheme,
+                            onChangePrimaryColor: widget.onChangePrimaryColor,
+                            onChangeLanguage: widget.onChangeLanguage,
+                            currentPrimaryColor: widget.currentPrimaryColor,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -282,7 +468,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _StatCard(
                         title: l10n.netMonthlyRevenue,
                         value: CurrencyService.format(
-                          (_monthlyRevenue.isNotEmpty ? _monthlyRevenue.last : 0) -
+                          (_monthlyRevenue.isNotEmpty
+                                  ? _monthlyRevenue.last
+                                  : 0) -
                               _monthlyExpenses,
                           _currency,
                         ),
@@ -302,14 +490,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       _StatCard(
                         title: l10n.pending,
-                        value: CurrencyService.format(_pendingAmount, _currency),
+                        value:
+                            CurrencyService.format(_pendingAmount, _currency),
                         subtitle: _currency,
                         icon: Icons.hourglass_bottom_rounded,
                         color: cs.tertiary,
                       ),
                       _StatCard(
-                        title: l10n.totalExpenses,
-                        value: CurrencyService.format(_monthlyExpenses, _currency),
+                        title: l10n.createExpenseNoteTitle,
+                        value:
+                            CurrencyService.format(_monthlyExpenses, _currency),
                         subtitle: _currency,
                         icon: Icons.account_balance_wallet_outlined,
                         color: cs.tertiaryContainer,
@@ -331,6 +521,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 18),
+
+                  // ===== NEW STATS SECTION =====
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -339,36 +531,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Text(
                             l10n.topClients,
-                            style: t.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                            style: t.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w900),
                           ),
                           const SizedBox(height: 12),
-                          ..._topClients.map(
-                            (e) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      e.key,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: t.bodyMedium,
+                          ..._topClients.map((e) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        e.key,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: t.bodyMedium,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    CurrencyService.format(e.value, _currency),
-                                    style: t.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w800,
+                                    Text(
+                                      CurrencyService.format(
+                                          e.value, _currency),
+                                      style: t.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w800),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                                  ],
+                                ),
+                              )),
                         ],
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 18),
+
                   stackCharts
                       ? Column(
                           children: [
@@ -381,8 +575,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Text(
                                       l10n.growthCurve,
                                       style: t.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                      ),
+                                          fontWeight: FontWeight.w900),
                                     ),
                                     const SizedBox(height: 12),
                                     SizedBox(
@@ -401,9 +594,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               painter: _RevenueLineChartPainter(
                                                 values: _growth,
                                                 lineColor: cs.primary,
-                                                fillColor: cs.primary.withOpacity(0.10),
-                                                gridColor:
-                                                    cs.outlineVariant.withOpacity(0.25),
+                                                fillColor: cs.primary
+                                                    .withOpacity(0.10),
+                                                gridColor: cs.outlineVariant
+                                                    .withOpacity(0.25),
                                               ),
                                               child: const SizedBox.expand(),
                                             ),
@@ -422,26 +616,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Text(
                                       l10n.paymentRate,
                                       style: t.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                      ),
+                                          fontWeight: FontWeight.w900),
                                     ),
                                     const SizedBox(height: 12),
                                     SizedBox(
                                       height: 180,
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
+                                          Text(
+                                            l10n.paymentRate,
+                                            style: t.titleSmall?.copyWith(
+                                                fontWeight: FontWeight.w900),
+                                          ),
+                                          const SizedBox(height: 12),
                                           LinearProgressIndicator(
                                             value: _paymentRate / 100,
                                             minHeight: 10,
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
                                             '${_paymentRate.toStringAsFixed(1)}%',
                                             style: t.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.w900,
-                                            ),
+                                                fontWeight: FontWeight.w900),
                                           ),
                                           Text(
                                             '$_paidCount ${l10n.paidLabel} / $_unpaidCount ${l10n.unpaidLabel}',
@@ -463,13 +663,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         l10n.growthCurve,
                                         style: t.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                            fontWeight: FontWeight.w900),
                                       ),
                                       const SizedBox(height: 12),
                                       SizedBox(
@@ -485,12 +685,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                 ),
                                               )
                                             : CustomPaint(
-                                                painter: _RevenueLineChartPainter(
+                                                painter:
+                                                    _RevenueLineChartPainter(
                                                   values: _growth,
                                                   lineColor: cs.primary,
-                                                  fillColor: cs.primary.withOpacity(0.10),
-                                                  gridColor:
-                                                      cs.outlineVariant.withOpacity(0.25),
+                                                  fillColor: cs.primary
+                                                      .withOpacity(0.10),
+                                                  gridColor: cs.outlineVariant
+                                                      .withOpacity(0.25),
                                                 ),
                                                 child: const SizedBox.expand(),
                                               ),
@@ -506,31 +708,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         l10n.paymentRate,
                                         style: t.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                            fontWeight: FontWeight.w900),
                                       ),
                                       const SizedBox(height: 12),
                                       SizedBox(
                                         height: 180,
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
+                                            Text(
+                                              l10n.paymentRate,
+                                              style: t.titleSmall?.copyWith(
+                                                  fontWeight: FontWeight.w900),
+                                            ),
+                                            const SizedBox(height: 12),
                                             LinearProgressIndicator(
                                               value: _paymentRate / 100,
                                               minHeight: 10,
-                                              borderRadius: BorderRadius.circular(20),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
                                               '${_paymentRate.toStringAsFixed(1)}%',
                                               style: t.titleMedium?.copyWith(
-                                                fontWeight: FontWeight.w900,
-                                              ),
+                                                  fontWeight: FontWeight.w900),
                                             ),
                                             Text(
                                               '$_paidCount ${l10n.paidLabel} / $_unpaidCount ${l10n.unpaidLabel}',
@@ -577,23 +786,27 @@ class _StatCard extends StatelessWidget {
     return Card(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 110 || constraints.maxHeight < 110;
-          final ultraCompact = constraints.maxWidth < 90 || constraints.maxHeight < 90;
+          final compact =
+              constraints.maxWidth < 110 || constraints.maxHeight < 110;
+          final ultraCompact =
+              constraints.maxWidth < 90 || constraints.maxHeight < 90;
 
           final padding = ultraCompact ? 10.0 : (compact ? 12.0 : 14.0);
           final iconPad = ultraCompact ? 6.0 : (compact ? 8.0 : 10.0);
           final iconSize = ultraCompact ? 16.0 : (compact ? 20.0 : 24.0);
-
-          final titleStyle = (ultraCompact ? t.labelSmall : t.bodySmall)?.copyWith(
+          final titleStyle =
+              (ultraCompact ? t.labelSmall : t.bodySmall)?.copyWith(
             color: cs.onSurfaceVariant,
             fontWeight: FontWeight.w700,
             height: 1.0,
           );
-          final valueStyle = (ultraCompact ? t.titleSmall : t.titleMedium)?.copyWith(
+          final valueStyle =
+              (ultraCompact ? t.titleSmall : t.titleMedium)?.copyWith(
             fontWeight: FontWeight.w900,
             height: 1.0,
           );
-          final subtitleStyle = (ultraCompact ? t.labelSmall : t.bodySmall)?.copyWith(
+          final subtitleStyle =
+              (ultraCompact ? t.labelSmall : t.bodySmall)?.copyWith(
             color: cs.onSurfaceVariant,
             fontWeight: FontWeight.w600,
             height: 1.0,
@@ -657,6 +870,24 @@ class _StatCard extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+
+  const _LegendDot({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
       ),
     );
   }
@@ -732,11 +963,11 @@ class _RevenueLineChartPainter extends CustomPainter {
       final x = leftPad + (dx * i);
       final y = chartHeight - ((values[i] / maxValue) * (chartHeight - 8));
       canvas.drawCircle(Offset(x, y), 3.8, pointPaint);
-
       final textPainter = TextPainter(
         text: TextSpan(
           text: '${values[i].toStringAsFixed(0)}%',
-          style: const TextStyle(
+          style: TextStyle(
+            color: values[i] >= 0 ? Colors.green : Colors.red,
             fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
@@ -757,5 +988,68 @@ class _RevenueLineChartPainter extends CustomPainter {
         oldDelegate.lineColor != lineColor ||
         oldDelegate.fillColor != fillColor ||
         oldDelegate.gridColor != gridColor;
+  }
+}
+
+class _InvoiceDonutPainter extends CustomPainter {
+  final int paidCount;
+  final int unpaidCount;
+  final Color paidColor;
+  final Color unpaidColor;
+  final Color trackColor;
+
+  _InvoiceDonutPainter({
+    required this.paidCount,
+    required this.unpaidCount,
+    required this.paidColor,
+    required this.unpaidColor,
+    required this.trackColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = paidCount + unpaidCount;
+    if (total <= 0) return;
+
+    final strokeWidth = 18.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - strokeWidth;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final paidPaint = Paint()
+      ..color = paidColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final unpaidPaint = Paint()
+      ..color = unpaidColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, trackPaint);
+
+    final paidSweep = (paidCount / total) * math.pi * 2;
+    final unpaidSweep = (unpaidCount / total) * math.pi * 2;
+
+    canvas.drawArc(rect, -math.pi / 2, paidSweep, false, paidPaint);
+    canvas.drawArc(
+        rect, -math.pi / 2 + paidSweep, unpaidSweep, false, unpaidPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _InvoiceDonutPainter oldDelegate) {
+    return oldDelegate.paidCount != paidCount ||
+        oldDelegate.unpaidCount != unpaidCount ||
+        oldDelegate.paidColor != paidColor ||
+        oldDelegate.unpaidColor != unpaidColor ||
+        oldDelegate.trackColor != trackColor;
   }
 }

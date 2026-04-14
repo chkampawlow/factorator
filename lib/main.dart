@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/expense_notes_screen.dart';
-import 'package:my_app/screens/profile_screen.dart';
+import 'package:my_app/screens/scan_invoice_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
+import 'screens/clients_screen.dart';
 import 'screens/dashboard_screen.dart';
-import 'screens/client_dashboard_screen.dart';
 import 'screens/invoices_screen.dart';
-import 'screens/client_received_invoices_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/products_screen.dart';
 import 'screens/signup_screen.dart';
@@ -51,7 +50,8 @@ class _FacturationAppState extends State<FacturationApp> {
 
   Future<void> _initializeLanguage() async {
     try {
-      final savedLanguage = (await _settingsService.getLanguage()).toLowerCase();
+      final savedLanguage =
+          (await _settingsService.getLanguage()).toLowerCase();
 
       if (savedLanguage.isNotEmpty &&
           ['fr', 'en', 'ar'].contains(savedLanguage)) {
@@ -66,10 +66,9 @@ class _FacturationAppState extends State<FacturationApp> {
           (await _locationLanguageService.detectLanguageCodeFromLocation())
               .toLowerCase();
 
-      final finalLanguage =
-          ['fr', 'en', 'ar'].contains(detectedLanguage)
-              ? detectedLanguage
-              : 'fr';
+      final finalLanguage = ['fr', 'en', 'ar'].contains(detectedLanguage)
+          ? detectedLanguage
+          : 'fr';
 
       await _settingsService.setLanguage(finalLanguage);
 
@@ -142,7 +141,7 @@ class _FacturationAppState extends State<FacturationApp> {
       routes: {
         '/login': (_) => const LoginScreen(),
         '/signup': (_) => const SignupScreen(),
-        '/dashboard': (_) => AppStartGate(
+        '/dashboard': (_) => MainShell(
               onToggleTheme: _toggleTheme,
               onChangePrimaryColor: _changePrimaryColor,
               onChangeLanguage: _changeLanguage,
@@ -182,7 +181,6 @@ class _AppStartGateState extends State<AppStartGate> {
 
   bool _loading = true;
   bool _loggedIn = false;
-  String _role = 'OWNER';
 
   @override
   void initState() {
@@ -199,31 +197,16 @@ class _AppStartGateState extends State<AppStartGate> {
         setState(() {
           _loggedIn = false;
           _loading = false;
-          _role = 'OWNER';
         });
         return;
       }
 
-      final meRes = await _authService.me();
-
-      String role = 'OWNER';
-      if (meRes is Map) {
-        if (meRes['user'] is Map) {
-          role = (meRes['user']['role'] ?? 'OWNER').toString();
-        } else if (meRes.containsKey('role')) {
-          role = meRes['role'].toString();
-        }
-      }
-      role = role.toUpperCase();
-      if (role != 'CLIENT') {
-        role = 'OWNER';
-      }
+      await _authService.me();
 
       if (!mounted) return;
       setState(() {
         _loggedIn = true;
         _loading = false;
-        _role = role;
       });
     } catch (_) {
       await _authService.logout();
@@ -232,7 +215,6 @@ class _AppStartGateState extends State<AppStartGate> {
       setState(() {
         _loggedIn = false;
         _loading = false;
-        _role = 'OWNER';
       });
     }
   }
@@ -254,7 +236,6 @@ class _AppStartGateState extends State<AppStartGate> {
       onChangePrimaryColor: widget.onChangePrimaryColor,
       onChangeLanguage: widget.onChangeLanguage,
       currentPrimaryColor: widget.currentPrimaryColor,
-      userRole: _role,
     );
   }
 }
@@ -264,7 +245,6 @@ class MainShell extends StatefulWidget {
   final void Function(Color color) onChangePrimaryColor;
   final void Function(String code) onChangeLanguage;
   final Color currentPrimaryColor;
-  final String userRole;
 
   const MainShell({
     super.key,
@@ -272,7 +252,6 @@ class MainShell extends StatefulWidget {
     required this.onChangePrimaryColor,
     required this.onChangeLanguage,
     required this.currentPrimaryColor,
-    required this.userRole,
   });
 
   @override
@@ -289,35 +268,38 @@ class _MainShellState extends State<MainShell> {
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final isClient = widget.userRole.toUpperCase() == 'CLIENT';
-
-    final pages = isClient
-        ? [
-            const ClientDashboardScreen(),
-            const ClientReceivedInvoicesScreen(),
-            ProfileScreen(
-              onToggleTheme: widget.onToggleTheme,
-              onChangePrimaryColor: widget.onChangePrimaryColor,
-              onChangeLanguage: widget.onChangeLanguage,
-              currentPrimaryColor: widget.currentPrimaryColor,
-            ),
-          ]
-        : [
-            DashboardScreen(onToggleTheme: widget.onToggleTheme),
-            const ProductsScreen(),
-            const InvoicesScreen(),
-            const ExpenseNotesScreen(),
-            ProfileScreen(
-              onToggleTheme: widget.onToggleTheme,
-              onChangePrimaryColor: widget.onChangePrimaryColor,
-              onChangeLanguage: widget.onChangeLanguage,
-              currentPrimaryColor: widget.currentPrimaryColor,
-            ),
-          ];
-
-    if (_index >= pages.length) {
-      _index = 0;
-    }
+    final pages = [
+      DashboardScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
+      ClientsScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
+      InvoicesScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
+      ProductsScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
+      ExpenseNotesScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
+    ];
 
     return Scaffold(
       body: pages[_index],
@@ -361,8 +343,7 @@ class _MainShellState extends State<MainShell> {
                       WidgetStateProperty.resolveWith<TextStyle>((states) {
                     final selected = states.contains(WidgetState.selected);
                     return theme.textTheme.labelMedium!.copyWith(
-                      fontWeight:
-                          selected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                       color: selected ? cs.onSurface : cs.onSurfaceVariant,
                     );
                   }),
@@ -374,57 +355,84 @@ class _MainShellState extends State<MainShell> {
                   selectedIndex: _index,
                   elevation: 0,
                   onDestinationSelected: (i) => setState(() => _index = i),
-                  destinations: isClient
-                      ? [
-                          NavigationDestination(
-                            icon: const Icon(Icons.dashboard_outlined),
-                            selectedIcon: const Icon(Icons.dashboard_rounded),
-                            label: l10n.dashboard,
-                          ),
-                          NavigationDestination(
-                            icon: const Icon(Icons.receipt_long_outlined),
-                            selectedIcon: const Icon(Icons.receipt_long_rounded),
-                            label: l10n.invoices,
-                          ),
-                          NavigationDestination(
-                            icon: const Icon(Icons.person_outline),
-                            selectedIcon: const Icon(Icons.person),
-                            label: l10n.profile,
-                          ),
-                        ]
-                      : [
-                          NavigationDestination(
-                            icon: const Icon(Icons.dashboard_outlined),
-                            selectedIcon: const Icon(Icons.dashboard_rounded),
-                            label: l10n.dashboard,
-                          ),
-                          NavigationDestination(
-                            icon: const Icon(Icons.inventory_2_outlined),
-                            selectedIcon: const Icon(Icons.inventory_2_rounded),
-                            label: l10n.items,
-                          ),
-                          NavigationDestination(
-                            icon: const Icon(Icons.receipt_long_outlined),
-                            selectedIcon: const Icon(Icons.receipt_long_rounded),
-                            label: l10n.invoices,
-                          ),
-                          NavigationDestination(
-                            icon: const Icon(Icons.account_balance_wallet_outlined),
-                            selectedIcon:
-                                const Icon(Icons.account_balance_wallet_rounded),
-                            label: l10n.expenseNotesTitle,
-                          ),
-                          NavigationDestination(
-                            icon: const Icon(Icons.person_outline),
-                            selectedIcon: const Icon(Icons.person),
-                            label: l10n.profile,
-                          ),
-                        ],
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.dashboard_outlined),
+                      selectedIcon: const Icon(Icons.dashboard_rounded),
+                      label: l10n.dashboard,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.people_outline),
+                      selectedIcon: const Icon(Icons.people_rounded),
+                      label: l10n.clients,
+                    ),
+                    NavigationDestination(
+                      icon: _CenterInvoiceNavIcon(
+                        color: cs.primary,
+                        foreground: cs.onPrimary,
+                        selected: false,
+                      ),
+                      selectedIcon: _CenterInvoiceNavIcon(
+                        color: cs.primary,
+                        foreground: cs.onPrimary,
+                        selected: true,
+                      ),
+                      label: l10n.invoices,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      selectedIcon: const Icon(Icons.inventory_2_rounded),
+                      label: l10n.items,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.account_balance_wallet_outlined),
+                      selectedIcon:
+                          const Icon(Icons.account_balance_wallet_rounded),
+                      label: l10n.expenseNotesTitle,
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CenterInvoiceNavIcon extends StatelessWidget {
+  final Color color;
+  final Color foreground;
+  final bool selected;
+
+  const _CenterInvoiceNavIcon({
+    required this.color,
+    required this.foreground,
+    required this.selected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: selected ? 54 : 48,
+      height: selected ? 54 : 48,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(selected ? 0.32 : 0.20),
+            blurRadius: selected ? 18 : 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.receipt_long_rounded,
+        color: foreground,
+        size: selected ? 34 : 31,
       ),
     );
   }

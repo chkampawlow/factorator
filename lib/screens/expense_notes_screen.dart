@@ -6,9 +6,21 @@ import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/expense_notes_repo.dart';
 import 'package:my_app/widgets/app_alerts.dart';
+import 'package:my_app/widgets/app_top_bar.dart';
 
 class ExpenseNotesScreen extends StatefulWidget {
-  const ExpenseNotesScreen({super.key});
+  final VoidCallback onToggleTheme;
+  final void Function(Color color) onChangePrimaryColor;
+  final void Function(String code) onChangeLanguage;
+  final Color currentPrimaryColor;
+
+  const ExpenseNotesScreen({
+    super.key,
+    required this.onToggleTheme,
+    required this.onChangePrimaryColor,
+    required this.onChangeLanguage,
+    required this.currentPrimaryColor,
+  });
 
   @override
   State<ExpenseNotesScreen> createState() => _ExpenseNotesScreenState();
@@ -35,8 +47,8 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
       final title = (note['title'] ?? '').toString().toLowerCase();
       final category = (note['category'] ?? '').toString().toLowerCase();
       final description = (note['description'] ?? '').toString().toLowerCase();
-      final status =
-          _normalizedStatus((note['status'] ?? 'unpaid').toString()).toLowerCase();
+      final status = _normalizedStatus((note['status'] ?? 'unpaid').toString())
+          .toLowerCase();
 
       final matchesStatus =
           _statusFilter == 'all' ? true : status == _statusFilter;
@@ -337,15 +349,12 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
     final filteredNotes = _filteredNotes;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.expenseNotesTitle),
-        actions: [
-          IconButton(
-            onPressed: _load,
-            icon: const Icon(Icons.refresh),
-            tooltip: l10n.refresh,
-          ),
-        ],
+      appBar: AppTopBar(
+        title: l10n.expenseNotesTitle,
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreate,
@@ -420,7 +429,8 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                         _FilterChip(
                           label: l10n.statusCancelled,
                           selected: _statusFilter == 'cancelled',
-                          onTap: () => setState(() => _statusFilter = 'cancelled'),
+                          onTap: () =>
+                              setState(() => _statusFilter = 'cancelled'),
                         ),
                       ],
                     ),
@@ -442,7 +452,8 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                             : RefreshIndicator(
                                 onRefresh: _load,
                                 child: ListView.separated(
-                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
                                   itemCount: filteredNotes.length,
                                   separatorBuilder: (_, __) =>
                                       const SizedBox(height: 12),
@@ -450,17 +461,21 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                     final note = filteredNotes[i];
 
                                     final noteId = _toInt(note['id']);
-                                    final title = (note['title'] ?? '').toString();
-                                    final category = (note['category'] ?? '').toString();
+                                    final title =
+                                        (note['title'] ?? '').toString();
+                                    final category =
+                                        (note['category'] ?? '').toString();
                                     final description =
                                         (note['description'] ?? '').toString();
                                     final status = _normalizedStatus(
                                       (note['status'] ?? 'unpaid').toString(),
                                     );
                                     final date = _parseDate(note['date']);
-                                    final amountValue = _toDouble(note['amount']);
+                                    final amountValue =
+                                        _toDouble(note['amount']);
 
-                                    final formattedAmount = CurrencyService.format(
+                                    final formattedAmount =
+                                        CurrencyService.format(
                                       amountValue,
                                       _currency.isEmpty ? 'TND' : _currency,
                                     );
@@ -476,15 +491,16 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
                                           color: cs.surface,
-                                          borderRadius: BorderRadius.circular(22),
+                                          borderRadius:
+                                              BorderRadius.circular(22),
                                           border: Border.all(
-                                            color:
-                                                cs.outlineVariant.withOpacity(0.28),
+                                            color: cs.outlineVariant
+                                                .withOpacity(0.28),
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color:
-                                                  theme.shadowColor.withOpacity(0.08),
+                                              color: theme.shadowColor
+                                                  .withOpacity(0.08),
                                               blurRadius: 14,
                                               offset: const Offset(0, 6),
                                             ),
@@ -501,7 +517,8 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                                 Expanded(
                                                   child: Column(
                                                     crossAxisAlignment:
-                                                        CrossAxisAlignment.start,
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
                                                       Text(
                                                         title.isEmpty
@@ -509,10 +526,10 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                                                 .expenseNotePreviewTitleFallback
                                                             : title,
                                                         maxLines: 1,
-                                                        overflow:
-                                                            TextOverflow.ellipsis,
-                                                        style: theme
-                                                            .textTheme.titleMedium
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: theme.textTheme
+                                                            .titleMedium
                                                             ?.copyWith(
                                                           fontWeight:
                                                               FontWeight.w900,
@@ -521,19 +538,23 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                                       if (category.isNotEmpty)
                                                         Padding(
                                                           padding:
-                                                              const EdgeInsets.only(
+                                                              const EdgeInsets
+                                                                  .only(
                                                             top: 6,
                                                           ),
                                                           child: Text(
                                                             category,
                                                             maxLines: 1,
                                                             overflow:
-                                                                TextOverflow.ellipsis,
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                             style: theme
-                                                                .textTheme.bodyLarge
+                                                                .textTheme
+                                                                .bodyLarge
                                                                 ?.copyWith(
                                                               fontWeight:
-                                                                  FontWeight.w800,
+                                                                  FontWeight
+                                                                      .w800,
                                                             ),
                                                           ),
                                                         ),
@@ -628,7 +649,8 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                               children: [
                                                 Expanded(
                                                   child: OutlinedButton.icon(
-                                                    onPressed: () => _openEdit(note),
+                                                    onPressed: () =>
+                                                        _openEdit(note),
                                                     icon: const Icon(
                                                       Icons.edit_outlined,
                                                     ),
@@ -640,7 +662,8 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                                   child: FilledButton.icon(
                                                     onPressed: _updatingStatus
                                                         ? null
-                                                        : () => _showStatusSheet(
+                                                        : () =>
+                                                            _showStatusSheet(
                                                               noteId,
                                                               status,
                                                             ),

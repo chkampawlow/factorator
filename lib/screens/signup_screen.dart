@@ -31,9 +31,6 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscureConfirmPassword = true;
   String? _error;
 
-  // 'organization' | 'individual'
-  String _accountType = 'organization';
-
   String _phonePrefix = '+216';
 
   final int _totalPages = 4;
@@ -133,24 +130,14 @@ class _SignupScreenState extends State<SignupScreen> {
 
     switch (_currentPage) {
       case 0:
-        final dn = _organizationCtrl.text.trim();
-        if (dn.isEmpty) {
-          _setError(_accountType == 'organization'
-              ? l10n.organizationNameRequired
-              : l10n.fullNameRequired);
+        final fiscalId = _fiscalIdCtrl.text.trim().toUpperCase();
+        if (fiscalId.isEmpty) {
+          _setError(l10n.fiscalIdRequired);
           return false;
         }
-
-        if (_accountType == 'organization') {
-          final fiscalId = _fiscalIdCtrl.text.trim().toUpperCase();
-          if (fiscalId.isEmpty) {
-            _setError(l10n.fiscalIdRequired);
-            return false;
-          }
-          if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(fiscalId)) {
-            _setError(l10n.invalidFiscalId);
-            return false;
-          }
+        if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(fiscalId)) {
+          _setError(l10n.invalidFiscalId);
+          return false;
         }
         break;
 
@@ -222,16 +209,9 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final displayName = _organizationCtrl.text.trim();
-      final fiscalId = _accountType == 'organization'
-          ? _fiscalIdCtrl.text.trim().toUpperCase()
-          : '';
-
       await _authService.signup(
-        displayName: displayName,
-        organizationName: _accountType == 'organization' ? displayName : '',
-        fiscalId: fiscalId,
-        accountType: _accountType,
+        organizationName: _organizationCtrl.text.trim(),
+        fiscalId: _fiscalIdCtrl.text.trim().toUpperCase(),
         email: _emailCtrl.text.trim(),
         phone: _phoneCtrl.text.trim(),
         password: _passwordCtrl.text,
@@ -310,119 +290,10 @@ class _SignupScreenState extends State<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withOpacity(0.35),
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _accountType = 'individual';
-                      _fiscalIdCtrl.clear();
-                      _error = null;
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _accountType == 'individual'
-                          ? theme.colorScheme.primaryContainer
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.person_outline,
-                          size: 18,
-                          color: _accountType == 'individual'
-                              ? theme.colorScheme.onPrimaryContainer
-                              : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            l10n.individual,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: _accountType == 'individual'
-                                  ? theme.colorScheme.onPrimaryContainer
-                                  : theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _accountType = 'organization';
-                      _error = null;
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _accountType == 'organization'
-                          ? theme.colorScheme.primaryContainer
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.business_outlined,
-                          size: 18,
-                          color: _accountType == 'organization'
-                              ? theme.colorScheme.onPrimaryContainer
-                              : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            l10n.organization,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: _accountType == 'organization'
-                                  ? theme.colorScheme.onPrimaryContainer
-                                  : theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
         _stepHeader(
           theme: theme,
-          title: _accountType == 'organization' ? l10n.companyDetails : l10n.personalDetails,
-          subtitle: _accountType == 'organization' ? l10n.addOrganizationAndFiscalInfo : l10n.addYourPersonalInfo,
+          title: l10n.companyDetails,
+          subtitle: l10n.addOrganizationAndFiscalInfo,
         ),
         const SizedBox(height: 18),
         _stepCard(
@@ -431,32 +302,29 @@ class _SignupScreenState extends State<SignupScreen> {
               controller: _organizationCtrl,
               textInputAction: TextInputAction.next,
               decoration: _decoration(
-                label: _accountType == 'organization' ? l10n.organizationName : l10n.fullName,
+                label: l10n.organizationName,
                 icon: Icons.business_outlined,
               ),
             ),
-            if (_accountType == 'organization') ...[
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _fiscalIdCtrl,
-                textCapitalization: TextCapitalization.characters,
-                textInputAction: TextInputAction.done,
-                decoration: _decoration(
-                  label: l10n.fiscalIdRequiredLabel,
-                  hint: '**************',
-                  icon: Icons.confirmation_number_outlined,
-                ),
-                validator: (value) {
-                  if (_accountType != 'organization') return null;
-                  final v = value?.trim().toUpperCase() ?? '';
-                  if (v.isEmpty) return l10n.fiscalIdRequired;
-                  if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(v)) {
-                    return l10n.invalidFiscalId;
-                  }
-                  return null;
-                },
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _fiscalIdCtrl,
+              textCapitalization: TextCapitalization.characters,
+              textInputAction: TextInputAction.done,
+              decoration: _decoration(
+                label: l10n.fiscalIdRequiredLabel,
+                hint: '**************',
+                icon: Icons.confirmation_number_outlined,
               ),
-            ],
+              validator: (value) {
+                final v = value?.trim().toUpperCase() ?? '';
+                if (v.isEmpty) return l10n.fiscalIdRequired;
+                if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(v)) {
+                  return l10n.invalidFiscalId;
+                }
+                return null;
+              },
+            ),
           ],
         ),
       ],
@@ -612,11 +480,10 @@ class _SignupScreenState extends State<SignupScreen> {
         _stepCard(
           children: [
             _reviewRow(
-              _accountType == 'organization' ? l10n.organization : l10n.fullName,
+              l10n.organization,
               _organizationCtrl.text.isEmpty ? '-' : _organizationCtrl.text,
             ),
-            if (_accountType == 'organization')
-              _reviewRow(l10n.fiscalIdLabel, _fiscalIdCtrl.text.toUpperCase()),
+            _reviewRow(l10n.fiscalIdLabel, _fiscalIdCtrl.text.toUpperCase()),
             _reviewRow(l10n.email, _emailCtrl.text),
             _reviewRow(
               l10n.phone,

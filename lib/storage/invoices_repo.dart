@@ -4,6 +4,12 @@ import 'package:my_app/core/api_config.dart';
 class InvoicesRepo {
   final ApiClient _api = ApiClient.instance;
 
+  int _toInt(dynamic v, [int fallback = 0]) {
+    if (v == null) return fallback;
+    if (v is int) return v;
+    return int.tryParse(v.toString()) ?? fallback;
+  }
+
   Future<List<Map<String, dynamic>>> getAllInvoices() async {
     final response = await _api.get(
       ApiConfig.getInvoices,
@@ -29,34 +35,31 @@ class InvoicesRepo {
   }
 
   Future<int> createInvoiceHeader({
-    required int clientId,
+    int? clientId,
     required DateTime issueDate,
-    required DateTime dueDate,
+    DateTime? dueDate,
     required String status,
     required double subtotal,
     required double totalVat,
     required double total,
-    String? customCode,
-    String? customName,
-    String? customEmail,
   }) async {
+    final cid = _toInt(clientId);
+
     final response = await _api.post(
       ApiConfig.addInvoice,
       authRequired: true,
       body: {
-        'client_id': clientId,
+        if (cid > 0) 'client_id': cid,
         'invoice_date': issueDate.toIso8601String().split('T').first,
-        'invoice_due_date': dueDate.toIso8601String().split('T').first,
-        'status': status,
+        if (dueDate != null)
+          'invoice_due_date': dueDate.toIso8601String().split('T').first,
+        'status': status.trim().isEmpty ? 'DRAFT' : status.trim(),
         'subtotal': subtotal,
         'montant_tva': totalVat,
         'subtotal_ttc': total,
         'total': total,
         'invoice_type': 'FACTURE',
         'notes': '',
-        'custom_code': (customCode ?? '').trim(),
-        'custom_name': (customName ?? '').trim(),
-        'custom_email': (customEmail ?? '').trim(),
       },
     ) as Map<String, dynamic>;
 
@@ -94,30 +97,31 @@ class InvoicesRepo {
     throw Exception('Invalid invoice response');
   }
   Future<void> recomputeInvoiceTotals(int invoiceId) async {
-  final response = await _api.post(
-    ApiConfig.recomputeInvoiceTotals,
-    authRequired: true,
-    body: {
-      'invoice_id': invoiceId,
-    },
-  ) as Map<String, dynamic>;
+    final response = await _api.post(
+      ApiConfig.recomputeInvoiceTotals,
+      authRequired: true,
+      body: {
+        'invoice_id': invoiceId,
+      },
+    ) as Map<String, dynamic>;
 
-  if (response['success'] != true) {
-    throw Exception(response['message'] ?? 'Recompute totals failed');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Recompute totals failed');
+    }
   }
-}
-Future<void> updateInvoiceStatus(int id, String status) async {
-  final res = await _api.post(
-    ApiConfig.updateInvoiceStatus,
-    authRequired: true,
-    body: {
-      'id': id,
-      'status': status,
-    },
-  ) as Map<String, dynamic>;
 
-  if (res['success'] != true) {
-    throw Exception(res['message'] ?? 'Failed to update invoice status');
+  Future<void> updateInvoiceStatus(int id, String status) async {
+    final res = await _api.post(
+      ApiConfig.updateInvoiceStatus,
+      authRequired: true,
+      body: {
+        'id': id,
+        'status': status,
+      },
+    ) as Map<String, dynamic>;
+
+    if (res['success'] != true) {
+      throw Exception(res['message'] ?? 'Failed to update invoice status');
+    }
   }
-}
 }

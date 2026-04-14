@@ -140,10 +140,19 @@ class _AddProductScreenState extends State<AddProductScreen>
   }
 
   double _priceBaseTnd() {
+    // Convert the entered price (in the selected currency) to the base currency (TND)
+    // so the backend always stores consistent values.
+    //
+    // ExchangeRateService.rates is expected to be: 1 unit of currency = <rate> TND
+    // مثال: EUR = 3.4 يعني 1€ = 3.4 دينار
     final entered = _parseNum(_price.text) ?? 0.0;
     final rate = ExchangeRateService.rates[_currency] ?? 1.0;
-    if (rate == 0) return entered;
-    return entered / rate;
+
+    if (_currency == 'TND') return entered;
+    if (rate <= 0) return entered;
+
+    // Convert to TND
+    return entered * rate;
   }
 
   String _pricePreview() {
@@ -204,6 +213,8 @@ class _AddProductScreenState extends State<AddProductScreen>
 
       final price = _priceBaseTnd();
 
+      Map<String, dynamic>? created;
+
       if (isEdit) {
         final rawId = widget.product!['id'];
         final id = rawId is int ? rawId : int.tryParse(rawId.toString());
@@ -224,20 +235,35 @@ class _AddProductScreenState extends State<AddProductScreen>
         if (!mounted) return;
         AppAlerts.success(context, l10n.productUpdatedSuccessfully);
       } else {
-        await _repo.addProduct(
+        final createdProduct = await _repo.addProduct(
           code: code,
           name: name,
           price: price,
           tvaRate: tvaRate,
           unit: unit,
         );
-
+        created = createdProduct;
         if (!mounted) return;
         AppAlerts.success(context, l10n.productSavedSuccessfully);
       }
 
       if (!mounted) return;
-      Navigator.pop(context, true);
+
+      if (isEdit) {
+        // Return the updated product to the caller so it can refresh/select immediately.
+        final merged = <String, dynamic>{
+          ...?widget.product,
+          'code': code,
+          'name': name,
+          'price': price,
+          'tva_rate': tvaRate,
+          'unit': unit,
+        };
+        Navigator.pop(context, merged);
+      } else {
+        // Return the created product to the caller so it can be selected immediately.
+        Navigator.pop(context, created);
+      }
     } catch (e) {
       if (!mounted) return;
       AppAlerts.error(context, e.toString().replaceFirst('Exception: ', ''));

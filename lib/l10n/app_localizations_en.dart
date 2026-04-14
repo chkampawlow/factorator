@@ -146,10 +146,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clientSelectionFailed => 'Client selection failed';
 
   @override
-  String get pleaseChooseClient => 'Choose a client';
+  String get pleaseChooseClient => 'Please choose a client.';
 
   @override
-  String get chooseClient => 'Choose Client';
+  String get chooseClient => 'Choose a client';
 
   @override
   String get addNewClient => 'Add new client';
@@ -161,7 +161,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidNumber => 'Invalid number';
 
   @override
-  String get priceAndTvaMustBeValidNumbers => 'Price and TVA must be valid numbers.';
+  String get priceAndTvaMustBeValidNumbers =>
+      'Price and TVA must be valid numbers.';
 
   @override
   String get invalidProductId => 'Invalid product id';
@@ -176,7 +177,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editProduct => 'Edit Product';
 
   @override
-  String get addProduct => 'Add Product';
+  String get addProduct => 'Add product';
 
   @override
   String get saveProduct => 'Save Product';
@@ -219,6 +220,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboard => 'Dashboard';
+
+  @override
+  String get scanInvoiceTitle => 'Scan invoice';
+
+  @override
+  String get scanInvoiceSubtitle =>
+      'Place the invoice inside the frame. This is the camera UI preview.';
+
+  @override
+  String get scanInvoiceMode => 'Invoice';
+
+  @override
+  String get scanInvoiceAlign => 'Align the invoice inside the frame';
+
+  @override
+  String get scanInvoiceGuideTitle => 'Scan guide';
+
+  @override
+  String get scanInvoiceGuideLight =>
+      'Use good light and avoid shadows on the paper.';
+
+  @override
+  String get scanInvoiceGuideEdges =>
+      'Keep all invoice corners visible in the frame.';
+
+  @override
+  String get scanInvoiceGuideReadable =>
+      'Make sure totals and supplier details are readable.';
 
   @override
   String get quickActions => 'Quick actions';
@@ -280,7 +309,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add => 'Add';
 
   @override
-  String get searchNameMfCin => 'Search (name / MF / CIN)...';
+  String get searchNameMfCin => 'Search by name, MF or CIN';
 
   @override
   String get allCustomers => 'All customers';
@@ -319,7 +348,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoiceNotFound => 'Invoice not found.';
 
   @override
-  String get addAtLeastOneItemBeforePreviewPdf => 'Add at least one item before previewing the PDF.';
+  String get addAtLeastOneItemBeforePreviewPdf =>
+      'Add at least one item before previewing the PDF.';
 
   @override
   String get qtyMustBeGreaterThanZero => 'Qty must be > 0';
@@ -398,13 +428,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get createYourFirstInvoiceToSeeItHere => 'Create your first invoice to see it here.';
+  String get createYourFirstInvoiceToSeeItHere =>
+      'Create your first invoice to see it here.';
 
   @override
   String get welcomeBack => 'Welcome back';
 
   @override
-  String get loginToManageApp => 'Login to manage your clients, products and invoices.';
+  String get loginToManageApp =>
+      'Login to manage your clients, products and invoices.';
 
   @override
   String get emailAddress => 'Email address';
@@ -501,7 +533,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whoAreYou => 'Who are you?';
 
   @override
-  String get startWithPersonalInformation => 'Start with your personal information.';
+  String get startWithPersonalInformation =>
+      'Start with your personal information.';
 
   @override
   String get firstName => 'First name';
@@ -513,7 +546,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get companyDetails => 'Company details';
 
   @override
-  String get addOrganizationAndFiscalInfo => 'Add your organization and fiscal information.';
+  String get addOrganizationAndFiscalInfo =>
+      'Add your organization and fiscal information.';
 
   @override
   String get organizationName => 'Organization name';
@@ -552,7 +586,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reviewAndCreate => 'Review & create';
 
   @override
-  String get reviewBeforeCreate => 'Make sure everything looks good before creating the account.';
+  String get reviewBeforeCreate =>
+      'Make sure everything looks good before creating the account.';
 
   @override
   String get organization => 'Organization';
@@ -639,7 +674,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verifyEmail => 'Verify your email';
 
   @override
-  String get verifyEmailDescription => 'Please verify your email before continuing. Enter the 6-digit code or resend the email.';
+  String get verifyEmailDescription =>
+      'Please verify your email before continuing. Enter the 6-digit code or resend the email.';
 
   @override
   String get verificationCode => 'Verification code';
@@ -665,7 +701,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailVerifiedSuccessfully => 'Email verified successfully';
 
   @override
-  String get forgotPasswordDescription => 'Enter your email and we will send you a 6-digit code to reset your password.';
+  String get forgotPasswordDescription =>
+      'Enter your email and we will send you a 6-digit code to reset your password.';
 
   @override
   String get sendResetCode => 'Send reset code';
@@ -677,7 +714,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetPassword => 'Reset password';
 
   @override
-  String get resetPasswordDescription => 'Enter the 6-digit code and your new password.';
+  String get resetPasswordDescription =>
+      'Enter the 6-digit code and your new password.';
 
   @override
   String get enterResetCode => 'Enter the reset code';
@@ -706,7 +744,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get twoFactorCodeInvalid => 'Enter a valid 6-digit code';
 
   @override
-  String get twoFactorHint => 'Open Google Authenticator and enter the current 6-digit code.';
+  String get twoFactorHint =>
+      'Open Google Authenticator and enter the current 6-digit code.';
 
   @override
   String get twoFactorVerify => 'Verify';
@@ -721,13 +760,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get twoFactorSetupTitle => 'Google Authenticator';
 
   @override
-  String get twoFactorSetupSubtitle => 'Set up two-factor authentication to better protect your account.';
+  String get twoFactorSetupSubtitle =>
+      'Set up two-factor authentication to better protect your account.';
 
   @override
   String get twoFactorStep1 => 'Step 1';
 
   @override
-  String get twoFactorScanQr => 'Scan this QR code with Google Authenticator or enter the manual key below.';
+  String get twoFactorScanQr =>
+      'Scan this QR code with Google Authenticator or enter the manual key below.';
 
   @override
   String get twoFactorManualKey => 'Manual key';
@@ -742,13 +783,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get twoFactorStep2 => 'Step 2';
 
   @override
-  String get twoFactorEnterSetupCode => 'Enter the 6-digit code generated by your authenticator app.';
+  String get twoFactorEnterSetupCode =>
+      'Enter the 6-digit code generated by your authenticator app.';
 
   @override
   String get twoFactorEnableButton => 'Enable 2FA';
 
   @override
-  String get twoFactorEnabledSuccess => 'Two-factor authentication enabled successfully';
+  String get twoFactorEnabledSuccess =>
+      'Two-factor authentication enabled successfully';
 
   @override
   String get somethingWentWrong => 'Something went wrong';
@@ -757,7 +800,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get twoFactorDisableTitle => 'Disable two-factor authentication';
 
   @override
-  String get twoFactorDisableMessage => 'Are you sure you want to disable Google Authenticator for this account?';
+  String get twoFactorDisableMessage =>
+      'Are you sure you want to disable Google Authenticator for this account?';
 
   @override
   String get twoFactorDisableButton => 'Disable';
@@ -766,7 +810,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get twoFactorDisableCodeTitle => 'Enter disable code';
 
   @override
-  String get twoFactorDisabledSuccess => 'Two-factor authentication disabled successfully';
+  String get twoFactorDisabledSuccess =>
+      'Two-factor authentication disabled successfully';
 
   @override
   String get twoFactorToggleTitle => 'Google Authenticator';
@@ -778,7 +823,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get twoFactorToggleOff => 'Two-factor authentication is disabled';
 
   @override
-  String get twoFactorLoadingStatus => 'Checking two-factor authentication status...';
+  String get twoFactorLoadingStatus =>
+      'Checking two-factor authentication status...';
 
   @override
   String get twoFactorDisabling => 'Disabling two-factor authentication...';
@@ -820,6 +866,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unpaidLabel => 'Unpaid';
 
   @override
+  String get draftLabel => 'Draft';
+
+  @override
   String get paymentRate => 'Payment Rate';
 
   @override
@@ -842,6 +891,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get markAsUnpaid => 'Mark as unpaid';
+
+  @override
+  String get validateInvoice => 'Validate invoice';
+
+  @override
+  String get confirmValidateInvoiceTitle => 'Validate this invoice?';
+
+  @override
+  String get confirmValidateInvoiceBody =>
+      'Are you sure you want to validate this invoice? You cannot modify it after validating.';
+
+  @override
+  String get invoiceLockedAfterValidation =>
+      'This invoice is validated. You can no longer modify, add, or delete items.';
 
   @override
   String get markAsCancelled => 'Mark as cancelled';
@@ -880,7 +943,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noExpenseNotesMatchSearch => 'No expense notes match your search';
 
   @override
-  String get createYourFirstExpenseNoteToSeeItHere => 'Create your first expense note to see it here';
+  String get createYourFirstExpenseNoteToSeeItHere =>
+      'Create your first expense note to see it here';
 
   @override
   String get expenseNotePreviewTitleFallback => 'Expense Note';
@@ -895,7 +959,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmDeleteTitle => 'Confirm deletion';
 
   @override
-  String get confirmDeleteExpenseMessage => 'Are you sure you want to delete this expense note?';
+  String get confirmDeleteExpenseMessage =>
+      'Are you sure you want to delete this expense note?';
 
   @override
   String get deleteButton => 'Delete';
@@ -977,13 +1042,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get companyInfoIncompleteTitle => 'Company information is incomplete';
 
   @override
-  String get companyInfoIncompleteBody => 'Please complete your company information.';
+  String get companyInfoIncompleteBody =>
+      'Please complete your company information.';
 
   @override
   String get googleAuthenticator => 'Google Authenticator';
 
   @override
-  String get enableTwoFactorAuthentication => 'Enable two-factor authentication';
+  String get enableTwoFactorAuthentication =>
+      'Enable two-factor authentication';
 
   @override
   String get monthlyExpenses => 'Monthly expenses';
@@ -1091,173 +1158,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidPhoneNumber => 'Numéro invalide. Exemple : +216 20123456';
 
   @override
-  String get personalDetails => 'Personal details';
-
-  @override
-  String get addYourPersonalInfo => 'Add your personal information';
-
-  @override
-  String get individual => 'Individual';
-
-  @override
-  String get organizationNameRequired => 'Organization name is required.';
-
-  @override
-  String get fullNameRequired => 'Full name is required.';
-
-  @override
-  String get connectionsSubtitle => 'Manage your connections and invitations';
-
-  @override
-  String get invite => 'Invite';
-
-  @override
-  String get accepted => 'Connected';
-
-  @override
-  String get requests => 'Requests';
-
-  @override
-  String get sentInvites => 'Sent';
-
-  @override
-  String get noAcceptedConnections => 'No accepted connections yet';
-
-  @override
-  String get noRequests => 'No pending requests';
-
-  @override
-  String get noSentInvites => 'No sent invitations';
-
-  @override
-  String get inviteUser => 'Invite a user';
-
-  @override
-  String get searchUsersHint => 'Search users';
-
-  @override
   String get noResults => 'No results';
 
   @override
-  String get invitationSent => 'Invitation sent';
+  String get newCustomer => 'New Customer';
 
   @override
-  String get updated => 'Updated';
+  String get createCustomer => 'Create Customer';
 
   @override
-  String get removed => 'Removed';
+  String get createFirstCustomerToSeeHere =>
+      'Create your first customer to see it here.';
 
   @override
-  String get accept => 'Accept';
+  String get searchCustomerNameIdEmail => 'Search customer, ID, email...';
 
   @override
-  String get decline => 'Decline';
+  String get companies => 'Companies';
 
   @override
-  String get remove => 'Remove';
+  String get createYourFirstProduct =>
+      'Create your first product to start adding items to this invoice.';
 
   @override
-  String get areYouSure => 'Are you sure?';
+  String get individuals => 'Individuals';
 
   @override
-  String get chooseFromConnections => 'Choose from connections';
-
-  @override
-  String get manualClient => 'Manual';
-
-  @override
-  String get connectedUser => 'Connected user';
-
-  @override
-  String get invalidSelection => 'Invalid selection';
-
-  @override
-  String get enterClientNameOrEmail => 'Enter a client name or an email';
-
-  @override
-  String get noClientSelected => 'No client selected';
-
-  @override
-  String get clientNameOptional => 'Client name (optional)';
-
-  @override
-  String get clientEmailOptional => 'Client email (optional)';
-
-  @override
-  String get createInvoiceSetupSubtitle => 'Select a client and set the due date';
-
-  @override
-  String get searchUsers => 'Search users';
-
-  @override
-  String get notifications => 'Notifications';
-
-  @override
-  String get totalExpenses => 'Total expenses';
-
-  @override
-  String get recentlySearched => 'Recently searched';
-
-  @override
-  String get clear => 'Clear';
-
-  @override
-  String get markAllRead => 'Mark all read';
-
-  @override
-  String get noNotifications => 'No notifications';
-
-  @override
-  String get close => 'Close';
-
-  @override
-  String get clientDashboard => 'Client Dashboard';
-
-  @override
-  String get clientDashboardSubtitle => 'Your space';
-
-  @override
-  String get clientDashboardHint => 'Here you can view invoices you received and manage your profile.';
-
-  @override
-  String get receivedInvoices => 'Received invoices';
-
-  @override
-  String get receivedInvoicesSubtitle => 'Invoices sent to you';
-
-  @override
-  String get profileSubtitle => 'Manage your info and settings';
-
-  @override
-  String get openInvoicesFromNav => 'Open Invoices from the bottom navigation bar.';
-
-  @override
-  String get openProfileFromNav => 'Open Profile from the bottom navigation bar.';
-
-  @override
-  String get invoiceDetails => 'Invoice details';
-
-  @override
-  String get unknown => 'Unknown';
-
-  @override
-  String get date => 'Date';
-
-  @override
-  String get sender => 'Sender';
-
-  @override
-  String get receiver => 'Receiver';
-
-  @override
-  String get accountType => 'Account type';
-
-  @override
-  String get receivedInvoicesListTitle => 'Received invoices list';
-
-  @override
-  String get filter => 'Filter';
-
-  @override
-  String get searchReceivedInvoicesHint => 'Search invoice, client, email...';
+  String get productAdded => 'Product added';
 }

@@ -28,7 +28,7 @@ class ProductsRepo {
     throw Exception('Invalid products response');
   }
 
-  Future<void> addProduct({
+  Future<Map<String, dynamic>> addProduct({
     required String name,
     required double price,
     required double tvaRate,
@@ -50,6 +50,25 @@ class ProductsRepo {
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Add product failed');
     }
+
+    // Prefer backend-returned product payload when available.
+    final dynamic p = response['product'] ?? response['item'] ?? response['data'];
+    if (p is Map) {
+      return Map<String, dynamic>.from(p);
+    }
+
+    // Fallback: backend returned only an id.
+    final dynamic id = response['id'];
+    final int parsedId = (id is int) ? id : int.tryParse(id?.toString() ?? '') ?? 0;
+
+    return <String, dynamic>{
+      'id': parsedId,
+      'code': code,
+      'name': name,
+      'price': price,
+      'tva_rate': tvaRate,
+      'unit': unit,
+    };
   }
 
   Future<void> updateProduct({
