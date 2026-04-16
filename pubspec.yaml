@@ -20,7 +20,10 @@ dependencies:
   http: ^1.2.0
   shared_preferences: ^2.2.2
   table_calendar: ^3.0.9
+  camera: ^0.11.0+2
   image_picker: ^0.8.7+3
+  path_provider: ^2.1.5
+  permission_handler: ^11.3.1
   fl_chart: ^0.69.0
   flutter_secure_storage: ^10.0.0
   geolocator: ^12.0.0
@@ -37,9 +40,16 @@ flutter:
   generate: true
   
   assets:
+    - assets/fonts/logo.png
     - assets/fonts/Cairo-Black.ttf
     - assets/fonts/Cairo-Light.ttf
     - assets/fonts/Cairo-Medium.ttf
     - assets/fonts/Cairo-SemiBold.ttf
     - assets/fonts/Cairo-Regular.ttf
     - assets/fonts/Cairo-Bold.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/fonts/logo_launcher.png
+  remove_alpha_ios: true

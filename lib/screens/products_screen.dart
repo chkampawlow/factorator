@@ -353,32 +353,34 @@ class _ProductsScreenState extends State<ProductsScreen> {
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final res = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddProductScreen()),
-          );
+      floatingActionButton: _filtered.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () async {
+                final res = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddProductScreen()),
+                );
 
-          // If AddProductScreen returns the created product map, insert it immediately.
-          if (res is Map) {
-            final created = Map<String, dynamic>.from(res);
-            if (!mounted) return;
-            setState(() {
-              _products.insert(0, created);
-            });
-            _applyFilter();
-            return;
-          }
+                // If AddProductScreen returns the created product map, insert it immediately.
+                if (res is Map) {
+                  final created = Map<String, dynamic>.from(res);
+                  if (!mounted) return;
+                  setState(() {
+                    _products.insert(0, created);
+                  });
+                  _applyFilter();
+                  return;
+                }
 
-          // Backward compatibility
-          if (res == true) {
-            await _loadProducts();
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: Text(l10n.add),
-      ),
+                // Backward compatibility
+                if (res == true) {
+                  await _loadProducts();
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: Text(l10n.add),
+            ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(

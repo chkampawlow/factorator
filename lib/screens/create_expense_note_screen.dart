@@ -1,10 +1,9 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/services/currency_service.dart';
+import 'package:my_app/services/exchange_rate_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/expense_notes_repo.dart';
 
@@ -33,12 +32,64 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
   late final Animation<Offset> _slideAnimation;
 
   DateTime _selectedDate = DateTime.now();
-  String _selectedStatus = 'unpaid';
   bool _submitting = false;
 
   String _currency = 'TND';
 
-  final List<String> _statuses = const ['unpaid', 'paid', 'cancelled'];
+  final List<String> _currencies = const ['TND', 'EUR', 'USD'];
+
+  List<String> _expenseCategories(AppLocalizations l10n) {
+    switch (l10n.localeName) {
+      case 'fr':
+        return const [
+          'Achats',
+          'Transport',
+          'Carburant',
+          'Repas',
+          'Fournitures',
+          'Loyer',
+          'Internet',
+          'Téléphone',
+          'Marketing',
+          'Maintenance',
+          'Taxes',
+          'Salaires',
+          'Autre',
+        ];
+      case 'ar':
+        return const [
+          'مشتريات',
+          'نقل',
+          'وقود',
+          'وجبات',
+          'لوازم',
+          'إيجار',
+          'إنترنت',
+          'هاتف',
+          'تسويق',
+          'صيانة',
+          'ضرائب',
+          'رواتب',
+          'أخرى',
+        ];
+      default:
+        return const [
+          'Purchases',
+          'Transport',
+          'Fuel',
+          'Meals',
+          'Supplies',
+          'Rent',
+          'Internet',
+          'Phone',
+          'Marketing',
+          'Maintenance',
+          'Taxes',
+          'Salaries',
+          'Other',
+        ];
+    }
+  }
 
   @override
   void initState() {
@@ -90,27 +141,22 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
     super.dispose();
   }
 
-  String _normalizeStatus(String s) {
-    final v = s.trim().toLowerCase();
-    if (v == 'paid') return 'paid';
-    if (v == 'cancelled' || v == 'canceled') return 'cancelled';
-    return 'unpaid';
-  }
-
-  String _statusLabel(AppLocalizations l10n, String status) {
-    final v = _normalizeStatus(status);
-    if (v == 'paid') return l10n.statusPaid;
-    if (v == 'cancelled') return l10n.statusCancelled;
-    return l10n.statusPending;
-  }
-
   double _parseAmount() {
     final txt = _amountController.text.trim().replaceAll(',', '.');
     return double.tryParse(txt) ?? 0.0;
   }
 
+  double _amountBaseTnd() {
+    final entered = _parseAmount();
+    final rate = ExchangeRateService.rates[_currency] ?? 1.0;
+
+    if (_currency == 'TND') return entered;
+    if (rate <= 0) return entered;
+    return entered * rate;
+  }
+
   String _amountPreview() {
-    return CurrencyService.format(_parseAmount(), _currency);
+    return CurrencyService.format(_amountBaseTnd(), _currency);
   }
 
   Future<void> _pickDate() async {
@@ -144,7 +190,7 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
     if (_submitting) return;
     if (!_formKey.currentState!.validate()) return;
 
-    final amount = _parseAmount();
+    final amount = _amountBaseTnd();
     if (amount < 0) {
       _snack(l10n.updateFailed, isError: true);
       return;
@@ -160,7 +206,7 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
         date: DateFormat('yyyy-MM-dd').format(_selectedDate),
         description: _descriptionController.text.trim(),
         receiptPath: _receiptPathController.text.trim(),
-        status: _selectedStatus,
+        status: 'pending',
       );
 
       if (!mounted) return;
@@ -192,6 +238,10 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final categories = _expenseCategories(l10n);
+    final selectedCategory = categories.contains(_categoryController.text)
+        ? _categoryController.text
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -221,14 +271,14 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  cs.primaryContainer.withOpacity(0.45),
+                                  cs.primaryContainer.withValues(alpha: 0.45),
                                   cs.surface,
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
                                 color: cs.outlineVariant
-                                    .withOpacity(isDark ? 0.28 : 0.18),
+                                    .withValues(alpha: isDark ? 0.28 : 0.18),
                               ),
                             ),
                             child: Column(
@@ -236,16 +286,14 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                               children: [
                                 Text(
                                   l10n.createExpenseNoteTitle,
-                                  style:
-                                      theme.textTheme.titleLarge?.copyWith(
+                                  style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   l10n.createExpenseNoteSubtitle,
-                                  style:
-                                      theme.textTheme.bodyMedium?.copyWith(
+                                  style: theme.textTheme.bodyMedium?.copyWith(
                                     color: cs.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -272,16 +320,12 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                             action: TextInputAction.next,
                           ),
                           const SizedBox(height: 12),
-                          _field(
-                            context,
+                          TextFormField(
                             controller: _amountController,
-                            label: l10n.amount,
-                            hint: l10n.amount,
-                            icon: Icons.payments_outlined,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
+                            textInputAction: TextInputAction.next,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
                                 return l10n.requiredField;
@@ -294,53 +338,57 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                               }
                               return null;
                             },
-                            action: TextInputAction.next,
-                          ),
-                          const SizedBox(height: 12),
-                          _field(
-                            context,
-                            controller: _categoryController,
-                            label: l10n.categoryLabel,
-                            hint: l10n.categoryLabel,
-                            icon: Icons.category_outlined,
-                            action: TextInputAction.next,
+                            decoration: _fieldDecoration(
+                              context,
+                              label: l10n.amount,
+                              hint: l10n.amount,
+                              icon: Icons.payments_outlined,
+                              suffixIcon: Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _currency,
+                                    isDense: true,
+                                    borderRadius: BorderRadius.circular(12),
+                                    items: _currencies
+                                        .map(
+                                          (currency) =>
+                                              DropdownMenuItem<String>(
+                                            value: currency,
+                                            child: Text(currency),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) {
+                                      if (v == null) return;
+                                      setState(() => _currency = v);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            value: _selectedStatus,
-                            items: _statuses
+                            initialValue: selectedCategory,
+                            items: categories
                                 .map(
-                                  (s) => DropdownMenuItem(
-                                    value: s,
-                                    child: Text(_statusLabel(l10n, s)),
+                                  (category) => DropdownMenuItem<String>(
+                                    value: category,
+                                    child: Text(category),
                                   ),
                                 )
                                 .toList(),
-                            onChanged: (v) =>
-                                setState(() => _selectedStatus = v ?? 'unpaid'),
-                            decoration: InputDecoration(
-                              labelText: l10n.status,
-                              prefixIcon: const Icon(Icons.flag_outlined),
-                              filled: true,
-                              fillColor: cs.surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                  color:
-                                      cs.outlineVariant.withOpacity(0.35),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                  color: cs.primary,
-                                  width: 1.5,
-                                ),
-                              ),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              _categoryController.text = v;
+                              setState(() {});
+                            },
+                            decoration: _fieldDecoration(
+                              context,
+                              label: l10n.categoryLabel,
+                              hint: l10n.categoryLabel,
+                              icon: Icons.category_outlined,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -361,8 +409,8 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
-                                    color:
-                                        cs.outlineVariant.withOpacity(0.35),
+                                    color: cs.outlineVariant
+                                        .withValues(alpha: 0.35),
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
@@ -407,7 +455,8 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                               color: cs.surface,
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
-                                color: cs.outlineVariant.withOpacity(0.28),
+                                color:
+                                    cs.outlineVariant.withValues(alpha: 0.28),
                               ),
                             ),
                             child: Row(
@@ -419,8 +468,8 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                                         : _titleController.text.trim(),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
@@ -428,8 +477,7 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                                 const SizedBox(width: 12),
                                 Text(
                                   _amountPreview(),
-                                  style: theme.textTheme.titleMedium
-                                      ?.copyWith(
+                                  style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -451,8 +499,7 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
                               Expanded(
                                 flex: 2,
                                 child: FilledButton(
-                                  onPressed:
-                                      _submitting ? null : _create,
+                                  onPressed: _submitting ? null : _create,
                                   child: _submitting
                                       ? SizedBox(
                                           width: 18,
@@ -495,8 +542,6 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
     int minLines = 1,
     int maxLines = 1,
   }) {
-    final cs = Theme.of(context).colorScheme;
-
     return TextFormField(
       controller: controller,
       validator: validator,
@@ -504,24 +549,43 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
       textInputAction: action,
       minLines: minLines,
       maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon),
-        filled: true,
-        fillColor: cs.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.35)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: cs.primary, width: 1.5),
-        ),
+      decoration: _fieldDecoration(
+        context,
+        label: label,
+        hint: hint,
+        icon: icon,
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration(
+    BuildContext context, {
+    required String label,
+    required String hint,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: cs.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide:
+            BorderSide(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.primary, width: 1.5),
       ),
     );
   }

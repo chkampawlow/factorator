@@ -259,7 +259,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get advanceInvoiceComingSoon => 'الفاتورة المسبقة: قريباً';
 
   @override
-  String get recentTransactions => 'المعاملات الأخيرة';
+  String get recentTransactions => 'الإحصائيات';
 
   @override
   String get all => 'الكل';
@@ -515,7 +515,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get fiscalIdRequired => 'المعرف الجبائي مطلوب';
 
   @override
-  String get fiscalIdMustMatch => 'يجب أن يطابق المعرف الجبائي 1234567ABC123';
+  String get fiscalIdMustMatch => 'يجب أن يطابق المعرف الجبائي 1234567A';
 
   @override
   String get passwordMinLength =>
@@ -555,7 +555,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get fiscalIdRequiredLabel => 'المعرف الجبائي*';
 
   @override
-  String get fiscalIdFormat => 'الصيغة: 1234567ABC123';
+  String get fiscalIdFormat => 'الصيغة: 1234567A';
 
   @override
   String get contactInformation => 'معلومات الاتصال';
@@ -887,6 +887,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get markAsPaid => 'تعيين كمدفوع';
 
   @override
+  String get markAsPending => 'تعيين كقيد الانتظار';
+
+  @override
+  String get markAsRejected => 'تعيين كمرفوض';
+
+  @override
   String get markAsUnpaid => 'تعيين كغير مدفوع';
 
   @override
@@ -972,6 +978,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get statusCancelled => 'ملغى';
+
+  @override
+  String get statusRejected => 'مرفوض';
 
   @override
   String get dateLabel => 'التاريخ';
@@ -1156,17 +1165,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noResults => 'لا توجد نتائج';
 
   @override
-  String get newCustomer => 'New Customer';
+  String get newCustomer => 'عميل جديد';
 
   @override
-  String get createCustomer => 'Create Customer';
+  String get createCustomer => 'إنشاء عميل';
 
   @override
-  String get createFirstCustomerToSeeHere =>
-      'Create your first customer to see it here.';
+  String get createFirstCustomerToSeeHere => 'أنشئ أول عميل ليظهر هنا.';
 
   @override
-  String get searchCustomerNameIdEmail => 'Search customer, ID, email...';
+  String get searchCustomerNameIdEmail =>
+      'ابحث عن عميل أو معرف أو بريد إلكتروني...';
 
   @override
   String get companies => 'الشركات';

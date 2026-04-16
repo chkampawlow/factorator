@@ -32,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-
   Future<void> _login() async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -54,44 +53,44 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-final requires2fa = response['requires_2fa'] == true;
+      final requires2fa = response['requires_2fa'] == true;
 
-if (requires2fa) {
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (_) => TwoFactorLoginScreen(
-        email: _emailCtrl.text.trim(),
-        rememberMe: _rememberMe,
-      ),
-    ),
-  );
-  return;
-}
+      if (requires2fa) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TwoFactorLoginScreen(
+              email: _emailCtrl.text.trim(),
+              rememberMe: _rememberMe,
+            ),
+          ),
+        );
+        return;
+      }
 
-final user = response['user'] as Map<String, dynamic>?;
-final organizationName =
-    (user?['organization_name'] ?? '').toString().trim();
-final emailVerified = user?['email_verified'] == true;
+      final user = response['user'] as Map<String, dynamic>?;
+      final organizationName =
+          (user?['organization_name'] ?? '').toString().trim();
+      final emailVerified = user?['email_verified'] == true;
 
-AppAlerts.success(
-  context,
-  organizationName.isNotEmpty
-      ? l10n.welcomeUser(organizationName)
-      : l10n.loginSuccess,
-);
+      AppAlerts.success(
+        context,
+        organizationName.isNotEmpty
+            ? l10n.welcomeUser(organizationName)
+            : l10n.loginSuccess,
+      );
 
-if (!emailVerified) {
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const VerifyEmailScreen(),
-    ),
-  );
-  return;
-}
+      if (!emailVerified) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const VerifyEmailScreen(),
+          ),
+        );
+        return;
+      }
 
-Navigator.pushReplacementNamed(context, '/dashboard');
+      Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -138,16 +137,32 @@ Navigator.pushReplacementNamed(context, '/dashboard');
                   const SizedBox(height: 12),
                   Center(
                     child: Container(
-                      height: 74,
-                      width: 74,
+                      width: 96,
+                      height: 96,
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: cs.primaryContainer,
+                        color: cs.surface,
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: cs.outlineVariant.withValues(alpha: 0.35),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: cs.shadow.withValues(alpha: 0.12),
+                            blurRadius: 22,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
-                      child: Icon(
-                        Icons.lock_outline_rounded,
-                        size: 34,
-                        color: cs.onPrimaryContainer,
+                      child: ClipOval(
+                        child: Transform.scale(
+                          scale: 1.42,
+                          child: Image.asset(
+                            'assets/fonts/logo.png',
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -234,16 +249,17 @@ Navigator.pushReplacementNamed(context, '/dashboard');
                                   ),
                                 ),
                                 TextButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ForgotPasswordScreen(),
-      ),
-    );
-  },
-  child: Text(l10n.forgotPassword),
-),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const ForgotPasswordScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(l10n.forgotPassword),
+                                ),
                               ],
                             ),
                             if (_error != null) ...[
@@ -252,7 +268,8 @@ Navigator.pushReplacementNamed(context, '/dashboard');
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: cs.errorContainer.withOpacity(0.7),
+                                  color:
+                                      cs.errorContainer.withValues(alpha: 0.7),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(

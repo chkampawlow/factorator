@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/location_service.dart';
@@ -135,7 +136,7 @@ class _SignupScreenState extends State<SignupScreen> {
           _setError(l10n.fiscalIdRequired);
           return false;
         }
-        if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(fiscalId)) {
+        if (!RegExp(r'^[0-9]{7}[A-Z]$').hasMatch(fiscalId)) {
           _setError(l10n.invalidFiscalId);
           return false;
         }
@@ -152,7 +153,9 @@ class _SignupScreenState extends State<SignupScreen> {
           _setError(l10n.enterValidEmail);
           return false;
         }
-        if (phone.isEmpty || phone == _phonePrefix || phone == '$_phonePrefix ') {
+        if (phone.isEmpty ||
+            phone == _phonePrefix ||
+            phone == '$_phonePrefix ') {
           _setError(l10n.phoneNumberRequired);
           return false;
         }
@@ -249,7 +252,9 @@ class _SignupScreenState extends State<SignupScreen> {
       height: 8,
       width: active ? 20 : 8,
       decoration: BoxDecoration(
-        color: active ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+        color: active
+            ? theme.colorScheme.primary
+            : theme.colorScheme.outlineVariant,
         borderRadius: BorderRadius.circular(999),
       ),
     );
@@ -311,15 +316,25 @@ class _SignupScreenState extends State<SignupScreen> {
               controller: _fiscalIdCtrl,
               textCapitalization: TextCapitalization.characters,
               textInputAction: TextInputAction.done,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(8),
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9a-zA-Z]')),
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  return newValue.copyWith(
+                    text: newValue.text.toUpperCase(),
+                    selection: newValue.selection,
+                  );
+                }),
+              ],
               decoration: _decoration(
                 label: l10n.fiscalIdRequiredLabel,
-                hint: '**************',
+                hint: l10n.fiscalIdFormat,
                 icon: Icons.confirmation_number_outlined,
               ),
               validator: (value) {
                 final v = value?.trim().toUpperCase() ?? '';
                 if (v.isEmpty) return l10n.fiscalIdRequired;
-                if (!RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(v)) {
+                if (!RegExp(r'^[0-9]{7}[A-Z]$').hasMatch(v)) {
                   return l10n.invalidFiscalId;
                 }
                 return null;

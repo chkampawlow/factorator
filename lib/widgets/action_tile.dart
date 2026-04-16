@@ -4,6 +4,7 @@ class ActionTile extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color bg;
+  final Color? fg;
   final VoidCallback onTap;
 
   const ActionTile({
@@ -11,6 +12,7 @@ class ActionTile extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.bg,
+    this.fg,
     required this.onTap,
   });
 
@@ -22,7 +24,7 @@ class ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
 
-    final textColor = _isDarkColor(bg) ? Colors.white : Colors.black87;
+    final textColor = fg ?? (_isDarkColor(bg) ? Colors.white : Colors.black87);
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),

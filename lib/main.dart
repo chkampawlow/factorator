@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/expense_notes_screen.dart';
-import 'package:my_app/screens/scan_invoice_screen.dart';
 import 'package:my_app/themes/app_theme.dart';
 
 import 'screens/clients_screen.dart';
@@ -31,8 +30,8 @@ class _FacturationAppState extends State<FacturationApp> {
   final LocationLanguageService _locationLanguageService =
       LocationLanguageService();
 
-  ThemeMode _mode = ThemeMode.light;
-  Color _primaryColor = AppTheme.mint;
+  ThemeMode _mode = ThemeMode.dark;
+  Color _primaryColor = AppTheme.accent;
   Locale _locale = const Locale('fr');
 
   @override
@@ -102,7 +101,7 @@ class _FacturationAppState extends State<FacturationApp> {
   }
 
   Future<void> _changePrimaryColor(Color color) async {
-    await _settingsService.setAppColor(color.value);
+    await _settingsService.setAppColor(color.toARGB32());
 
     if (!mounted) return;
 
@@ -126,6 +125,7 @@ class _FacturationAppState extends State<FacturationApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'el fatoura',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(primaryColor: _primaryColor),
       darkTheme: AppTheme.dark(primaryColor: _primaryColor),
@@ -222,9 +222,7 @@ class _AppStartGateState extends State<AppStartGate> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const _AppLoadingScreen();
     }
 
     if (!_loggedIn) {
@@ -236,6 +234,94 @@ class _AppStartGateState extends State<AppStartGate> {
       onChangePrimaryColor: widget.onChangePrimaryColor,
       onChangeLanguage: widget.onChangeLanguage,
       currentPrimaryColor: widget.currentPrimaryColor,
+    );
+  }
+}
+
+class _AppLoadingScreen extends StatefulWidget {
+  const _AppLoadingScreen();
+
+  @override
+  State<_AppLoadingScreen> createState() => _AppLoadingScreenState();
+}
+
+class _AppLoadingScreenState extends State<_AppLoadingScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      body: Center(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final t = Curves.easeInOut.transform(_controller.value);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Transform.scale(
+                  scale: 0.92 + (t * 0.08),
+                  child: Container(
+                    width: 104,
+                    height: 104,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: cs.outlineVariant.withValues(alpha: 0.35),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: cs.primary.withValues(alpha: 0.22),
+                          blurRadius: 24 + (t * 10),
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Transform.scale(
+                        scale: 1.42,
+                        child: Image.asset(
+                          'assets/fonts/logo.png',
+                          fit: BoxFit.cover,
+                          filterQuality: FilterQuality.high,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: 132,
+                  child: LinearProgressIndicator(
+                    minHeight: 4,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -267,6 +353,8 @@ class _MainShellState extends State<MainShell> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final invoiceColor = isDark ? Colors.white : cs.primary;
+    final invoiceForeground = isDark ? cs.primary : cs.onPrimary;
 
     final pages = [
       DashboardScreen(
@@ -309,14 +397,15 @@ class _MainShellState extends State<MainShell> {
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           child: Container(
             decoration: BoxDecoration(
-              color: cs.surface.withOpacity(isDark ? 0.92 : 0.98),
+              color: cs.surface.withValues(alpha: isDark ? 0.92 : 0.98),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: cs.outlineVariant.withOpacity(isDark ? 0.28 : 0.18),
+                color:
+                    cs.outlineVariant.withValues(alpha: isDark ? 0.28 : 0.18),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.22 : 0.08),
+                  color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.08),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -327,8 +416,8 @@ class _MainShellState extends State<MainShell> {
               child: NavigationBarTheme(
                 data: NavigationBarThemeData(
                   backgroundColor: Colors.transparent,
-                  indicatorColor:
-                      cs.primaryContainer.withOpacity(isDark ? 0.85 : 0.95),
+                  indicatorColor: cs.primaryContainer
+                      .withValues(alpha: isDark ? 0.85 : 0.95),
                   iconTheme:
                       WidgetStateProperty.resolveWith<IconThemeData>((states) {
                     final selected = states.contains(WidgetState.selected);
@@ -368,13 +457,13 @@ class _MainShellState extends State<MainShell> {
                     ),
                     NavigationDestination(
                       icon: _CenterInvoiceNavIcon(
-                        color: cs.primary,
-                        foreground: cs.onPrimary,
+                        color: invoiceColor,
+                        foreground: invoiceForeground,
                         selected: false,
                       ),
                       selectedIcon: _CenterInvoiceNavIcon(
-                        color: cs.primary,
-                        foreground: cs.onPrimary,
+                        color: invoiceColor,
+                        foreground: invoiceForeground,
                         selected: true,
                       ),
                       label: l10n.invoices,
@@ -423,7 +512,7 @@ class _CenterInvoiceNavIcon extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(selected ? 0.32 : 0.20),
+            color: color.withValues(alpha: selected ? 0.32 : 0.20),
             blurRadius: selected ? 18 : 12,
             offset: const Offset(0, 6),
           ),

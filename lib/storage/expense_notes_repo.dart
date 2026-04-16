@@ -139,39 +139,33 @@ class ExpenseNotesRepo {
   String _backendWorkflowStatusFromUi(String status) {
     switch (status.trim().toLowerCase()) {
       case 'paid':
-        // Backend workflow accepts: PENDING, APPROVED, REJECTED, REIMBURSED
-        return 'APPROVED';
+      case 'approved':
+      case 'reimbursed':
+        return 'PAID';
       case 'cancelled':
       case 'canceled':
+      case 'rejected':
         return 'REJECTED';
       case 'unpaid':
+      case 'pending':
       default:
         return 'PENDING';
     }
   }
 
   String _backendStatusFromUi(String status) {
-    switch (status.trim().toLowerCase()) {
-      case 'paid':
-        return 'PAID';
-      case 'cancelled':
-      case 'canceled':
-        return 'CANCELLED';
-      case 'unpaid':
-      default:
-        return 'PENDING';
-    }
+    return _backendWorkflowStatusFromUi(status);
   }
 
   String _uiStatusFromBackend(String status) {
     switch (status.trim().toUpperCase()) {
-      case 'PAID':
       case 'APPROVED':
+      case 'PAID':
       case 'REIMBURSED':
         return 'paid';
+      case 'REJECTED':
       case 'CANCELLED':
       case 'CANCELED':
-      case 'REJECTED':
         return 'cancelled';
       case 'PENDING':
       default:

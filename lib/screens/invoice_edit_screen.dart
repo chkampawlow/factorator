@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/pdf_preview_screen.dart';
 import 'package:my_app/screens/add_client_screen.dart';
@@ -57,7 +58,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   String _currency = 'TND';
 
   final TextEditingController _qtyCtrl = TextEditingController(text: '1');
-  final TextEditingController _discountCtrl = TextEditingController(text: '0');
+  final TextEditingController _discountCtrl = TextEditingController(text: '1');
   final TextEditingController _customPriceCtrl = TextEditingController();
 
   @override
@@ -104,8 +105,79 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   double _qty() =>
       double.tryParse(_qtyCtrl.text.trim().replaceAll(',', '.')) ?? 1.0;
 
-  double _discountPct() =>
-      double.tryParse(_discountCtrl.text.trim().replaceAll(',', '.')) ?? 0.0;
+  double _discountPct() => _clampDiscount(
+        double.tryParse(_discountCtrl.text.trim().replaceAll(',', '.')) ?? 1.0,
+      );
+
+  double _clampDiscount(double value) => value.clamp(1.0, 100.0).toDouble();
+
+  void _setDiscount(double value) {
+    final next = _clampDiscount(value).round().toString();
+    if (_discountCtrl.text == next) return;
+
+    _discountCtrl.value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: next.length),
+    );
+    setState(() {});
+  }
+
+  void _stepDiscount(int delta) {
+    _setDiscount(_discountPct() + delta);
+  }
+
+  String _dateOnly(dynamic value) {
+    return (value ?? '').toString().split(' ').first;
+  }
+
+  DateTime? _parseDateOnly(dynamic value) {
+    final raw = _dateOnly(value);
+    if (raw.isEmpty) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  Future<void> _changeIssueDate() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_invoice == null) return;
+    if (!_isDraftInvoice) {
+      _toast(l10n.invoiceLockedAfterValidation, tone: AlertTone.warning);
+      return;
+    }
+
+    final currentIssue =
+        _parseDateOnly(_invoice!['issueDate']) ?? DateTime.now();
+    final currentDue = _parseDateOnly(_invoice!['dueDate']);
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: currentIssue,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (selected == null || !mounted) return;
+
+    final dueDate = currentDue == null
+        ? null
+        : selected.add(currentDue.difference(currentIssue));
+
+    try {
+      await _invoicesRepo.updateInvoiceDates(
+        id: widget.invoiceId,
+        issueDate: selected,
+        dueDate: dueDate,
+      );
+
+      if (!mounted) return;
+      await _loadAll();
+      _toast(l10n.invoiceStatusUpdated, tone: AlertTone.success);
+    } catch (e) {
+      if (!mounted) return;
+      _toast(
+        e.toString().replaceFirst('Exception: ', ''),
+        tone: AlertTone.error,
+      );
+    }
+  }
 
   Future<void> _loadAll() async {
     setState(() {
@@ -383,7 +455,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     }
 
     final price = _productPrice();
-    final discountPct = _discountPct().clamp(0.0, 100.0);
+    final discountPct = _discountPct();
     final tvaRate = _productTvaRate();
 
     final totals = _computeLineTotals(
@@ -413,7 +485,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     );
 
     _qtyCtrl.text = '1';
-    _discountCtrl.text = '0';
+    _discountCtrl.text = '1';
     _customPriceCtrl.clear();
 
     await _recomputeAndUpdateInvoiceTotals();
@@ -672,8 +744,30 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                   const SizedBox(height: 4),
                   Text('${l10n.status}: ${status.toUpperCase()}'),
                   const SizedBox(height: 4),
-                  Text(
-                    '${l10n.issue}: ${(_invoice!['issueDate'] ?? '')}',
+                  InkWell(
+                    onTap: _changeIssueDate,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '${l10n.issue}: ${_dateOnly(_invoice!['issueDate'])}',
+                            ),
+                          ),
+                          if (_isDraftInvoice) ...[
+                            const SizedBox(width: 5),
+                            Icon(
+                              Icons.edit_calendar_outlined,
+                              size: 16,
+                              color: cs.primary,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1072,7 +1166,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         : _computeLineTotals(
             qty: _qty(),
             price: _productPrice(),
-            discountPct: _discountPct().clamp(0, 100),
+            discountPct: _discountPct(),
             tvaRate: _productTvaRate(),
           );
 
@@ -1141,21 +1235,77 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 48,
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: _products.isEmpty ? null : _addItem,
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Icon(Icons.check_rounded, size: 24),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _discountCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                  child: InputDecorator(
                     decoration: InputDecoration(
                       labelText: l10n.discountPercent,
                       border: const OutlineInputBorder(),
                     ),
-                    onChanged: (_) => setState(() {}),
+                    child: Row(
+                      children: [
+                        _DiscountStepButton(
+                          icon: Icons.remove_rounded,
+                          onTap: () => _stepDiscount(-1),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: _discountCtrl,
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(3),
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              isDense: true,
+                              suffixText: '%',
+                            ),
+                            onChanged: (value) {
+                              if (value.isEmpty) {
+                                setState(() {});
+                                return;
+                              }
+                              final parsed = int.tryParse(value);
+                              if (parsed == null) return;
+                              if (parsed < 1 || parsed > 100) {
+                                _setDiscount(parsed.toDouble());
+                              } else {
+                                setState(() {});
+                              }
+                            },
+                            onEditingComplete: () {
+                              _setDiscount(_discountPct());
+                              FocusScope.of(context).unfocus();
+                            },
+                          ),
+                        ),
+                        _DiscountStepButton(
+                          icon: Icons.add_rounded,
+                          onTap: () => _stepDiscount(1),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -1196,37 +1346,12 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                     const SizedBox(height: 8),
                     _linePreviewRow(
                       context,
-                      label: 'TVA ${_productTvaRate().toStringAsFixed(0)}%',
-                      value: CurrencyService.format(lineTotals.tva, _currency),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _linePreviewRow(
-                            context,
-                            label: 'TTC',
-                            value: CurrencyService.format(
-                              lineTotals.ttc,
-                              _currency,
-                            ),
-                            isTotal: true,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: FilledButton(
-                            onPressed: _products.isEmpty ? null : _addItem,
-                            style: FilledButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              shape: const CircleBorder(),
-                            ),
-                            child: const Icon(Icons.add_rounded, size: 22),
-                          ),
-                        ),
-                      ],
+                      label: 'TTC',
+                      value: CurrencyService.format(
+                        lineTotals.ttc,
+                        _currency,
+                      ),
+                      isTotal: true,
                     ),
                   ],
                 ),
@@ -1532,43 +1657,6 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.all(16),
             children: [
-              Card(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.person_outline_rounded),
-                      title: Text(
-                        _toInt(_invoice!['clientId']) > 0
-                            ? (_invoice!['clientName'] ?? '')
-                                    .toString()
-                                    .trim()
-                                    .isNotEmpty
-                                ? _invoice!['clientName'].toString()
-                                : l10n.client
-                            : l10n.client,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(
-                        _toInt(_invoice!['clientId']) > 0
-                            ? (_invoice!['clientEmail'] ?? '')
-                                    .toString()
-                                    .trim()
-                                    .isNotEmpty
-                                ? (_invoice!['clientEmail'] ?? '')
-                                    .toString()
-                                    .trim()
-                                : l10n.client
-                            : l10n.client,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
               _buildSummaryCard(cs),
               const SizedBox(height: 12),
               if (_clientDeleted) ...[
@@ -1607,6 +1695,35 @@ class _LineTotals {
   });
 }
 
+class _DiscountStepButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _DiscountStepButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: cs.primaryContainer.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 20, color: cs.onPrimaryContainer),
+      ),
+    );
+  }
+}
+
 class _ClientPickerSheet extends StatefulWidget {
   final ClientsRepo clientsRepo;
 
@@ -1634,8 +1751,8 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
   }
 
   bool _looksLikeFiscalId(String v) {
-    final s = v.trim();
-    return RegExp(r'^\d{7}[a-zA-Z]{2,5}$').hasMatch(s);
+    final s = v.trim().toUpperCase();
+    return RegExp(r'^\d{7}[A-Z]$').hasMatch(s);
   }
 
   bool _clientExists(String value) {

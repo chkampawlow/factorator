@@ -48,6 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _currency = 'TND';
   String _language = 'fr';
   String _region = '';
+  late Color _selectedPrimaryColor;
 
   final List<Color> _colors = const [
     Color(0xFF16B39A),
@@ -63,7 +64,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedPrimaryColor = widget.currentPrimaryColor;
     _loadProfileData();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.currentPrimaryColor.toARGB32() !=
+        widget.currentPrimaryColor.toARGB32()) {
+      _selectedPrimaryColor = widget.currentPrimaryColor;
+    }
   }
 
   Future<void> _loadProfileData() async {
@@ -362,10 +374,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildColorCircle(Color color) {
     final cs = Theme.of(context).colorScheme;
-    final isSelected = widget.currentPrimaryColor.value == color.value;
+    final isSelected = _selectedPrimaryColor.toARGB32() == color.toARGB32();
 
     return GestureDetector(
-      onTap: () => widget.onChangePrimaryColor(color),
+      onTap: () {
+        setState(() {
+          _selectedPrimaryColor = color;
+        });
+        widget.onChangePrimaryColor(color);
+      },
       child: Container(
         width: 42,
         height: 42,
@@ -377,7 +394,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 3,
           ),
         ),
-        child: isSelected ? Icon(Icons.check, color: cs.onPrimary, size: 20) : null,
+        child: isSelected
+            ? Icon(Icons.check, color: cs.onPrimary, size: 20)
+            : null,
       ),
     );
   }
@@ -621,7 +640,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     borderSide: BorderSide(
-                                      color: cs.outlineVariant.withOpacity(0.35),
+                                      color:
+                                          cs.outlineVariant.withOpacity(0.35),
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
@@ -678,7 +698,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     borderSide: BorderSide(
-                                      color: cs.outlineVariant.withOpacity(0.35),
+                                      color:
+                                          cs.outlineVariant.withOpacity(0.35),
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
@@ -724,8 +745,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Wrap(
                                 spacing: 12,
                                 runSpacing: 12,
-                                children:
-                                    _colors.map((c) => _buildColorCircle(c)).toList(),
+                                children: _colors
+                                    .map((c) => _buildColorCircle(c))
+                                    .toList(),
                               ),
                             ],
                           ),
@@ -739,7 +761,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               SwitchListTile.adaptive(
                                 secondary: const Icon(Icons.dark_mode_outlined),
                                 title: Text(l10n.toggleTheme),
-                                value: Theme.of(context).brightness == Brightness.dark,
+                                value: Theme.of(context).brightness ==
+                                    Brightness.dark,
                                 onChanged: (_) => widget.onToggleTheme(),
                               ),
                               const Divider(height: 1),
@@ -753,7 +776,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ListTile(
                                 leading: const Icon(Icons.shield_outlined),
                                 title: Text(l10n.googleAuthenticator),
-                                subtitle: Text(l10n.enableTwoFactorAuthentication),
+                                subtitle:
+                                    Text(l10n.enableTwoFactorAuthentication),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: () {
                                   Navigator.push(

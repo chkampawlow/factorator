@@ -94,7 +94,7 @@
   "quickActions": "Actions rapides",
   "advanceInvoice": "Facture d'avance",
   "advanceInvoiceComingSoon": "Facture d'avance : bientôt disponible",
-  "recentTransactions": "Transactions récentes",
+  "recentTransactions": "Statistiques",
   "all": "Tout",
   "noInvoicesYet": "Aucune facture pour le moment.",
 
@@ -227,7 +227,7 @@
   "firstNameRequired": "Le prénom est requis",
   "lastNameRequired": "Le nom est requis",
   "fiscalIdRequired": "Le matricule fiscal est requis",
-  "fiscalIdMustMatch": "Le matricule fiscal doit correspondre à 1234567ABC123",
+  "fiscalIdMustMatch": "Le matricule fiscal doit correspondre à 1234567A",
   "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères",
   "pleaseConfirmPassword": "Veuillez confirmer votre mot de passe",
   "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
@@ -240,7 +240,7 @@
   "addOrganizationAndFiscalInfo": "Ajoutez votre organisation et vos informations fiscales.",
   "organizationName": "Nom de l'organisation",
   "fiscalIdRequiredLabel": "Matricule Fiscal*",
-  "fiscalIdFormat": "Format : 1234567ABC123",
+  "fiscalIdFormat": "Format : 1234567A",
   "contactInformation": "Informations de contact",
   "howCanWeReachYou": "Comment pouvons-nous vous joindre ?",
   "emailAddressLabel": "Adresse email",
@@ -500,8 +500,11 @@
   "statusPaid": "Payé",
   "statusUnpaid": "Impayé",
   "statusCancelled": "Annulé",
+  "statusRejected": "Rejeté",
   "changeStatus": "Changer le statut",
   "markAsPaid": "Marquer comme payé",
+  "markAsPending": "Marquer comme en attente",
+  "markAsRejected": "Marquer comme rejeté",
   "markAsUnpaid": "Marquer comme impayé",
   "markAsCancelled": "Marquer comme annulé",
   "edit": "Modifier",
@@ -523,6 +526,7 @@
   "statusPending": "En attente",
   "statusPaid": "Payé",
   "statusCancelled": "Annulé",
+  "statusRejected": "Rejeté",
 
   "receiptPathLabel": "Chemin du reçu",
   "receiptPathHint": "Saisir le chemin du fichier du reçu",
@@ -607,6 +611,3 @@
   "productAdded": "Produit ajouté"
 
 }
-
-
-

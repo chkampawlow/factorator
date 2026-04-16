@@ -11,6 +11,7 @@ import 'package:my_app/widgets/app_top_bar.dart';
 
 class InvoicesScreen extends StatefulWidget {
   final int initialInvoiceId;
+  final String initialStatus;
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
   final void Function(String code) onChangeLanguage;
@@ -19,6 +20,7 @@ class InvoicesScreen extends StatefulWidget {
   const InvoicesScreen({
     super.key,
     this.initialInvoiceId = 0,
+    this.initialStatus = 'all',
     required this.onToggleTheme,
     required this.onChangePrimaryColor,
     required this.onChangeLanguage,
@@ -102,6 +104,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     super.didChangeDependencies();
     if (!_didLoadOnce) {
       _didLoadOnce = true;
+      _statusFilter = _normalizeFilterInput(widget.initialStatus);
       _load();
     }
   }
@@ -110,6 +113,24 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     if (v == null) return fallback;
     if (v is int) return v;
     return int.tryParse(v.toString()) ?? fallback;
+  }
+
+  String _normalizeFilterInput(String v) {
+    final s = v.trim().toLowerCase();
+    if (s.isEmpty) return 'all';
+
+    // Accept multiple synonyms coming from other screens / backend.
+    if (s == 'all') return 'all';
+    if (s == 'draft') return 'draft';
+    if (s == 'paid') return 'paid';
+    if (s == 'unpaid' || s == 'open') return 'unpaid';
+    if (s == 'cancelled' || s == 'canceled') return 'cancelled';
+
+    // Also accept uppercase values.
+    if (s == 'paid') return 'paid';
+    if (s == 'unpaid') return 'unpaid';
+
+    return 'all';
   }
 
   Future<Map<String, dynamic>?> _pickClient() async {
@@ -147,6 +168,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         total: 0,
       );
 
+      if (!mounted) return;
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -163,6 +185,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       if (!mounted) return;
       await _load();
     } catch (e) {
+      if (!mounted) return;
       AppAlerts.error(
         context,
         '${l10n.saveFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
@@ -207,6 +230,14 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         _invoices = List<Map<String, dynamic>>.from(data);
         _currency = currency;
         _loading = false;
+        if (widget.initialInvoiceId > 0) {
+          // Open requested invoice after first load.
+          final idToOpen = widget.initialInvoiceId;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _openEdit(idToOpen);
+          });
+        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -345,6 +376,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Future<void> _showStatusSheet(int invoiceId, String currentStatus) async {
     final l10n = AppLocalizations.of(context)!;
     final normalized = _normalizedStatus(currentStatus);
+    if (normalized == 'DRAFT') {
+      return;
+    }
 
     await showModalBottomSheet<void>(
       context: context,
@@ -457,7 +491,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: cs.outlineVariant.withOpacity(0.35),
+                          color: cs.outlineVariant.withValues(alpha: 0.35),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -472,28 +506,41 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   const SizedBox(height: 12),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    
                     child: Row(
-  mainAxisSize: MainAxisSize.min,
-  children: [
-    if (onTap != null) ...[
-      Icon(Icons.touch_app_rounded, size: 15, color: fg),
-      const SizedBox(width: 5),
-    ],
-    Text(
-      text,
-      style: TextStyle(
-        fontWeight: FontWeight.w900,
-        color: fg,
-        fontSize: 12,
-      ),
-    ),
-    if (onTap != null) ...[
-      const SizedBox(width: 3),
-      Icon(Icons.expand_more_rounded, size: 16, color: fg),
-    ],
-  ],
-),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _FilterChip(
+                          label: l10n.all,
+                          selected: _statusFilter == 'all',
+                          onTap: () => setState(() => _statusFilter = 'all'),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: l10n.draftLabel,
+                          selected: _statusFilter == 'draft',
+                          onTap: () => setState(() => _statusFilter = 'draft'),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: l10n.unpaidLabel,
+                          selected: _statusFilter == 'unpaid',
+                          onTap: () => setState(() => _statusFilter = 'unpaid'),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: l10n.paidLabel,
+                          selected: _statusFilter == 'paid',
+                          onTap: () => setState(() => _statusFilter = 'paid'),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: l10n.cancelledLabel,
+                          selected: _statusFilter == 'cancelled',
+                          onTap: () =>
+                              setState(() => _statusFilter = 'cancelled'),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Expanded(
@@ -569,19 +616,21 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                               BorderRadius.circular(22),
                                           border: Border.all(
                                             color: overdue
-                                                ? cs.error.withOpacity(0.30)
+                                                ? cs.error
+                                                    .withValues(alpha: 0.30)
                                                 : (dueSoon
                                                     ? cs.tertiary
-                                                        .withOpacity(0.28)
+                                                        .withValues(alpha: 0.28)
                                                     : cs.outlineVariant
-                                                        .withOpacity(0.28)),
+                                                        .withValues(
+                                                            alpha: 0.28)),
                                           ),
                                           boxShadow: [
                                             BoxShadow(
                                               color: Theme.of(context)
                                                   .shadowColor
-                                                  .withOpacity(
-                                                    Theme.of(context)
+                                                  .withValues(
+                                                    alpha: Theme.of(context)
                                                                 .brightness ==
                                                             Brightness.dark
                                                         ? 0.22
@@ -677,9 +726,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                                           status, overdue, cs),
                                                       fg: _statusFg(
                                                           status, overdue, cs),
-                                                      onTap: (_updatingStatus || status == 'DRAFT')
-    ? null
-    : () => _showStatusSheet(invoiceId, status),
+                                                      onTap: (_updatingStatus ||
+                                                              status == 'DRAFT')
+                                                          ? null
+                                                          : () =>
+                                                              _showStatusSheet(
+                                                                  invoiceId,
+                                                                  status),
                                                     ),
                                                     const SizedBox(height: 10),
                                                     Text(
@@ -729,79 +782,16 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                                 ),
                                               ],
                                             ),
-                                            const SizedBox(height: 12),
-                                            Container(
-                                              width: double.infinity,
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: overdue
-                                                    ? cs.errorContainer
-                                                        .withOpacity(0.55)
-                                                    : (dueSoon
-                                                        ? cs.tertiaryContainer
-                                                            .withOpacity(0.55)
-                                                        : cs.surfaceContainerHighest
-                                                            .withOpacity(0.45)),
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                              ),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Icon(
-                                                        overdue
-                                                            ? Icons
-                                                                .warning_amber_rounded
-                                                            : (dueSoon
-                                                                ? Icons
-                                                                    .schedule_rounded
-                                                                : Icons
-                                                                    .event_note_rounded),
-                                                        size: 18,
-                                                        color: overdue
-                                                            ? cs
-                                                                .onErrorContainer
-                                                            : (dueSoon
-                                                                ? cs.onTertiaryContainer
-                                                                : cs.onSurfaceVariant),
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Expanded(
-                                                        child: Text(
-                                                          _daysLeftText(due),
-                                                          style: theme.textTheme
-                                                              .bodyMedium
-                                                              ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight.w800,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerRight,
-                                                    child: Text(
-                                                      'HT $subtotal • TVA $vatAmount',
-                                                      style: theme
-                                                          .textTheme.bodySmall
-                                                          ?.copyWith(
-                                                        color:
-                                                            cs.onSurfaceVariant,
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                            const SizedBox(height: 10),
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: Text(
+                                                'HT $subtotal • TVA $vatAmount',
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  color: cs.onSurfaceVariant,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -844,13 +834,15 @@ class _StatusPill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: fg.withOpacity(0.28)),
+            border: Border.all(color: fg.withValues(alpha: 0.28)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.touch_app_rounded, size: 15, color: fg),
-              const SizedBox(width: 5),
+              if (onTap != null) ...[
+                Icon(Icons.touch_app_rounded, size: 15, color: fg),
+                const SizedBox(width: 5),
+              ],
               Text(
                 text,
                 style: TextStyle(
@@ -859,8 +851,10 @@ class _StatusPill extends StatelessWidget {
                   fontSize: 12,
                 ),
               ),
-              const SizedBox(width: 3),
-              Icon(Icons.expand_more_rounded, size: 16, color: fg),
+              if (onTap != null) ...[
+                const SizedBox(width: 3),
+                Icon(Icons.expand_more_rounded, size: 16, color: fg),
+              ],
             ],
           ),
         ),
@@ -902,7 +896,7 @@ class _MetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withOpacity(0.55),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -940,12 +934,14 @@ class _StatusActionTile extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? cs.primaryContainer.withOpacity(0.65) : cs.surface,
+          color: selected
+              ? cs.primaryContainer.withValues(alpha: 0.65)
+              : cs.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: selected
-                ? cs.primary.withOpacity(0.4)
-                : cs.outlineVariant.withOpacity(0.25),
+                ? cs.primary.withValues(alpha: 0.4)
+                : cs.outlineVariant.withValues(alpha: 0.25),
           ),
         ),
         child: Row(
@@ -1100,10 +1096,8 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
   }
 
   bool _looksLikeFiscalId(String s) {
-    final v = s.trim();
-    // Common Tunisian MF shape in your examples: 7 digits + letters (case-insensitive)
-    // Accept 7 digits followed by 2 to 5 letters (e.g. 1234567ab)
-    return RegExp(r'^\d{7}[a-zA-Z]{2,5}$').hasMatch(v);
+    final v = s.trim().toUpperCase();
+    return RegExp(r'^\d{7}[A-Z]$').hasMatch(v);
   }
 
   Future<void> _addClientFromSearch(String value) async {
@@ -1193,30 +1187,6 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                 height: 1.45,
               ),
             ),
-            const SizedBox(height: 24),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: SizedBox(
-                width: double.infinity,
-                height: 66,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.add_rounded, size: 24),
-                  label: Text(
-                    l10n.add,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                    ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                  onPressed: () => _addClientFromSearch(searchValue),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -1230,7 +1200,6 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
     final q = _searchCtrl.text.trim();
-    final showQuickAdd = q.isNotEmpty && _filtered.isEmpty;
 
     return SafeArea(
       child: Padding(
@@ -1252,20 +1221,6 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                 ),
               ),
               const SizedBox(height: 10),
-              if (showQuickAdd)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton.icon(
-                      icon: const Icon(Icons.person_add_alt_1_rounded),
-                      label: Text('${l10n.addNewClient}: $q'),
-                      onPressed: () => _addClientFromSearch(q),
-                    ),
-                  ),
-                ),
-              if (showQuickAdd) const SizedBox(height: 10),
               Expanded(
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
@@ -1276,10 +1231,11 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: cs.errorContainer.withOpacity(0.55),
+                                color:
+                                    cs.errorContainer.withValues(alpha: 0.55),
                                 borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
-                                    color: cs.error.withOpacity(0.25)),
+                                    color: cs.error.withValues(alpha: 0.25)),
                               ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1316,12 +1272,15 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                                   final cin = (c['cin'] ?? '').toString();
 
                                   final parts = <String>[];
-                                  if (email.trim().isNotEmpty)
+                                  if (email.trim().isNotEmpty) {
                                     parts.add(email.trim());
-                                  if (mf.trim().isNotEmpty)
+                                  }
+                                  if (mf.trim().isNotEmpty) {
                                     parts.add('MF: ${mf.trim()}');
-                                  if (cin.trim().isNotEmpty)
+                                  }
+                                  if (cin.trim().isNotEmpty) {
                                     parts.add('CIN: ${cin.trim()}');
+                                  }
 
                                   return ListTile(
                                     title: Text(
@@ -1341,6 +1300,26 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                                 },
                               ),
               ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    label: Text(
+                      q.isEmpty
+                          ? l10n.addNewClient
+                          : '${l10n.addNewClient}: $q',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onPressed: () => _addClientFromSearch(q),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
             ],
           ),
         ),

@@ -17,17 +17,13 @@ class InvoicesRepo {
     );
 
     if (response is List) {
-      return response
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      return response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     }
 
     if (response is Map<String, dynamic>) {
       final data = response['data'];
       if (data is List) {
-        return data
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }
     }
 
@@ -96,6 +92,7 @@ class InvoicesRepo {
 
     throw Exception('Invalid invoice response');
   }
+
   Future<void> recomputeInvoiceTotals(int invoiceId) async {
     final response = await _api.post(
       ApiConfig.recomputeInvoiceTotals,
@@ -107,6 +104,27 @@ class InvoicesRepo {
 
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Recompute totals failed');
+    }
+  }
+
+  Future<void> updateInvoiceDates({
+    required int id,
+    required DateTime issueDate,
+    DateTime? dueDate,
+  }) async {
+    final res = await _api.post(
+      ApiConfig.updateInvoice,
+      authRequired: true,
+      body: {
+        'id': id,
+        'invoice_date': issueDate.toIso8601String().split('T').first,
+        if (dueDate != null)
+          'invoice_due_date': dueDate.toIso8601String().split('T').first,
+      },
+    ) as Map<String, dynamic>;
+
+    if (res['success'] != true) {
+      throw Exception(res['message'] ?? 'Failed to update invoice date');
     }
   }
 

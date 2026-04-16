@@ -1,12 +1,20 @@
+import 'dart:io';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/widgets/app_top_bar.dart';
 
-class ScanInvoiceScreen extends StatelessWidget {
+class ScanInvoiceScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
   final void Function(String code) onChangeLanguage;
   final Color currentPrimaryColor;
+
+  // After capture, we’ll return the image path:
+  // Navigator.pop(context, imagePath);
 
   const ScanInvoiceScreen({
     super.key,
@@ -17,524 +25,407 @@ class ScanInvoiceScreen extends StatelessWidget {
   });
 
   @override
+  State<ScanInvoiceScreen> createState() => _ScanInvoiceScreenState();
+}
+
+class _ScanInvoiceScreenState extends State<ScanInvoiceScreen> {
+  CameraController? _controller;
+  bool _initializing = true;
+  bool _taking = false;
+  bool _flashOn = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    setState(() {
+      _initializing = true;
+      _error = null;
+    });
+
+    final perm = await Permission.camera.request();
+    if (!perm.isGranted) {
+      setState(() {
+        _initializing = false;
+        _error = 'Camera permission denied';
+      });
+      return;
+    }
+
+    try {
+      final cams = await availableCameras();
+      final back = cams.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => cams.first,
+      );
+
+      final c = CameraController(
+        back,
+        ResolutionPreset.high,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.yuv420,
+      );
+
+      await c.initialize();
+      await c.setFlashMode(FlashMode.off);
+
+      if (!mounted) return;
+      setState(() {
+        _controller = c;
+        _initializing = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _initializing = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleFlash() async {
+    final c = _controller;
+    if (c == null) return;
+
+    try {
+      final next = !_flashOn;
+      await c.setFlashMode(next ? FlashMode.torch : FlashMode.off);
+      if (!mounted) return;
+      setState(() => _flashOn = next);
+    } catch (_) {}
+  }
+
+  Future<void> _pickFromGallery() async {
+    // Ask permission before opening gallery
+    PermissionStatus perm;
+    if (Platform.isIOS) {
+      perm = await Permission.photos.request();
+    } else {
+      // Android: READ_MEDIA_IMAGES (API 33+) is mapped by permission_handler to `photos`.
+      // On some devices you may still need `storage`.
+      perm = await Permission.photos.request();
+      if (!perm.isGranted) {
+        perm = await Permission.storage.request();
+      }
+    }
+
+    if (!perm.isGranted) {
+      if (!mounted) return;
+      setState(() => _error = 'Gallery permission denied');
+      return;
+    }
+
+    final picker = ImagePicker();
+    final x = await picker.pickImage(source: ImageSource.gallery, imageQuality: 95);
+    if (x == null) return;
+
+    if (!mounted) return;
+    Navigator.pop(context, x.path);
+  }
+
+  Future<void> _capture() async {
+    final c = _controller;
+    if (c == null || _taking) return;
+
+    setState(() => _taking = true);
+    try {
+      final x = await c.takePicture();
+
+      // Optionally copy to app dir for stable path
+      final dir = await getApplicationDocumentsDirectory();
+      final out = File('${dir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await File(x.path).copy(out.path);
+
+      if (!mounted) return;
+      Navigator.pop(context, out.path);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _taking = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppTopBar(
         title: l10n.scanInvoiceTitle,
-        onToggleTheme: onToggleTheme,
-        onChangePrimaryColor: onChangePrimaryColor,
-        onChangeLanguage: onChangeLanguage,
-        currentPrimaryColor: currentPrimaryColor,
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
       ),
       body: SafeArea(
         top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.scanInvoiceSubtitle,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  height: 1.35,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 18),
-              _CameraPreviewCard(
-                primary: cs.primary,
-                onPrimary: cs.onPrimary,
-                isDark: isDark,
-                modeLabel: l10n.scanInvoiceMode,
-                alignLabel: l10n.scanInvoiceAlign,
-              ),
-              const SizedBox(height: 18),
-              _CaptureControls(primary: cs.primary, onPrimary: cs.onPrimary),
-              const SizedBox(height: 22),
-              _ScanTipsCard(
-                title: l10n.scanInvoiceGuideTitle,
-                tips: [
-                  l10n.scanInvoiceGuideLight,
-                  l10n.scanInvoiceGuideEdges,
-                  l10n.scanInvoiceGuideReadable,
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CameraPreviewCard extends StatelessWidget {
-  final Color primary;
-  final Color onPrimary;
-  final bool isDark;
-  final String modeLabel;
-  final String alignLabel;
-
-  const _CameraPreviewCard({
-    required this.primary,
-    required this.onPrimary,
-    required this.isDark,
-    required this.modeLabel,
-    required this.alignLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Container(
-      height: 430,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xFF020617), Color(0xFF111827)]
-              : const [Color(0xFF0F172A), Color(0xFF334155)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: primary.withOpacity(0.22),
-            blurRadius: 28,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                gradient: RadialGradient(
-                  center: Alignment.topRight,
-                  radius: 1.2,
-                  colors: [
-                    primary.withOpacity(0.24),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 18,
-            right: 18,
-            top: 18,
-            child: Row(
-              children: [
-                _CameraChip(
-                  icon: Icons.document_scanner_outlined,
-                  label: modeLabel,
-                  foreground: Colors.white,
-                ),
-                const Spacer(),
-                _RoundCameraButton(
-                  icon: Icons.flash_off_rounded,
-                  foreground: Colors.white,
-                  background: Colors.white.withOpacity(0.12),
-                ),
-              ],
-            ),
-          ),
-          Center(
-            child: Container(
-              width: 246,
-              height: 320,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.94),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.24),
-                    blurRadius: 24,
-                    offset: const Offset(0, 14),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 82,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: primary.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    ...List.generate(
-                      5,
-                      (index) => Padding(
-                        padding: const EdgeInsets.only(bottom: 13),
-                        child: Container(
-                          width: index == 4 ? 124 : double.infinity,
-                          height: 9,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFCBD5E1),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
+        child: _initializing
+            ? const Center(child: CircularProgressIndicator())
+            : (_error != null)
+                ? Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: primary.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                        Text(l10n.error, style: theme.textTheme.titleLarge),
+                        const SizedBox(height: 8),
+                        Text(_error!, style: TextStyle(color: cs.error)),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: _init,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(l10n.retry),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    Container(
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE2E8F0),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  )
+                : _buildCameraUi(context),
+      ),
+    );
+  }
+
+  Widget _buildCameraUi(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final c = _controller!;
+
+    return Stack(
+      children: [
+        // camera preview
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(0),
+            child: CameraPreview(c),
           ),
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(42, 80, 42, 54),
-              child: CustomPaint(
-                painter: _ScanFramePainter(color: primary),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 26,
-            right: 26,
-            bottom: 22,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.34),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white.withOpacity(0.12)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.auto_awesome_rounded, color: primary, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      alignLabel,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  Icon(Icons.horizontal_rule_rounded, color: onPrimary),
+        ),
+
+        // dark top/bottom gradient like your screenshot
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFF0B1F2A).withOpacity(0.88),
+                  Colors.transparent,
+                  Colors.transparent,
+                  const Color(0xFF0B1F2A).withOpacity(0.88),
                 ],
               ),
             ),
           ),
-          Positioned(
-            left: 22,
-            top: 74,
-            child: Icon(
-              Icons.camera_alt_outlined,
-              color: cs.onPrimary.withOpacity(0.48),
-              size: 34,
+        ),
+
+        // scan frame corners
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 90, 28, 160),
+            child: CustomPaint(
+              painter: _ScanFramePainter(color: const Color(0xFF16C7FF)),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CaptureControls extends StatelessWidget {
-  final Color primary;
-  final Color onPrimary;
-
-  const _CaptureControls({
-    required this.primary,
-    required this.onPrimary,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _RoundCameraButton(
-          icon: Icons.photo_library_outlined,
-          foreground: cs.onSurface,
-          background: cs.surface,
         ),
-        const SizedBox(width: 24),
-        Container(
-          width: 78,
-          height: 78,
-          padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: primary.withOpacity(0.35), width: 3),
-          ),
-          child: DecoratedBox(
+
+        // top left chip "Facture"
+        Positioned(
+          left: 18,
+          top: 18,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: primary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: primary.withOpacity(0.34),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Colors.white.withOpacity(0.15)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.receipt_long_outlined, color: Colors.white, size: 18),
+                const SizedBox(width: 10),
+                Text(
+                  l10n.invoice,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
                 ),
               ],
             ),
-            child: Icon(Icons.camera_alt_rounded, color: onPrimary, size: 32),
           ),
         ),
-        const SizedBox(width: 24),
-        _RoundCameraButton(
-          icon: Icons.tune_rounded,
-          foreground: cs.onSurface,
-          background: cs.surface,
+
+        // top right flash button
+        Positioned(
+          right: 18,
+          top: 14,
+          child: _RoundButton(
+            icon: _flashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+            onTap: _toggleFlash,
+          ),
+        ),
+
+        // guidance bar
+        Positioned(
+          left: 18,
+          right: 18,
+          bottom: 140,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.35),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white.withOpacity(0.10)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.auto_awesome_rounded, color: Color(0xFF16C7FF), size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    l10n.scanInvoiceAlign, // “Alignez la facture dans le cadre”
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // bottom controls
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 18,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _RoundButton(
+                icon: Icons.photo_library_outlined,
+                onTap: _pickFromGallery,
+              ),
+              const SizedBox(width: 26),
+              _CaptureButton(
+                onTap: _taking ? null : _capture,
+              ),
+              const SizedBox(width: 26),
+              _RoundButton(
+                icon: Icons.tune_rounded,
+                onTap: () {
+                  // later: crop/edges/settings
+                },
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 }
 
-class _ScanTipsCard extends StatelessWidget {
-  final String title;
-  final List<String> tips;
+class _RoundButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
 
-  const _ScanTipsCard({
-    required this.title,
-    required this.tips,
-  });
+  const _RoundButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: cs.outlineVariant.withOpacity(0.28)),
+    final enabled = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(enabled ? 0.12 : 0.08),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.14)),
+        ),
+        child: Icon(icon, color: Colors.white, size: 24),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  Icons.tips_and_updates_outlined,
-                  color: cs.onPrimaryContainer,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleMedium,
-                ),
-              ),
+    );
+  }
+}
+
+class _CaptureButton extends StatelessWidget {
+  final VoidCallback? onTap;
+
+  const _CaptureButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 86,
+        height: 86,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFF16C7FF).withOpacity(0.55), width: 3),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: enabled ? const Color(0xFF16C7FF) : Colors.white24,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF16C7FF).withOpacity(0.35),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              )
             ],
           ),
-          const SizedBox(height: 14),
-          for (final tip in tips)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: cs.primary,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      tip,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: cs.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CameraChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color foreground;
-
-  const _CameraChip({
-    required this.icon,
-    required this.label,
-    required this.foreground,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.14)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: foreground, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: foreground,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RoundCameraButton extends StatelessWidget {
-  final IconData icon;
-  final Color foreground;
-  final Color background;
-
-  const _RoundCameraButton({
-    required this.icon,
-    required this.foreground,
-    required this.background,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: background,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.18),
+          child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 34),
         ),
       ),
-      child: Icon(icon, color: foreground),
     );
   }
 }
 
 class _ScanFramePainter extends CustomPainter {
   final Color color;
-
   const _ScanFramePainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 5
+      ..strokeWidth = 6
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    const corner = 42.0;
+    const corner = 52.0;
     final rect = Offset.zero & size;
 
-    canvas.drawLine(
-        rect.topLeft, rect.topLeft + const Offset(corner, 0), paint);
-    canvas.drawLine(
-        rect.topLeft, rect.topLeft + const Offset(0, corner), paint);
-    canvas.drawLine(
-      rect.topRight,
-      rect.topRight + const Offset(-corner, 0),
-      paint,
-    );
-    canvas.drawLine(
-      rect.topRight,
-      rect.topRight + const Offset(0, corner),
-      paint,
-    );
-    canvas.drawLine(
-      rect.bottomLeft,
-      rect.bottomLeft + const Offset(corner, 0),
-      paint,
-    );
-    canvas.drawLine(
-      rect.bottomLeft,
-      rect.bottomLeft + const Offset(0, -corner),
-      paint,
-    );
-    canvas.drawLine(
-      rect.bottomRight,
-      rect.bottomRight + const Offset(-corner, 0),
-      paint,
-    );
-    canvas.drawLine(
-      rect.bottomRight,
-      rect.bottomRight + const Offset(0, -corner),
-      paint,
-    );
+    // top-left
+    canvas.drawLine(rect.topLeft, rect.topLeft + const Offset(corner, 0), paint);
+    canvas.drawLine(rect.topLeft, rect.topLeft + const Offset(0, corner), paint);
+    // top-right
+    canvas.drawLine(rect.topRight, rect.topRight + const Offset(-corner, 0), paint);
+    canvas.drawLine(rect.topRight, rect.topRight + const Offset(0, corner), paint);
+    // bottom-left
+    canvas.drawLine(rect.bottomLeft, rect.bottomLeft + const Offset(corner, 0), paint);
+    canvas.drawLine(rect.bottomLeft, rect.bottomLeft + const Offset(0, -corner), paint);
+    // bottom-right
+    canvas.drawLine(rect.bottomRight, rect.bottomRight + const Offset(-corner, 0), paint);
+    canvas.drawLine(rect.bottomRight, rect.bottomRight + const Offset(0, -corner), paint);
   }
 
   @override
-  bool shouldRepaint(covariant _ScanFramePainter oldDelegate) {
-    return oldDelegate.color != color;
-  }
+  bool shouldRepaint(covariant _ScanFramePainter oldDelegate) => oldDelegate.color != color;
 }

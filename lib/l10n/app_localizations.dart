@@ -577,7 +577,7 @@ abstract class AppLocalizations {
   /// No description provided for @recentTransactions.
   ///
   /// In en, this message translates to:
-  /// **'Recent transactions'**
+  /// **'Stats'**
   String get recentTransactions;
 
   /// No description provided for @all.
@@ -1063,7 +1063,7 @@ abstract class AppLocalizations {
   /// No description provided for @fiscalIdMustMatch.
   ///
   /// In en, this message translates to:
-  /// **'Fiscal ID must match 1234567ABC123'**
+  /// **'Fiscal ID must match 1234567A'**
   String get fiscalIdMustMatch;
 
   /// No description provided for @passwordMinLength.
@@ -1141,7 +1141,7 @@ abstract class AppLocalizations {
   /// No description provided for @fiscalIdFormat.
   ///
   /// In en, this message translates to:
-  /// **'Format: 1234567ABC123'**
+  /// **'Format: 1234567A'**
   String get fiscalIdFormat;
 
   /// No description provided for @contactInformation.
@@ -1774,6 +1774,18 @@ abstract class AppLocalizations {
   /// **'Mark as paid'**
   String get markAsPaid;
 
+  /// No description provided for @markAsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as pending'**
+  String get markAsPending;
+
+  /// No description provided for @markAsRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as rejected'**
+  String get markAsRejected;
+
   /// No description provided for @markAsUnpaid.
   ///
   /// In en, this message translates to:
@@ -1941,6 +1953,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancelled'**
   String get statusCancelled;
+
+  /// No description provided for @statusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get statusRejected;
 
   /// No description provided for @dateLabel.
   ///

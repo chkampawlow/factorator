@@ -261,7 +261,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Facture d\'avance : bientôt disponible';
 
   @override
-  String get recentTransactions => 'Transactions récentes';
+  String get recentTransactions => 'Statistiques';
 
   @override
   String get all => 'Tous';
@@ -519,7 +519,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get fiscalIdMustMatch =>
-      'Le matricule fiscal doit correspondre à 1234567ABC123';
+      'Le matricule fiscal doit correspondre à 1234567A';
 
   @override
   String get passwordMinLength =>
@@ -561,7 +561,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get fiscalIdRequiredLabel => 'Matricule Fiscal*';
 
   @override
-  String get fiscalIdFormat => 'Format : 1234567ABC123';
+  String get fiscalIdFormat => 'Format : 1234567A';
 
   @override
   String get contactInformation => 'Informations de contact';
@@ -902,6 +902,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get markAsPaid => 'Marquer comme payé';
 
   @override
+  String get markAsPending => 'Marquer comme en attente';
+
+  @override
+  String get markAsRejected => 'Marquer comme rejeté';
+
+  @override
   String get markAsUnpaid => 'Marquer comme impayé';
 
   @override
@@ -992,6 +998,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get statusCancelled => 'Annulé';
+
+  @override
+  String get statusRejected => 'Rejeté';
 
   @override
   String get dateLabel => 'Date';

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/create_expense_note_screen.dart';
 import 'package:my_app/screens/edit_expense_note_screen.dart';
+import 'package:my_app/screens/scan_invoice_screen.dart';
 import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/expense_notes_repo.dart';
 import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/widgets/app_top_bar.dart';
+
+enum _ExpenseEntryMode { manual, scan }
 
 class ExpenseNotesScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -47,7 +50,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
       final title = (note['title'] ?? '').toString().toLowerCase();
       final category = (note['category'] ?? '').toString().toLowerCase();
       final description = (note['description'] ?? '').toString().toLowerCase();
-      final status = _normalizedStatus((note['status'] ?? 'unpaid').toString())
+      final status = _normalizedStatus((note['status'] ?? 'pending').toString())
           .toLowerCase();
 
       final matchesStatus =
@@ -62,11 +65,11 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
     }).toList();
 
     filtered.sort((a, b) {
-      final aStatus = _normalizedStatus((a['status'] ?? 'unpaid').toString());
-      final bStatus = _normalizedStatus((b['status'] ?? 'unpaid').toString());
+      final aStatus = _normalizedStatus((a['status'] ?? 'pending').toString());
+      final bStatus = _normalizedStatus((b['status'] ?? 'pending').toString());
 
-      if (aStatus == 'unpaid' && bStatus != 'unpaid') return -1;
-      if (aStatus != 'unpaid' && bStatus == 'unpaid') return 1;
+      if (aStatus == 'pending' && bStatus != 'pending') return -1;
+      if (aStatus != 'pending' && bStatus == 'pending') return 1;
 
       final aDate = _parseDate(a['date']);
       final bDate = _parseDate(b['date']);
@@ -95,6 +98,76 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
 
     if (!mounted) return;
     await _load();
+  }
+
+  Future<void> _openScan() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ScanInvoiceScreen(
+          onToggleTheme: widget.onToggleTheme,
+          onChangePrimaryColor: widget.onChangePrimaryColor,
+          onChangeLanguage: widget.onChangeLanguage,
+          currentPrimaryColor: widget.currentPrimaryColor,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    await _load();
+  }
+
+  Future<void> _openCreateOptions() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final mode = await showModalBottomSheet<_ExpenseEntryMode>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.createExpenseNoteTitle,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Icon(Icons.edit_note_rounded),
+                  title: const Text('Enter manually'),
+                  subtitle: Text(l10n.createExpenseNoteSubtitle),
+                  onTap: () => Navigator.pop(context, _ExpenseEntryMode.manual),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  leading: const Icon(Icons.document_scanner_outlined),
+                  title: Text(l10n.scanInvoiceTitle),
+                  subtitle: Text(l10n.scanInvoiceSubtitle),
+                  onTap: () => Navigator.pop(context, _ExpenseEntryMode.scan),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || mode == null) return;
+
+    switch (mode) {
+      case _ExpenseEntryMode.manual:
+        await _openCreate();
+        break;
+      case _ExpenseEntryMode.scan:
+        await _openScan();
+        break;
+    }
   }
 
   Future<void> _openEdit(Map<String, dynamic> note) async {
@@ -160,29 +233,31 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
 
   String _normalizedStatus(String status) {
     final s = status.trim().toLowerCase();
-    if (s == 'paid') return 'paid';
-    if (s == 'cancelled' || s == 'canceled') return 'cancelled';
-    return 'unpaid';
+    if (s == 'approved' || s == 'paid' || s == 'reimbursed') return 'paid';
+    if (s == 'rejected' || s == 'cancelled' || s == 'canceled') {
+      return 'rejected';
+    }
+    return 'pending';
   }
 
   String _statusLabel(String status, AppLocalizations l10n) {
     final normalized = _normalizedStatus(status);
     if (normalized == 'paid') return l10n.statusPaid.toUpperCase();
-    if (normalized == 'cancelled') return l10n.statusCancelled.toUpperCase();
-    return l10n.statusUnpaid.toUpperCase();
+    if (normalized == 'rejected') return l10n.statusRejected.toUpperCase();
+    return l10n.statusPending.toUpperCase();
   }
 
   Color _statusBg(String status, ColorScheme cs) {
     final normalized = _normalizedStatus(status);
     if (normalized == 'paid') return cs.primaryContainer;
-    if (normalized == 'cancelled') return cs.errorContainer;
+    if (normalized == 'rejected') return cs.errorContainer;
     return cs.tertiaryContainer;
   }
 
   Color _statusFg(String status, ColorScheme cs) {
     final normalized = _normalizedStatus(status);
     if (normalized == 'paid') return cs.onPrimaryContainer;
-    if (normalized == 'cancelled') return cs.onErrorContainer;
+    if (normalized == 'rejected') return cs.onErrorContainer;
     return cs.onTertiaryContainer;
   }
 
@@ -243,7 +318,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
     }
   }
 
-  Future<void> _showDeleteDialog(int id) async {
+  Future<bool> _confirmDeleteExpenseNote() async {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
 
@@ -271,9 +346,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
       },
     );
 
-    if (confirmed == true) {
-      await _deleteExpenseNote(id);
-    }
+    return confirmed == true;
   }
 
   Future<void> _showStatusSheet(int noteId, String currentStatus) async {
@@ -310,21 +383,21 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                 const SizedBox(height: 8),
                 _StatusActionTile(
                   icon: Icons.schedule_outlined,
-                  title: l10n.markAsUnpaid,
-                  selected: normalized == 'unpaid',
+                  title: l10n.markAsPending,
+                  selected: normalized == 'pending',
                   onTap: () async {
                     Navigator.pop(context);
-                    await _updateExpenseStatus(noteId, 'unpaid');
+                    await _updateExpenseStatus(noteId, 'pending');
                   },
                 ),
                 const SizedBox(height: 8),
                 _StatusActionTile(
                   icon: Icons.cancel_outlined,
-                  title: l10n.markAsCancelled,
-                  selected: normalized == 'cancelled',
+                  title: l10n.markAsRejected,
+                  selected: normalized == 'rejected',
                   onTap: () async {
                     Navigator.pop(context);
-                    await _updateExpenseStatus(noteId, 'cancelled');
+                    await _updateExpenseStatus(noteId, 'rejected');
                   },
                 ),
               ],
@@ -356,11 +429,13 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreate,
-        icon: const Icon(Icons.add),
-        label: Text(l10n.createExpenseNoteTitle),
-      ),
+      floatingActionButton: _notes.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _openCreateOptions,
+              icon: const Icon(Icons.add),
+              label: Text(l10n.createExpenseNoteTitle),
+            ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _loading
@@ -391,7 +466,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: cs.outlineVariant.withOpacity(0.35),
+                          color: cs.outlineVariant.withValues(alpha: 0.35),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -415,9 +490,10 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
-                          label: l10n.statusUnpaid,
-                          selected: _statusFilter == 'unpaid',
-                          onTap: () => setState(() => _statusFilter = 'unpaid'),
+                          label: l10n.statusPending,
+                          selected: _statusFilter == 'pending',
+                          onTap: () =>
+                              setState(() => _statusFilter = 'pending'),
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
@@ -427,10 +503,10 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
-                          label: l10n.statusCancelled,
-                          selected: _statusFilter == 'cancelled',
+                          label: l10n.statusRejected,
+                          selected: _statusFilter == 'rejected',
                           onTap: () =>
-                              setState(() => _statusFilter = 'cancelled'),
+                              setState(() => _statusFilter = 'rejected'),
                         ),
                       ],
                     ),
@@ -438,7 +514,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                   const SizedBox(height: 14),
                   Expanded(
                     child: _notes.isEmpty
-                        ? _EmptyExpenseNotes(onCreate: _openCreate)
+                        ? _EmptyExpenseNotes(onCreate: _openCreateOptions)
                         : filteredNotes.isEmpty
                             ? ListView(
                                 physics: const AlwaysScrollableScrollPhysics(),
@@ -468,7 +544,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                     final description =
                                         (note['description'] ?? '').toString();
                                     final status = _normalizedStatus(
-                                      (note['status'] ?? 'unpaid').toString(),
+                                      (note['status'] ?? 'pending').toString(),
                                     );
                                     final date = _parseDate(note['date']);
                                     final amountValue =
@@ -480,54 +556,135 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                       _currency.isEmpty ? 'TND' : _currency,
                                     );
 
-                                    return InkWell(
-                                      borderRadius: BorderRadius.circular(22),
-                                      onTap: () => _openEdit(note),
-                                      onLongPress: () => _showStatusSheet(
-                                        noteId,
-                                        status,
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
+                                    return Dismissible(
+                                      key: ValueKey('expense_note_$noteId'),
+                                      direction: DismissDirection.endToStart,
+                                      confirmDismiss: (_) async {
+                                        final confirmed =
+                                            await _confirmDeleteExpenseNote();
+                                        if (confirmed) {
+                                          await _deleteExpenseNote(noteId);
+                                        }
+                                        return false;
+                                      },
+                                      background: const SizedBox.shrink(),
+                                      secondaryBackground: Container(
+                                        alignment: Alignment.centerRight,
+                                        padding:
+                                            const EdgeInsets.only(right: 22),
                                         decoration: BoxDecoration(
-                                          color: cs.surface,
+                                          color: cs.errorContainer,
                                           borderRadius:
                                               BorderRadius.circular(22),
-                                          border: Border.all(
-                                            color: cs.outlineVariant
-                                                .withOpacity(0.28),
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: theme.shadowColor
-                                                  .withOpacity(0.08),
-                                              blurRadius: 14,
-                                              offset: const Offset(0, 6),
-                                            ),
-                                          ],
                                         ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Expanded(
-                                                  child: Column(
+                                        child: Icon(
+                                          Icons.delete_outline,
+                                          color: cs.onErrorContainer,
+                                        ),
+                                      ),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(22),
+                                        onTap: () => _openEdit(note),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: cs.surface,
+                                            borderRadius:
+                                                BorderRadius.circular(22),
+                                            border: Border.all(
+                                              color: cs.outlineVariant
+                                                  .withValues(alpha: 0.28),
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: theme.shadowColor
+                                                    .withValues(alpha: 0.08),
+                                                blurRadius: 14,
+                                                offset: const Offset(0, 6),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          title.isEmpty
+                                                              ? l10n
+                                                                  .expenseNotePreviewTitleFallback
+                                                              : title,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: theme.textTheme
+                                                              .titleMedium
+                                                              ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight.w900,
+                                                          ),
+                                                        ),
+                                                        if (category.isNotEmpty)
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                              top: 6,
+                                                            ),
+                                                            child: Text(
+                                                              category,
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: theme
+                                                                  .textTheme
+                                                                  .bodyLarge
+                                                                  ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w800,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Column(
                                                     crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
+                                                        CrossAxisAlignment.end,
                                                     children: [
+                                                      _StatusPill(
+                                                        text: _statusLabel(
+                                                          status,
+                                                          l10n,
+                                                        ),
+                                                        bg: _statusBg(
+                                                            status, cs),
+                                                        fg: _statusFg(
+                                                            status, cs),
+                                                        onTap: _updatingStatus
+                                                            ? null
+                                                            : () =>
+                                                                _showStatusSheet(
+                                                                  noteId,
+                                                                  status,
+                                                                ),
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 10),
                                                       Text(
-                                                        title.isEmpty
-                                                            ? l10n
-                                                                .expenseNotePreviewTitleFallback
-                                                            : title,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                                        formattedAmount,
                                                         style: theme.textTheme
                                                             .titleMedium
                                                             ?.copyWith(
@@ -535,157 +692,72 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                                               FontWeight.w900,
                                                         ),
                                                       ),
-                                                      if (category.isNotEmpty)
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                            top: 6,
-                                                          ),
-                                                          child: Text(
-                                                            category,
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            style: theme
-                                                                .textTheme
-                                                                .bodyLarge
-                                                                ?.copyWith(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w800,
-                                                            ),
-                                                          ),
+                                                      Text(
+                                                        _currency.isEmpty
+                                                            ? 'TND'
+                                                            : _currency,
+                                                        style: theme
+                                                            .textTheme.bodySmall
+                                                            ?.copyWith(
+                                                          color: cs
+                                                              .onSurfaceVariant,
+                                                          fontWeight:
+                                                              FontWeight.w700,
                                                         ),
+                                                      ),
                                                     ],
                                                   ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
-                                                  children: [
-                                                    _StatusPill(
-                                                      text: _statusLabel(
-                                                        status,
-                                                        l10n,
-                                                      ),
-                                                      bg: _statusBg(status, cs),
-                                                      fg: _statusFg(status, cs),
-                                                    ),
-                                                    const SizedBox(height: 10),
-                                                    Text(
-                                                      formattedAmount,
-                                                      style: theme
-                                                          .textTheme.titleMedium
-                                                          ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w900,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      _currency.isEmpty
-                                                          ? 'TND'
-                                                          : _currency,
-                                                      style: theme
-                                                          .textTheme.bodySmall
-                                                          ?.copyWith(
-                                                        color:
-                                                            cs.onSurfaceVariant,
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 14),
-                                            Wrap(
-                                              spacing: 8,
-                                              runSpacing: 8,
-                                              children: [
-                                                _MetaChip(
-                                                  text:
-                                                      '${l10n.dateLabel}: ${date.toLocal().toString().split(' ')[0]}',
-                                                ),
-                                                if (category.isNotEmpty)
+                                                ],
+                                              ),
+                                              const SizedBox(height: 14),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
                                                   _MetaChip(
                                                     text:
-                                                        '${l10n.categoryLabel}: $category',
+                                                        '${l10n.dateLabel}: ${date.toLocal().toString().split(' ')[0]}',
                                                   ),
-                                              ],
-                                            ),
-                                            if (description.isNotEmpty) ...[
-                                              const SizedBox(height: 12),
-                                              Container(
-                                                width: double.infinity,
-                                                padding:
-                                                    const EdgeInsets.all(12),
-                                                decoration: BoxDecoration(
-                                                  color: cs
-                                                      .surfaceContainerHighest
-                                                      .withOpacity(0.45),
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                child: Text(
-                                                  description,
-                                                  maxLines: 3,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: theme
-                                                      .textTheme.bodyMedium
-                                                      ?.copyWith(
-                                                    color: cs.onSurfaceVariant,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
+                                                  if (category.isNotEmpty)
+                                                    _MetaChip(
+                                                      text:
+                                                          '${l10n.categoryLabel}: $category',
+                                                    ),
+                                                ],
                                               ),
-                                            ],
-                                            const SizedBox(height: 12),
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: OutlinedButton.icon(
-                                                    onPressed: () =>
-                                                        _openEdit(note),
-                                                    icon: const Icon(
-                                                      Icons.edit_outlined,
+                                              if (description.isNotEmpty) ...[
+                                                const SizedBox(height: 12),
+                                                Container(
+                                                  width: double.infinity,
+                                                  padding:
+                                                      const EdgeInsets.all(12),
+                                                  decoration: BoxDecoration(
+                                                    color: cs
+                                                        .surfaceContainerHighest
+                                                        .withValues(
+                                                            alpha: 0.45),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            16),
+                                                  ),
+                                                  child: Text(
+                                                    description,
+                                                    maxLines: 3,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: theme
+                                                        .textTheme.bodyMedium
+                                                        ?.copyWith(
+                                                      color:
+                                                          cs.onSurfaceVariant,
+                                                      fontWeight:
+                                                          FontWeight.w600,
                                                     ),
-                                                    label: Text(l10n.edit),
                                                   ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Expanded(
-                                                  child: FilledButton.icon(
-                                                    onPressed: _updatingStatus
-                                                        ? null
-                                                        : () =>
-                                                            _showStatusSheet(
-                                                              noteId,
-                                                              status,
-                                                            ),
-                                                    icon: const Icon(
-                                                      Icons.autorenew_rounded,
-                                                    ),
-                                                    label:
-                                                        Text(l10n.changeStatus),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                IconButton.filledTonal(
-                                                  onPressed: () =>
-                                                      _showDeleteDialog(noteId),
-                                                  icon: const Icon(
-                                                    Icons.delete_outline,
-                                                  ),
-                                                  tooltip: l10n.deleteButton,
                                                 ),
                                               ],
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     );
@@ -704,27 +776,50 @@ class _StatusPill extends StatelessWidget {
   final String text;
   final Color bg;
   final Color fg;
+  final VoidCallback? onTap;
 
   const _StatusPill({
     required this.text,
     required this.bg,
     required this.fg,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bg,
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontWeight: FontWeight.w900,
-          color: fg,
-          fontSize: 12,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: fg.withValues(alpha: 0.28)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (onTap != null) ...[
+                Icon(Icons.touch_app_rounded, size: 15, color: fg),
+                const SizedBox(width: 5),
+              ],
+              Text(
+                text,
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: fg,
+                  fontSize: 12,
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 3),
+                Icon(Icons.expand_more_rounded, size: 16, color: fg),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -764,7 +859,7 @@ class _MetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withOpacity(0.55),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -802,12 +897,14 @@ class _StatusActionTile extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? cs.primaryContainer.withOpacity(0.65) : cs.surface,
+          color: selected
+              ? cs.primaryContainer.withValues(alpha: 0.65)
+              : cs.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: selected
-                ? cs.primary.withOpacity(0.4)
-                : cs.outlineVariant.withOpacity(0.25),
+                ? cs.primary.withValues(alpha: 0.4)
+                : cs.outlineVariant.withValues(alpha: 0.25),
           ),
         ),
         child: Row(

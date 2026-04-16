@@ -7,6 +7,7 @@
       "name": "my_app",
       "version": "1.0.0+1",
       "dependencies": [
+        "camera",
         "fl_chart",
         "flutter",
         "flutter_localizations",
@@ -16,7 +17,9 @@
         "http",
         "image_picker",
         "intl",
+        "path_provider",
         "pdf",
+        "permission_handler",
         "printing",
         "qr_flutter",
         "shared_preferences",
@@ -119,6 +122,31 @@
       ]
     },
     {
+      "name": "permission_handler",
+      "version": "11.4.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "permission_handler_android",
+        "permission_handler_apple",
+        "permission_handler_html",
+        "permission_handler_platform_interface",
+        "permission_handler_windows"
+      ]
+    },
+    {
+      "name": "path_provider",
+      "version": "2.1.5",
+      "dependencies": [
+        "flutter",
+        "path_provider_android",
+        "path_provider_foundation",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "path_provider_windows"
+      ]
+    },
+    {
       "name": "image_picker",
       "version": "0.8.9",
       "dependencies": [
@@ -130,6 +158,18 @@
         "image_picker_macos",
         "image_picker_platform_interface",
         "image_picker_windows"
+      ]
+    },
+    {
+      "name": "camera",
+      "version": "0.11.4",
+      "dependencies": [
+        "camera_android_camerax",
+        "camera_avfoundation",
+        "camera_platform_interface",
+        "camera_web",
+        "flutter",
+        "flutter_plugin_android_lifecycle"
       ]
     },
     {
@@ -506,6 +546,97 @@
       ]
     },
     {
+      "name": "permission_handler_platform_interface",
+      "version": "4.3.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "permission_handler_windows",
+      "version": "0.2.1",
+      "dependencies": [
+        "flutter",
+        "permission_handler_platform_interface"
+      ]
+    },
+    {
+      "name": "permission_handler_html",
+      "version": "0.1.3+5",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "permission_handler_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "permission_handler_apple",
+      "version": "9.4.7",
+      "dependencies": [
+        "flutter",
+        "permission_handler_platform_interface"
+      ]
+    },
+    {
+      "name": "permission_handler_android",
+      "version": "12.1.0",
+      "dependencies": [
+        "flutter",
+        "permission_handler_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_windows",
+      "version": "2.3.0",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "path",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "version": "2.1.2",
+      "dependencies": [
+        "flutter",
+        "platform",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_linux",
+      "version": "2.2.1",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "path",
+        "path_provider_platform_interface",
+        "xdg_directories"
+      ]
+    },
+    {
+      "name": "path_provider_foundation",
+      "version": "2.6.0",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "objective_c",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_android",
+      "version": "2.2.22",
+      "dependencies": [
+        "flutter",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
       "name": "image_picker_windows",
       "version": "0.2.2",
       "dependencies": [
@@ -570,6 +701,54 @@
         "flutter",
         "flutter_plugin_android_lifecycle",
         "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "version": "2.0.33",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "camera_web",
+      "version": "0.3.5+3",
+      "dependencies": [
+        "camera_platform_interface",
+        "flutter",
+        "flutter_web_plugins",
+        "stream_transform",
+        "web"
+      ]
+    },
+    {
+      "name": "camera_platform_interface",
+      "version": "2.13.0",
+      "dependencies": [
+        "cross_file",
+        "flutter",
+        "plugin_platform_interface",
+        "stream_transform"
+      ]
+    },
+    {
+      "name": "camera_avfoundation",
+      "version": "0.9.23+2",
+      "dependencies": [
+        "camera_platform_interface",
+        "flutter",
+        "stream_transform"
+      ]
+    },
+    {
+      "name": "camera_android_camerax",
+      "version": "0.6.30",
+      "dependencies": [
+        "async",
+        "camera_platform_interface",
+        "flutter",
+        "meta",
+        "stream_transform"
       ]
     },
     {
@@ -855,15 +1034,29 @@
       ]
     },
     {
-      "name": "path_provider",
-      "version": "2.1.5",
+      "name": "platform",
+      "version": "3.1.6",
+      "dependencies": []
+    },
+    {
+      "name": "xdg_directories",
+      "version": "1.1.0",
       "dependencies": [
-        "flutter",
-        "path_provider_android",
-        "path_provider_foundation",
-        "path_provider_linux",
-        "path_provider_platform_interface",
-        "path_provider_windows"
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "objective_c",
+      "version": "9.3.0",
+      "dependencies": [
+        "code_assets",
+        "collection",
+        "ffi",
+        "hooks",
+        "logging",
+        "native_toolchain_c",
+        "pub_semver"
       ]
     },
     {
@@ -917,30 +1110,9 @@
       "dependencies": []
     },
     {
-      "name": "flutter_plugin_android_lifecycle",
-      "version": "2.0.33",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
-      "name": "path_provider_windows",
-      "version": "2.3.0",
-      "dependencies": [
-        "ffi",
-        "flutter",
-        "path",
-        "path_provider_platform_interface"
-      ]
-    },
-    {
-      "name": "path_provider_platform_interface",
-      "version": "2.1.2",
-      "dependencies": [
-        "flutter",
-        "platform",
-        "plugin_platform_interface"
-      ]
+      "name": "stream_transform",
+      "version": "2.1.1",
+      "dependencies": []
     },
     {
       "name": "file",
@@ -948,17 +1120,6 @@
       "dependencies": [
         "meta",
         "path"
-      ]
-    },
-    {
-      "name": "path_provider_linux",
-      "version": "2.2.1",
-      "dependencies": [
-        "ffi",
-        "flutter",
-        "path",
-        "path_provider_platform_interface",
-        "xdg_directories"
       ]
     },
     {
@@ -971,11 +1132,6 @@
     {
       "name": "synchronized",
       "version": "3.4.0",
-      "dependencies": []
-    },
-    {
-      "name": "platform",
-      "version": "3.1.6",
       "dependencies": []
     },
     {
@@ -1004,45 +1160,6 @@
       "name": "fixnum",
       "version": "1.1.1",
       "dependencies": []
-    },
-    {
-      "name": "path_provider_foundation",
-      "version": "2.6.0",
-      "dependencies": [
-        "ffi",
-        "flutter",
-        "objective_c",
-        "path_provider_platform_interface"
-      ]
-    },
-    {
-      "name": "path_provider_android",
-      "version": "2.2.22",
-      "dependencies": [
-        "flutter",
-        "path_provider_platform_interface"
-      ]
-    },
-    {
-      "name": "xdg_directories",
-      "version": "1.1.0",
-      "dependencies": [
-        "meta",
-        "path"
-      ]
-    },
-    {
-      "name": "objective_c",
-      "version": "9.3.0",
-      "dependencies": [
-        "code_assets",
-        "collection",
-        "ffi",
-        "hooks",
-        "logging",
-        "native_toolchain_c",
-        "pub_semver"
-      ]
     },
     {
       "name": "pub_semver",

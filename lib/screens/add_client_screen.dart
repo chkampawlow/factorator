@@ -43,7 +43,6 @@ class _AddClientScreenState extends State<AddClientScreen>
 
   bool _loading = false;
 
-
   late final AnimationController _animController;
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
@@ -60,20 +59,7 @@ class _AddClientScreenState extends State<AddClientScreen>
     final v = value.trim().toUpperCase();
     if (v.isEmpty) return false;
 
-    // Common cases:
-    // - TNxxxx...
-    // - 1234567ABC111 (legacy)
-    // - 1234567AB (requested)
-    // - 1234567ABC / 1234567AB12 (optional trailing digits)
-    if (v.startsWith('TN')) return true;
-
-    // 7 digits + 1-3 letters (+ optional 0-3 digits)
-    if (RegExp(r'^[0-9]{7}[A-Z]{1,3}([0-9]{0,3})$').hasMatch(v)) return true;
-
-    // Keep the stricter legacy format too
-    if (RegExp(r'^[0-9]{7}[A-Z]{3}[0-9]{3}$').hasMatch(v)) return true;
-
-    return false;
+    return RegExp(r'^[0-9]{7}[A-Z]$').hasMatch(v);
   }
 
   bool _looksLikeCin(String value) {
@@ -250,14 +236,17 @@ class _AddClientScreenState extends State<AddClientScreen>
     final rawName = _name.text.trim();
     final email = _email.text.trim().isEmpty ? null : _email.text.trim();
 
-    final code = _phoneCode.text.trim().isEmpty ? '+216' : _phoneCode.text.trim();
+    final code =
+        _phoneCode.text.trim().isEmpty ? '+216' : _phoneCode.text.trim();
     final localPhone = _phone.text.trim();
     final phone = localPhone.isEmpty ? null : '$code $localPhone';
 
     final address = _address.text.trim().isEmpty ? null : _address.text.trim();
 
     final fiscalId = _type == 'company'
-        ? (_fiscalId.text.trim().isEmpty ? null : _fiscalId.text.trim())
+        ? (_fiscalId.text.trim().isEmpty
+            ? null
+            : _fiscalId.text.trim().toUpperCase())
         : null;
 
     final cin = _type == 'individual'
@@ -540,7 +529,8 @@ class _AddClientScreenState extends State<AddClientScreen>
                                         .withOpacity(0.55),
                                     borderRadius: BorderRadius.circular(22),
                                     border: Border.all(
-                                      color: cs.outlineVariant.withOpacity(0.28),
+                                      color:
+                                          cs.outlineVariant.withOpacity(0.28),
                                     ),
                                   ),
                                   child: Column(
@@ -593,10 +583,34 @@ class _AddClientScreenState extends State<AddClientScreen>
                                             ? TextFormField(
                                                 key: const ValueKey('MF'),
                                                 controller: _fiscalId,
+                                                textCapitalization:
+                                                    TextCapitalization
+                                                        .characters,
+                                                inputFormatters: [
+                                                  LengthLimitingTextInputFormatter(
+                                                    8,
+                                                  ),
+                                                  FilteringTextInputFormatter
+                                                      .allow(
+                                                    RegExp(r'[0-9a-zA-Z]'),
+                                                  ),
+                                                  TextInputFormatter
+                                                      .withFunction(
+                                                    (oldValue, newValue) {
+                                                      return newValue.copyWith(
+                                                        text: newValue.text
+                                                            .toUpperCase(),
+                                                        selection:
+                                                            newValue.selection,
+                                                      );
+                                                    },
+                                                  ),
+                                                ],
                                                 decoration: _dec(
                                                   context,
                                                   l10n.fiscalIdMf,
                                                   icon: Icons.badge_outlined,
+                                                  hint: l10n.fiscalIdFormat,
                                                 ),
                                                 validator: (v) {
                                                   if (_type != 'company') {
@@ -605,6 +619,9 @@ class _AddClientScreenState extends State<AddClientScreen>
                                                   if (v == null ||
                                                       v.trim().isEmpty) {
                                                     return l10n.mfRequired;
+                                                  }
+                                                  if (!_looksLikeFiscalId(v)) {
+                                                    return l10n.invalidFiscalId;
                                                   }
                                                   return null;
                                                 },
@@ -615,7 +632,8 @@ class _AddClientScreenState extends State<AddClientScreen>
                                                 decoration: _dec(
                                                   context,
                                                   l10n.cin,
-                                                  icon: Icons.credit_card_outlined,
+                                                  icon: Icons
+                                                      .credit_card_outlined,
                                                 ),
                                                 keyboardType:
                                                     TextInputType.number,
@@ -652,8 +670,10 @@ class _AddClientScreenState extends State<AddClientScreen>
                                               controller: _phoneCode,
                                               keyboardType: TextInputType.phone,
                                               inputFormatters: <TextInputFormatter>[
-                                                FilteringTextInputFormatter.allow(RegExp(r'[+0-9]')),
-                                                LengthLimitingTextInputFormatter(4),
+                                                FilteringTextInputFormatter
+                                                    .allow(RegExp(r'[+0-9]')),
+                                                LengthLimitingTextInputFormatter(
+                                                    4),
                                               ],
                                               decoration: _dec(
                                                 context,
@@ -662,9 +682,12 @@ class _AddClientScreenState extends State<AddClientScreen>
                                               ),
                                               validator: (v) {
                                                 final s = (v ?? '').trim();
-                                                if (s.isEmpty) return null; // empty => default +216
-                                                if (!RegExp(r'^\+\d{1,3}$').hasMatch(s)) {
-                                                  return l10n.invalidPhoneNumber;
+                                                if (s.isEmpty)
+                                                  return null; // empty => default +216
+                                                if (!RegExp(r'^\+\d{1,3}$')
+                                                    .hasMatch(s)) {
+                                                  return l10n
+                                                      .invalidPhoneNumber;
                                                 }
                                                 return null;
                                               },
@@ -676,8 +699,10 @@ class _AddClientScreenState extends State<AddClientScreen>
                                               controller: _phone,
                                               keyboardType: TextInputType.phone,
                                               inputFormatters: <TextInputFormatter>[
-                                                FilteringTextInputFormatter.digitsOnly,
-                                                LengthLimitingTextInputFormatter(12),
+                                                FilteringTextInputFormatter
+                                                    .digitsOnly,
+                                                LengthLimitingTextInputFormatter(
+                                                    12),
                                               ],
                                               decoration: _dec(
                                                 context,
@@ -688,13 +713,20 @@ class _AddClientScreenState extends State<AddClientScreen>
                                                 final s = (v ?? '').trim();
                                                 if (s.isEmpty) return null;
 
-                                                final code = _phoneCode.text.trim();
+                                                final code =
+                                                    _phoneCode.text.trim();
                                                 // Tunisia default: exactly 8 digits when +216 or empty
-                                                if (code.isEmpty || code == '+216') {
-                                                  if (s.length != 8) return l10n.invalidPhoneNumber;
+                                                if (code.isEmpty ||
+                                                    code == '+216') {
+                                                  if (s.length != 8)
+                                                    return l10n
+                                                        .invalidPhoneNumber;
                                                 } else {
                                                   // Generic: 6..12 digits
-                                                  if (s.length < 6 || s.length > 12) return l10n.invalidPhoneNumber;
+                                                  if (s.length < 6 ||
+                                                      s.length > 12)
+                                                    return l10n
+                                                        .invalidPhoneNumber;
                                                 }
                                                 return null;
                                               },

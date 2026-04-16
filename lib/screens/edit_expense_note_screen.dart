@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:my_app/l10n/app_localizations.dart';
@@ -42,7 +40,11 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
   bool _submitting = false;
   String _currency = 'TND';
 
-  final List<String> _statuses = const ['unpaid', 'paid', 'cancelled'];
+  final List<String> _statuses = const [
+    'pending',
+    'paid',
+    'rejected',
+  ];
 
   @override
   void initState() {
@@ -61,7 +63,7 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
     _receiptPathController =
         TextEditingController(text: (n['receipt_path'] ?? '').toString());
 
-    _selectedStatus = _normalizeStatus((n['status'] ?? 'unpaid').toString());
+    _selectedStatus = _normalizeStatus((n['status'] ?? 'pending').toString());
 
     final rawDate = (n['expense_date'] ?? n['date'] ?? '').toString();
     _selectedDate = DateTime.tryParse(rawDate) ?? DateTime.now();
@@ -112,15 +114,17 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
 
   String _normalizeStatus(String s) {
     final v = s.trim().toLowerCase();
-    if (v == 'paid') return 'paid';
-    if (v == 'cancelled' || v == 'canceled') return 'cancelled';
-    return 'unpaid';
+    if (v == 'approved' || v == 'paid' || v == 'reimbursed') return 'paid';
+    if (v == 'rejected' || v == 'cancelled' || v == 'canceled') {
+      return 'rejected';
+    }
+    return 'pending';
   }
 
   String _statusLabel(AppLocalizations l10n, String status) {
     final v = _normalizeStatus(status);
     if (v == 'paid') return l10n.statusPaid;
-    if (v == 'cancelled') return l10n.statusCancelled;
+    if (v == 'rejected') return l10n.statusRejected;
     return l10n.statusPending;
   }
 
@@ -249,14 +253,14 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  cs.primaryContainer.withOpacity(0.45),
+                                  cs.primaryContainer.withValues(alpha: 0.45),
                                   cs.surface,
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
                                 color: cs.outlineVariant
-                                    .withOpacity(isDark ? 0.28 : 0.18),
+                                    .withValues(alpha: isDark ? 0.28 : 0.18),
                               ),
                             ),
                             child: Column(
@@ -304,8 +308,7 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                             label: l10n.amount,
                             hint: l10n.amount,
                             icon: Icons.payments_outlined,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             validator: (v) {
@@ -333,7 +336,7 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            value: _selectedStatus,
+                            initialValue: _selectedStatus,
                             items: _statuses
                                 .map(
                                   (s) => DropdownMenuItem(
@@ -342,8 +345,8 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                                   ),
                                 )
                                 .toList(),
-                            onChanged: (v) =>
-                                setState(() => _selectedStatus = v ?? 'unpaid'),
+                            onChanged: (v) => setState(
+                                () => _selectedStatus = v ?? 'pending'),
                             decoration: InputDecoration(
                               labelText: l10n.status,
                               prefixIcon: const Icon(Icons.flag_outlined),
@@ -356,8 +359,9 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color:
-                                      cs.outlineVariant.withOpacity(0.35),
+                                  color: cs.outlineVariant.withValues(
+                                    alpha: 0.35,
+                                  ),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -387,8 +391,9 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
-                                    color:
-                                        cs.outlineVariant.withOpacity(0.35),
+                                    color: cs.outlineVariant.withValues(
+                                      alpha: 0.35,
+                                    ),
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
@@ -433,7 +438,9 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                               color: cs.surface,
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
-                                color: cs.outlineVariant.withOpacity(0.28),
+                                color: cs.outlineVariant.withValues(
+                                  alpha: 0.28,
+                                ),
                               ),
                             ),
                             child: Row(
@@ -445,8 +452,8 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                                         : _titleController.text.trim(),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
@@ -454,8 +461,7 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                                 const SizedBox(width: 12),
                                 Text(
                                   _amountPreview(),
-                                  style: theme.textTheme.titleMedium
-                                      ?.copyWith(
+                                  style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -477,8 +483,7 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
                               Expanded(
                                 flex: 2,
                                 child: FilledButton(
-                                  onPressed:
-                                      _submitting ? null : _save,
+                                  onPressed: _submitting ? null : _save,
                                   child: _submitting
                                       ? SizedBox(
                                           width: 18,
@@ -542,7 +547,9 @@ class _EditExpenseNoteScreenState extends State<EditExpenseNoteScreen>
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.35)),
+          borderSide: BorderSide(
+            color: cs.outlineVariant.withValues(alpha: 0.35),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),

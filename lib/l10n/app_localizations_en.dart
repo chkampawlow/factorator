@@ -259,7 +259,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advanceInvoiceComingSoon => 'Advance invoice: coming soon';
 
   @override
-  String get recentTransactions => 'Recent transactions';
+  String get recentTransactions => 'Stats';
 
   @override
   String get all => 'All';
@@ -515,7 +515,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiscalIdRequired => 'Fiscal ID is required';
 
   @override
-  String get fiscalIdMustMatch => 'Fiscal ID must match 1234567ABC123';
+  String get fiscalIdMustMatch => 'Fiscal ID must match 1234567A';
 
   @override
   String get passwordMinLength => 'Password must be at least 6 characters';
@@ -556,7 +556,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiscalIdRequiredLabel => 'Fiscal ID*';
 
   @override
-  String get fiscalIdFormat => 'Format: 1234567ABC123';
+  String get fiscalIdFormat => 'Format: 1234567A';
 
   @override
   String get contactInformation => 'Contact information';
@@ -890,6 +890,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get markAsPaid => 'Mark as paid';
 
   @override
+  String get markAsPending => 'Mark as pending';
+
+  @override
+  String get markAsRejected => 'Mark as rejected';
+
+  @override
   String get markAsUnpaid => 'Mark as unpaid';
 
   @override
@@ -976,6 +982,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statusCancelled => 'Cancelled';
+
+  @override
+  String get statusRejected => 'Rejected';
 
   @override
   String get dateLabel => 'Date';

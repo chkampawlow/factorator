@@ -18,7 +18,8 @@ class ApiConfig {
 
   // Clients
   static String get getClients => '$baseUrl/clients/get_clients.php';
-  static String get getClientsevenarchived => '$baseUrl/clients/get_clients_all_with_archieved.php';
+  static String get getClientsevenarchived =>
+      '$baseUrl/clients/get_clients_all_with_archieved.php';
   static String get addClient => '$baseUrl/clients/add_client.php';
   static String get updateClient => '$baseUrl/clients/update_client.php';
   static String get deleteClient => '$baseUrl/clients/delete_client.php';
@@ -33,11 +34,11 @@ class ApiConfig {
   static String get getInvoices => '$baseUrl/invoices/get_invoices.php';
   static String get getInvoiceById => '$baseUrl/invoices/get_invoice_by_id.php';
   static String get addInvoice => '$baseUrl/invoices/add_invoice.php';
+  static String get updateInvoice => '$baseUrl/invoices/update_invoice.php';
   static String get recomputeInvoiceTotals =>
       '$baseUrl/invoices/recompute_invoice_totals.php';
   static String get updateInvoiceStatus =>
-    '$baseUrl/invoices/update_invoice_status.php';
-  
+      '$baseUrl/invoices/update_invoice_status.php';
 
   // Invoice items
   static String get addInvoiceItem =>
@@ -52,36 +53,30 @@ class ApiConfig {
   // User
   static String get updateProfile => '$baseUrl/user/update_profile.php';
 
-
-
 //mailing services
   static String get sendVerificationEmail =>
-    '$baseUrl/auth/send_verification_email.php';
+      '$baseUrl/auth/send_verification_email.php';
 
-static String get verifyEmail =>
-    '$baseUrl/auth/verify_email.php';
+  static String get verifyEmail => '$baseUrl/auth/verify_email.php';
 
-static String get forgotPassword =>
-    '$baseUrl/auth/forgot_password.php';
+  static String get forgotPassword => '$baseUrl/auth/forgot_password.php';
 
-static String get resetPassword =>
-    '$baseUrl/auth/reset_password.php';
+  static String get resetPassword => '$baseUrl/auth/reset_password.php';
 
-static String get sendInvoicePdf =>
-    '$baseUrl/mailer/send_invoice_pdf.php';
-    
+  static String get sendInvoicePdf => '$baseUrl/mailer/send_invoice_pdf.php';
+
 //2fa services
-static String get verify2faLogin => '$baseUrl/auth/verify_2fa_login.php';    
-static String get enable2fa => '$baseUrl/auth/enable_2fa.php';
-static String get confirm2fa => '$baseUrl/auth/confirm_2fa.php';
-static String get disable2fa => '$baseUrl/auth/disable_2fa.php';
-static String get twofaStatus => '$baseUrl/auth/twofa_status.php';
- 
- 
+  static String get verify2faLogin => '$baseUrl/auth/verify_2fa_login.php';
+  static String get enable2fa => '$baseUrl/auth/enable_2fa.php';
+  static String get confirm2fa => '$baseUrl/auth/confirm_2fa.php';
+  static String get disable2fa => '$baseUrl/auth/disable_2fa.php';
+  static String get twofaStatus => '$baseUrl/auth/twofa_status.php';
+
 //Expences repo
-static String get expenseNotesList => '$baseUrl/expense_notes/list.php';
-static String get expenseNotesAdd => '$baseUrl/expense_notes/add.php';
-static String get expenseNotesUpdate => '$baseUrl/expense_notes/update.php';
-static String get expenseNotesDelete => '$baseUrl/expense_notes/delete.php';
-static String get expenseNotesUpdateStatus => '$baseUrl/expense_notes/update_status.php'; 
-    }
+  static String get expenseNotesList => '$baseUrl/expense_notes/list.php';
+  static String get expenseNotesAdd => '$baseUrl/expense_notes/add.php';
+  static String get expenseNotesUpdate => '$baseUrl/expense_notes/update.php';
+  static String get expenseNotesDelete => '$baseUrl/expense_notes/delete.php';
+  static String get expenseNotesUpdateStatus =>
+      '$baseUrl/expense_notes/update_status.php';
+}
