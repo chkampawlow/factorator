@@ -27,31 +27,34 @@ class ActionTile extends StatelessWidget {
     final textColor = fg ?? (_isDarkColor(bg) ? Colors.white : Colors.black87);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(8),
       onTap: onTap,
       child: Ink(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 22,
+              size: 20,
               color: textColor,
             ),
-            const Spacer(),
+            const SizedBox(height: 6),
             Text(
               label,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               softWrap: true,
-              style: t.bodyMedium?.copyWith(
+              style: t.labelMedium?.copyWith(
                 fontWeight: FontWeight.w900,
                 color: textColor,
+                height: 1.05,
               ),
             ),
           ],

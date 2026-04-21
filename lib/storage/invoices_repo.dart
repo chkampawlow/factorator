@@ -1,5 +1,6 @@
 import 'package:my_app/core/api_client.dart';
 import 'package:my_app/core/api_config.dart';
+import 'package:my_app/services/exchange_rate_service.dart';
 
 class InvoicesRepo {
   final ApiClient _api = ApiClient.instance;
@@ -38,8 +39,10 @@ class InvoicesRepo {
     required double subtotal,
     required double totalVat,
     required double total,
+    double timbre = ExchangeRateService.timbreTnd,
   }) async {
     final cid = _toInt(clientId);
+    final totalWithTimbre = total + timbre;
 
     final response = await _api.post(
       ApiConfig.addInvoice,
@@ -53,7 +56,8 @@ class InvoicesRepo {
         'subtotal': subtotal,
         'montant_tva': totalVat,
         'subtotal_ttc': total,
-        'total': total,
+        'timbre': timbre,
+        'total': totalWithTimbre,
         'invoice_type': 'FACTURE',
         'notes': '',
       },
@@ -128,13 +132,36 @@ class InvoicesRepo {
     }
   }
 
-  Future<void> updateInvoiceStatus(int id, String status) async {
+  Future<void> updateInvoiceNotes({
+    required int id,
+    required String notes,
+  }) async {
     final res = await _api.post(
-      ApiConfig.updateInvoiceStatus,
+      ApiConfig.updateInvoice,
+      authRequired: true,
+      body: {
+        'id': id,
+        'notes': notes,
+      },
+    ) as Map<String, dynamic>;
+
+    if (res['success'] != true) {
+      throw Exception(res['message'] ?? 'Failed to update invoice notes');
+    }
+  }
+
+  Future<void> updateInvoiceStatus(
+    int id,
+    String status, {
+    String? paymentMethod,
+  }) async {
+    final res = await _api.post(
+      ApiConfig.updateInvoice,
       authRequired: true,
       body: {
         'id': id,
         'status': status,
+        'payment_method': paymentMethod,
       },
     ) as Map<String, dynamic>;
 
@@ -142,4 +169,15 @@ class InvoicesRepo {
       throw Exception(res['message'] ?? 'Failed to update invoice status');
     }
   }
+  Future<void> deleteInvoice(int invoiceId) async {
+  final res = await _api.post(
+    ApiConfig.deleteInvoice, // <-- add this in ApiConfig
+    authRequired: true,
+    body: {'id': invoiceId},
+  ) as Map<String, dynamic>;
+
+  if (res['success'] != true) {
+    throw Exception(res['message'] ?? 'Delete invoice failed');
+  }
+}
 }

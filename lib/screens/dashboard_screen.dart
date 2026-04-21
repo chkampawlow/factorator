@@ -360,7 +360,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final l10n = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
     final statsColumns = screenWidth < 360 ? 1 : (screenWidth < 520 ? 2 : 3);
-    final quickActionColumns = screenWidth < 430 ? 2 : 3;
     final stackCharts = screenWidth < 700;
 
     return Scaffold(
@@ -382,35 +381,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 18),
                   Text(l10n.quickActions, style: t.headlineSmall),
                   const SizedBox(height: 12),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: quickActionColumns,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: quickActionColumns == 2 ? 1.35 : 1.05,
-                    children: [
-                      ActionTile(
-                        label: l10n.createInvoice,
-                        icon: Icons.add_circle_outline,
-                        bg: cs.primary,
-                        fg: cs.onPrimary,
-                        onTap: _createInvoiceAndOpenEditor,
-                      ),
-                      ActionTile(
-                        label: l10n.createExpenseNoteTitle,
-                        icon: Icons.account_balance_wallet_outlined,
-                        bg: cs.tertiaryContainer.withValues(alpha: .40),
-                        onTap: _openNewExpenseOptions,
-                      ),
-                      ActionTile(
-                        label: l10n.newCustomer,
-                        icon: Icons.person_add_alt_1_outlined,
-                        bg: cs.secondary,
-                        fg: cs.onSecondary,
-                        onTap: _openAddClient,
-                      ),
-                    ],
+                  SizedBox(
+                    height: screenWidth < 380 ? 74 : 82,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: ActionTile(
+                            label: l10n.createInvoice,
+                            icon: Icons.add_circle_outline,
+                            bg: cs.primary,
+                            fg: cs.onPrimary,
+                            onTap: _createInvoiceAndOpenEditor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ActionTile(
+                            label: l10n.createExpenseNoteTitle,
+                            icon: Icons.account_balance_wallet_outlined,
+                            bg: cs.tertiaryContainer.withValues(alpha: .40),
+                            onTap: _openNewExpenseOptions,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ActionTile(
+                            label: l10n.newCustomer,
+                            icon: Icons.person_add_alt_1_outlined,
+                            bg: cs.secondary,
+                            fg: cs.onSecondary,
+                            onTap: _openAddClient,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 18),
                   Text(

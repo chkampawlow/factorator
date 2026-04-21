@@ -86,7 +86,15 @@ class ApiClient {
       return false;
     }
 
-    final dynamic decoded = body.isNotEmpty ? jsonDecode(body) : {};
+    late final dynamic decoded;
+    try {
+      decoded = body.isNotEmpty ? jsonDecode(body) : {};
+    } on FormatException {
+      final preview = body.length > 160 ? '${body.substring(0, 160)}...' : body;
+      throw Exception(
+        'Server returned non-JSON response. Check your API file/path. Status: ${response.statusCode}. Body: $preview',
+      );
+    }
 
     if (response.statusCode >= 200 &&
         response.statusCode < 300 &&

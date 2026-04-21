@@ -63,8 +63,7 @@ import 'app_localizations_fr.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -72,8 +71,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -85,8 +83,7 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -1354,6 +1351,48 @@ abstract class AppLocalizations {
   /// **'Notes'**
   String get notes;
 
+  /// Short invoice note button label
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get note;
+
+  /// Button and hint used to add an invoice note
+  ///
+  /// In en, this message translates to:
+  /// **'Add note'**
+  String get addNote;
+
+  /// Payment method selection title
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method'**
+  String get paymentMethod;
+
+  /// No description provided for @paymentCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash'**
+  String get paymentCash;
+
+  /// No description provided for @paymentCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get paymentCard;
+
+  /// No description provided for @paymentTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank transfer'**
+  String get paymentTransfer;
+
+  /// No description provided for @paymentCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get paymentCheck;
+
   /// Subtotal label in invoice PDF
   ///
   /// In en, this message translates to:
@@ -1726,12 +1765,6 @@ abstract class AppLocalizations {
   /// **'Unpaid'**
   String get unpaidLabel;
 
-  /// No description provided for @draftLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Draft'**
-  String get draftLabel;
-
   /// No description provided for @paymentRate.
   ///
   /// In en, this message translates to:
@@ -1743,6 +1776,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Growth Curve'**
   String get growthCurve;
+
+  /// No description provided for @draftLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get draftLabel;
 
   /// No description provided for @cancelledLabel.
   ///
@@ -1773,18 +1812,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mark as paid'**
   String get markAsPaid;
-
-  /// No description provided for @markAsPending.
-  ///
-  /// In en, this message translates to:
-  /// **'Mark as pending'**
-  String get markAsPending;
-
-  /// No description provided for @markAsRejected.
-  ///
-  /// In en, this message translates to:
-  /// **'Mark as rejected'**
-  String get markAsRejected;
 
   /// No description provided for @markAsUnpaid.
   ///
@@ -1959,6 +1986,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rejected'**
   String get statusRejected;
+
+  /// No description provided for @markAsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as pending'**
+  String get markAsPending;
+
+  /// No description provided for @markAsRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as rejected'**
+  String get markAsRejected;
 
   /// No description provided for @dateLabel.
   ///
@@ -2361,10 +2400,21 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Product added'**
   String get productAdded;
+
+  /// No description provided for @deleteDraftInvoiceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this draft invoice? This action cannot be undone.'**
+  String get deleteDraftInvoiceConfirm;
+
+  /// No description provided for @invoiceDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice deleted.'**
+  String get invoiceDeleted;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -2373,27 +2423,26 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['ar', 'en', 'fr'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['ar', 'en', 'fr'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar':
-      return AppLocalizationsAr();
-    case 'en':
-      return AppLocalizationsEn();
-    case 'fr':
-      return AppLocalizationsFr();
+    case 'ar': return AppLocalizationsAr();
+    case 'en': return AppLocalizationsEn();
+    case 'fr': return AppLocalizationsFr();
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.'
+  );
 }

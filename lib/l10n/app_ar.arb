@@ -313,6 +313,23 @@
   "@region": {
     "description": "منطقة المستخدم"
   },
+  "notes": "ملاحظات",
+  "note": "ملاحظة",
+  "@note": {
+    "description": "تسمية قصيرة لزر ملاحظة الفاتورة"
+  },
+  "addNote": "إضافة ملاحظة",
+  "@addNote": {
+    "description": "زر وتلميح لإضافة ملاحظة للفاتورة"
+  },
+  "paymentMethod": "طريقة الدفع",
+  "@paymentMethod": {
+    "description": "عنوان اختيار طريقة الدفع"
+  },
+  "paymentCash": "نقدًا",
+  "paymentCard": "بطاقة",
+  "paymentTransfer": "تحويل بنكي",
+  "paymentCheck": "شيك",
   "verifyEmail": "تحقق من بريدك الإلكتروني",
   "verifyEmailDescription": "يرجى التحقق من بريدك الإلكتروني قبل المتابعة. أدخل الرمز المكوّن من 6 أرقام أو أعد إرسال البريد.",
   "verificationCode": "رمز التحقق",
@@ -565,6 +582,9 @@
   "noProductsYet": "لا توجد منتجات بعد",
   "createYourFirstProduct": "أنشئ أول منتج لك لبدء إضافة عناصر إلى هذه الفاتورة.",
   "addProduct": "إضافة منتج",
-  "productAdded": "تمت إضافة المنتج"
+  "productAdded": "تمت إضافة المنتج",
+    "deleteDraftInvoiceConfirm": "هل تريد حذف هذه الفاتورة (مسودة)؟ لا يمكن التراجع عن هذا الإجراء.",
+  "invoiceDeleted": "تم حذف الفاتورة.",
+  "deleteFailed": "فشل الحذف"
 
 }

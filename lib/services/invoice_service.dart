@@ -1,4 +1,5 @@
 import 'package:my_app/storage/app_db.dart';
+import 'package:my_app/services/exchange_rate_service.dart';
 
 class InvoiceService {
   Future<int> createInvoice({
@@ -15,8 +16,11 @@ class InvoiceService {
       "dueDate": dueDate,
       "status": "open",
       "subtotal": 0.0,
+      "fodec": 0.0,
+      "baseTva": 0.0,
       "totalVat": 0.0,
-      "total": 0.0,
+      "timbre": ExchangeRateService.timbreTnd,
+      "total": ExchangeRateService.timbreTnd,
     });
   }
 
@@ -52,7 +56,8 @@ class InvoiceService {
     final db = await AppDb.instance;
 
     final price = (overridePrice ?? (product["price"] as num)).toDouble();
-    final tvaRate = (overrideTvaRate ?? (product["tva_rate"] ?? 0) as num).toDouble();
+    final tvaRate =
+        (overrideTvaRate ?? (product["tva_rate"] ?? 0) as num).toDouble();
 
     final line = calcLine(
       qty: qty,
@@ -91,7 +96,8 @@ class InvoiceService {
   }) async {
     final db = await AppDb.instance;
 
-    final line = calcLine(qty: qty, price: price, discount: discount, tvaRate: tvaRate);
+    final line =
+        calcLine(qty: qty, price: price, discount: discount, tvaRate: tvaRate);
 
     await db.update(
       "invoice_items",
@@ -132,13 +138,26 @@ class InvoiceService {
     final subtotal = (rows.first["subtotal"] as num).toDouble();
     final totalVat = (rows.first["totalVat"] as num).toDouble();
     final total = (rows.first["total"] as num).toDouble();
+    final invoiceRows = await db.query(
+      "invoices",
+      columns: ["timbre"],
+      where: "id = ?",
+      whereArgs: [invoiceId],
+      limit: 1,
+    );
+    final timbre = invoiceRows.isEmpty
+        ? ExchangeRateService.timbreTnd
+        : ((invoiceRows.first["timbre"] as num?)?.toDouble() ??
+            ExchangeRateService.timbreTnd);
 
     await db.update(
       "invoices",
       {
         "subtotal": double.parse(subtotal.toStringAsFixed(3)),
+        "fodec": 0.0,
+        "baseTva": double.parse(subtotal.toStringAsFixed(3)),
         "totalVat": double.parse(totalVat.toStringAsFixed(3)),
-        "total": double.parse(total.toStringAsFixed(3)),
+        "total": double.parse((total + timbre).toStringAsFixed(3)),
       },
       where: "id = ?",
       whereArgs: [invoiceId],

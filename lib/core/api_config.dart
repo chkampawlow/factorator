@@ -39,6 +39,8 @@ class ApiConfig {
       '$baseUrl/invoices/recompute_invoice_totals.php';
   static String get updateInvoiceStatus =>
       '$baseUrl/invoices/update_invoice_status.php';
+  static String get deleteInvoice =>
+      '$baseUrl/invoices/delete_invoice.php';
 
   // Invoice items
   static String get addInvoiceItem =>

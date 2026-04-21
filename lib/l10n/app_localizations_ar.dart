@@ -161,8 +161,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get invalidNumber => 'رقم غير صالح';
 
   @override
-  String get priceAndTvaMustBeValidNumbers =>
-      'يجب أن يكون السعر ونسبة TVA أرقامًا صالحة.';
+  String get priceAndTvaMustBeValidNumbers => 'يجب أن يكون السعر ونسبة TVA أرقامًا صالحة.';
 
   @override
   String get invalidProductId => 'معرّف المنتج غير صالح';
@@ -225,8 +224,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get scanInvoiceTitle => 'مسح الفاتورة';
 
   @override
-  String get scanInvoiceSubtitle =>
-      'ضع الفاتورة داخل الإطار. هذه واجهة الكاميرا فقط.';
+  String get scanInvoiceSubtitle => 'ضع الفاتورة داخل الإطار. هذه واجهة الكاميرا فقط.';
 
   @override
   String get scanInvoiceMode => 'فاتورة';
@@ -238,16 +236,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get scanInvoiceGuideTitle => 'دليل المسح';
 
   @override
-  String get scanInvoiceGuideLight =>
-      'استخدم إضاءة جيدة وتجنب الظلال على الورقة.';
+  String get scanInvoiceGuideLight => 'استخدم إضاءة جيدة وتجنب الظلال على الورقة.';
 
   @override
-  String get scanInvoiceGuideEdges =>
-      'حافظ على ظهور كل زوايا الفاتورة داخل الإطار.';
+  String get scanInvoiceGuideEdges => 'حافظ على ظهور كل زوايا الفاتورة داخل الإطار.';
 
   @override
-  String get scanInvoiceGuideReadable =>
-      'تأكد من أن الإجماليات ومعلومات المورد واضحة.';
+  String get scanInvoiceGuideReadable => 'تأكد من أن الإجماليات ومعلومات المورد واضحة.';
 
   @override
   String get quickActions => 'الإجراءات السريعة';
@@ -294,7 +289,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customerDeletedSuccessfully => 'تم حذف العميل بنجاح';
 
   @override
-  String get deleteFailed => 'فشل في الحذف';
+  String get deleteFailed => 'فشل الحذف';
 
   @override
   String get unnamedCustomer => 'عميل بدون اسم';
@@ -348,8 +343,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get invoiceNotFound => 'الفاتورة غير موجودة.';
 
   @override
-  String get addAtLeastOneItemBeforePreviewPdf =>
-      'أضف عنصرًا واحدًا على الأقل قبل معاينة ملف PDF.';
+  String get addAtLeastOneItemBeforePreviewPdf => 'أضف عنصرًا واحدًا على الأقل قبل معاينة ملف PDF.';
 
   @override
   String get qtyMustBeGreaterThanZero => 'يجب أن تكون الكمية أكبر من 0';
@@ -428,15 +422,13 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get createYourFirstInvoiceToSeeItHere =>
-      'أنشئ فاتورتك الأولى لتظهر هنا.';
+  String get createYourFirstInvoiceToSeeItHere => 'أنشئ فاتورتك الأولى لتظهر هنا.';
 
   @override
   String get welcomeBack => 'مرحباً بعودتك';
 
   @override
-  String get loginToManageApp =>
-      'سجّل الدخول لإدارة العملاء والمنتجات والفواتير.';
+  String get loginToManageApp => 'سجّل الدخول لإدارة العملاء والمنتجات والفواتير.';
 
   @override
   String get emailAddress => 'عنوان البريد الإلكتروني';
@@ -518,8 +510,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get fiscalIdMustMatch => 'يجب أن يطابق المعرف الجبائي 1234567A';
 
   @override
-  String get passwordMinLength =>
-      'يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل';
+  String get passwordMinLength => 'يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل';
 
   @override
   String get pleaseConfirmPassword => 'يرجى تأكيد كلمة المرور';
@@ -660,7 +651,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get identifier => 'Identifier';
 
   @override
-  String get notes => 'Notes';
+  String get notes => 'ملاحظات';
+
+  @override
+  String get note => 'ملاحظة';
+
+  @override
+  String get addNote => 'إضافة ملاحظة';
+
+  @override
+  String get paymentMethod => 'طريقة الدفع';
+
+  @override
+  String get paymentCash => 'نقدًا';
+
+  @override
+  String get paymentCard => 'بطاقة';
+
+  @override
+  String get paymentTransfer => 'تحويل بنكي';
+
+  @override
+  String get paymentCheck => 'شيك';
 
   @override
   String get subtotal => 'Subtotal';
@@ -672,8 +684,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get verifyEmail => 'تحقق من بريدك الإلكتروني';
 
   @override
-  String get verifyEmailDescription =>
-      'يرجى التحقق من بريدك الإلكتروني قبل المتابعة. أدخل الرمز المكوّن من 6 أرقام أو أعد إرسال البريد.';
+  String get verifyEmailDescription => 'يرجى التحقق من بريدك الإلكتروني قبل المتابعة. أدخل الرمز المكوّن من 6 أرقام أو أعد إرسال البريد.';
 
   @override
   String get verificationCode => 'رمز التحقق';
@@ -696,12 +707,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enterVerificationCode => 'أدخل رمز التحقق';
 
   @override
-  String get emailVerifiedSuccessfully =>
-      'تم التحقق من البريد الإلكتروني بنجاح';
+  String get emailVerifiedSuccessfully => 'تم التحقق من البريد الإلكتروني بنجاح';
 
   @override
-  String get forgotPasswordDescription =>
-      'أدخل بريدك الإلكتروني وسنرسل لك رمزًا مكوّنًا من 6 أرقام لإعادة تعيين كلمة المرور.';
+  String get forgotPasswordDescription => 'أدخل بريدك الإلكتروني وسنرسل لك رمزًا مكوّنًا من 6 أرقام لإعادة تعيين كلمة المرور.';
 
   @override
   String get sendResetCode => 'إرسال رمز إعادة التعيين';
@@ -713,8 +722,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get resetPassword => 'إعادة تعيين كلمة المرور';
 
   @override
-  String get resetPasswordDescription =>
-      'أدخل الرمز المكوّن من 6 أرقام وكلمة المرور الجديدة.';
+  String get resetPasswordDescription => 'أدخل الرمز المكوّن من 6 أرقام وكلمة المرور الجديدة.';
 
   @override
   String get enterResetCode => 'أدخل رمز إعادة التعيين';
@@ -743,8 +751,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get twoFactorCodeInvalid => 'أدخل رمزًا صحيحًا من 6 أرقام';
 
   @override
-  String get twoFactorHint =>
-      'افتح Google Authenticator وأدخل الرمز الحالي المكوّن من 6 أرقام.';
+  String get twoFactorHint => 'افتح Google Authenticator وأدخل الرمز الحالي المكوّن من 6 أرقام.';
 
   @override
   String get twoFactorVerify => 'تحقق';
@@ -759,15 +766,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get twoFactorSetupTitle => 'Google Authenticator';
 
   @override
-  String get twoFactorSetupSubtitle =>
-      'قم بإعداد المصادقة الثنائية لحماية حسابك بشكل أفضل.';
+  String get twoFactorSetupSubtitle => 'قم بإعداد المصادقة الثنائية لحماية حسابك بشكل أفضل.';
 
   @override
   String get twoFactorStep1 => 'الخطوة 1';
 
   @override
-  String get twoFactorScanQr =>
-      'امسح رمز QR هذا باستخدام Google Authenticator أو أدخل المفتاح اليدوي أدناه.';
+  String get twoFactorScanQr => 'امسح رمز QR هذا باستخدام Google Authenticator أو أدخل المفتاح اليدوي أدناه.';
 
   @override
   String get twoFactorManualKey => 'المفتاح اليدوي';
@@ -782,8 +787,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get twoFactorStep2 => 'الخطوة 2';
 
   @override
-  String get twoFactorEnterSetupCode =>
-      'أدخل الرمز المكوّن من 6 أرقام الذي أنشأه تطبيق المصادقة.';
+  String get twoFactorEnterSetupCode => 'أدخل الرمز المكوّن من 6 أرقام الذي أنشأه تطبيق المصادقة.';
 
   @override
   String get twoFactorEnableButton => 'تفعيل المصادقة الثنائية';
@@ -798,8 +802,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get twoFactorDisableTitle => 'تعطيل Google Authenticator';
 
   @override
-  String get twoFactorDisableMessage =>
-      'هل تريد فعلاً تعطيل المصادقة الثنائية؟';
+  String get twoFactorDisableMessage => 'هل تريد فعلاً تعطيل المصادقة الثنائية؟';
 
   @override
   String get twoFactorDisableButton => 'تعطيل';
@@ -820,8 +823,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get twoFactorToggleOff => 'المصادقة الثنائية غير مفعلة';
 
   @override
-  String get twoFactorLoadingStatus =>
-      'جاري التحقق من حالة المصادقة الثنائية...';
+  String get twoFactorLoadingStatus => 'جاري التحقق من حالة المصادقة الثنائية...';
 
   @override
   String get twoFactorDisabling => 'جاري تعطيل المصادقة الثنائية...';
@@ -863,13 +865,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unpaidLabel => 'غير مدفوعة';
 
   @override
-  String get draftLabel => 'مسودة';
-
-  @override
   String get paymentRate => 'معدل الدفع';
 
   @override
   String get growthCurve => 'منحنى النمو';
+
+  @override
+  String get draftLabel => 'مسودة';
 
   @override
   String get cancelledLabel => 'ملغاة';
@@ -887,12 +889,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get markAsPaid => 'تعيين كمدفوع';
 
   @override
-  String get markAsPending => 'تعيين كقيد الانتظار';
-
-  @override
-  String get markAsRejected => 'تعيين كمرفوض';
-
-  @override
   String get markAsUnpaid => 'تعيين كغير مدفوع';
 
   @override
@@ -902,12 +898,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirmValidateInvoiceTitle => 'اعتماد هذه الفاتورة؟';
 
   @override
-  String get confirmValidateInvoiceBody =>
-      'هل أنت متأكد من اعتماد هذه الفاتورة؟ لن تتمكن من تعديلها بعد الاعتماد.';
+  String get confirmValidateInvoiceBody => 'هل أنت متأكد من اعتماد هذه الفاتورة؟ لن تتمكن من تعديلها بعد الاعتماد.';
 
   @override
-  String get invoiceLockedAfterValidation =>
-      'تم اعتماد هذه الفاتورة. لم يعد بإمكانك تعديل العناصر أو إضافتها أو حذفها.';
+  String get invoiceLockedAfterValidation => 'تم اعتماد هذه الفاتورة. لم يعد بإمكانك تعديل العناصر أو إضافتها أو حذفها.';
 
   @override
   String get markAsCancelled => 'تعيين كملغى';
@@ -946,8 +940,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noExpenseNotesMatchSearch => 'لا توجد ملاحظات مصاريف تطابق البحث';
 
   @override
-  String get createYourFirstExpenseNoteToSeeItHere =>
-      'قم بإنشاء أول ملاحظة مصروف لتظهر هنا';
+  String get createYourFirstExpenseNoteToSeeItHere => 'قم بإنشاء أول ملاحظة مصروف لتظهر هنا';
 
   @override
   String get expenseNotePreviewTitleFallback => 'ملاحظة مصروف';
@@ -981,6 +974,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get statusRejected => 'مرفوض';
+
+  @override
+  String get markAsPending => 'تعيين كقيد الانتظار';
+
+  @override
+  String get markAsRejected => 'تعيين كمرفوض';
 
   @override
   String get dateLabel => 'التاريخ';
@@ -1158,8 +1157,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unitService => 'خدمة';
 
   @override
-  String get invalidPhoneNumber =>
-      'رقم الهاتف غير صالح. مثال: +216 20123456رقم الهاتف غير صالح. مثال: +216 ';
+  String get invalidPhoneNumber => 'رقم الهاتف غير صالح. مثال: +216 20123456رقم الهاتف غير صالح. مثال: +216 ';
 
   @override
   String get noResults => 'لا توجد نتائج';
@@ -1174,19 +1172,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get createFirstCustomerToSeeHere => 'أنشئ أول عميل ليظهر هنا.';
 
   @override
-  String get searchCustomerNameIdEmail =>
-      'ابحث عن عميل أو معرف أو بريد إلكتروني...';
+  String get searchCustomerNameIdEmail => 'ابحث عن عميل أو معرف أو بريد إلكتروني...';
 
   @override
   String get companies => 'الشركات';
 
   @override
-  String get createYourFirstProduct =>
-      'أنشئ أول منتج لك لبدء إضافة عناصر إلى هذه الفاتورة.';
+  String get createYourFirstProduct => 'أنشئ أول منتج لك لبدء إضافة عناصر إلى هذه الفاتورة.';
 
   @override
   String get individuals => 'الأفراد';
 
   @override
   String get productAdded => 'تمت إضافة المنتج';
+
+  @override
+  String get deleteDraftInvoiceConfirm => 'هل تريد حذف هذه الفاتورة (مسودة)؟ لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get invoiceDeleted => 'تم حذف الفاتورة.';
 }

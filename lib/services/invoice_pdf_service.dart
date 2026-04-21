@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart' show Color, ColorScheme;
 import 'package:pdf/pdf.dart';
 import 'currency_service.dart';
+import 'exchange_rate_service.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/services.dart' show rootBundle;
 
 class InvoicePdfService {
-
   static double _toDouble(dynamic value, [double fallback = 0.0]) {
     if (value == null) return fallback;
     if (value is num) return value.toDouble();
@@ -19,7 +19,6 @@ class InvoicePdfService {
     final s = value.toString().trim();
     return s.isEmpty ? fallback : s;
   }
-
 
   static PdfColor _pdfColor(Color color) {
     return PdfColor(
@@ -105,7 +104,8 @@ class InvoicePdfService {
 
     if (isArabic) {
       try {
-        final fontData = await rootBundle.load('assets/fonts/Cairo-Regular.ttf');
+        final fontData =
+            await rootBundle.load('assets/fonts/Cairo-Regular.ttf');
         final boldData = await rootBundle.load('assets/fonts/Cairo-Bold.ttf');
 
         arabicFont = pw.Font.ttf(fontData);
@@ -126,34 +126,35 @@ class InvoicePdfService {
           )
         : pw.Document();
 
-    final l = labels ?? {
-      'invoice': 'INVOICE',
-      'issueDate': 'Issue date',
-      'dueDate': 'Due date',
-      'organization': 'Organization',
-      'userFiscalId': 'User fiscal id',
-      'name': 'Name',
-      'fiscalId': 'Fiscal ID',
-      'cin': 'CIN',
-      'identifier': 'Identifier',
-      'address': 'Address',
-      'email': 'Email',
-      'phone': 'Phone',
-      'type': 'Type',
-      'items': 'Items',
-      'notes': 'Notes',
-      'subtotal': 'Subtotal',
-      'vat': 'TVA',
-      'total': 'TOTAL',
-      'product': 'Product',
-      'qty': 'Qty',
-      'price': 'Price',
-      'discount': 'Discount',
-      'ht': 'HT',
-      'ttc': 'TTC',
-      'website': 'Website',
-      'fax': 'Fax',
-    };
+    final l = labels ??
+        {
+          'invoice': 'INVOICE',
+          'issueDate': 'Issue date',
+          'dueDate': 'Due date',
+          'organization': 'Organization',
+          'userFiscalId': 'User fiscal id',
+          'name': 'Name',
+          'fiscalId': 'Fiscal ID',
+          'cin': 'CIN',
+          'identifier': 'Identifier',
+          'address': 'Address',
+          'email': 'Email',
+          'phone': 'Phone',
+          'type': 'Type',
+          'items': 'Items',
+          'notes': 'Notes',
+          'subtotal': 'Subtotal',
+          'vat': 'TVA',
+          'total': 'TOTAL',
+          'product': 'Product',
+          'qty': 'Qty',
+          'price': 'Price',
+          'discount': 'Discount',
+          'ht': 'HT',
+          'ttc': 'TTC',
+          'website': 'Website',
+          'fax': 'Fax',
+        };
 
     // Resolve logo from either memory bytes or local file path
     Uint8List? resolvedLogo;
@@ -198,11 +199,40 @@ class InvoicePdfService {
     final clientFiscalId = _safe(client['fiscalId']);
     final clientCin = _safe(client['cin']);
 
-    final subtotal = CurrencyService.format(_toDouble(invoice['subtotal']), currency);
-    final totalVat = CurrencyService.format(_toDouble(invoice['totalVat']), currency);
-    final total = CurrencyService.format(_toDouble(invoice['total']), currency);
+    final notesText = _safe(invoice['notes']).isEmpty
+        ? 'Thank you for your business. Please verify the invoice details before payment.'
+        : _safe(invoice['notes']);
+    final subtotalValue = _toDouble(invoice['subtotal']);
+    final fodecRate = _toDouble(invoice['fodecRate']);
+    final calculatedFodecValue =
+        fodecRate > 0 ? subtotalValue * (fodecRate / 100.0) : 0.0;
+    final storedBaseTvaValue = _toDouble(invoice['baseTva'], subtotalValue);
+    final baseTvaValue = fodecRate <= 0
+        ? subtotalValue
+        : (storedBaseTvaValue <= subtotalValue + 0.0005
+            ? subtotalValue + calculatedFodecValue
+            : storedBaseTvaValue);
+    final fodecValue = fodecRate > 0
+        ? (baseTvaValue - subtotalValue).clamp(0.0, double.infinity)
+        : 0.0;
+    final totalVatValue = _toDouble(invoice['totalVat']);
+    final timbreValue =
+        _toDouble(invoice['timbre'], ExchangeRateService.timbreTnd);
+    final storedTotalValue = _toDouble(invoice['total']);
+    final itemTotalValue = baseTvaValue + totalVatValue;
+    final displayTotalValue = storedTotalValue <= itemTotalValue + 0.0005
+        ? itemTotalValue + timbreValue
+        : storedTotalValue;
 
-    final identityValue = clientFiscalId.isNotEmpty ? clientFiscalId : clientCin;
+    final subtotal = CurrencyService.format(subtotalValue, currency);
+    final fodec = CurrencyService.format(fodecValue, currency);
+    final baseTva = CurrencyService.format(baseTvaValue, currency);
+    final totalVat = CurrencyService.format(totalVatValue, currency);
+    final timbre = CurrencyService.format(timbreValue, currency);
+    final total = CurrencyService.format(displayTotalValue, currency);
+
+    final identityValue =
+        clientFiscalId.isNotEmpty ? clientFiscalId : clientCin;
     final identityLabel = clientFiscalId.isNotEmpty
         ? l['fiscalId']!
         : (clientCin.isNotEmpty ? l['cin']! : l['identifier']!);
@@ -221,7 +251,8 @@ class InvoicePdfService {
       final tvaRate = '${_toDouble(item['tva_rate']).toStringAsFixed(0)}%';
       final discount = '${_toDouble(item['discount']).toStringAsFixed(0)}%';
       final ht = CurrencyService.format(_toDouble(item['subtotal']), currency);
-      final ttc = CurrencyService.format(_toDouble(item['subtotalTTC']), currency);
+      final ttc =
+          CurrencyService.format(_toDouble(item['subtotalTTC']), currency);
 
       return [productId, product, qty, price, tvaRate, discount, ht, ttc];
     }).toList();
@@ -232,7 +263,8 @@ class InvoicePdfService {
         margin: const pw.EdgeInsets.all(28),
         build: (context) => [
           pw.Directionality(
-            textDirection: isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+            textDirection:
+                isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
             child: pw.Column(
               children: [
                 pw.Container(
@@ -289,7 +321,9 @@ class InvoicePdfService {
                               status,
                               style: pw.TextStyle(
                                 fontSize: 10,
-                                color: status == 'PAID' ? successColor : warningColor,
+                                color: status == 'PAID'
+                                    ? successColor
+                                    : warningColor,
                                 fontWeight: pw.FontWeight.bold,
                               ),
                             ),
@@ -299,10 +333,8 @@ class InvoicePdfService {
                     ],
                   ),
                 ),
-
                 pw.Divider(color: outline),
                 pw.SizedBox(height: 14),
-
                 pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
@@ -403,9 +435,7 @@ class InvoicePdfService {
                     ),
                   ],
                 ),
-
                 pw.SizedBox(height: 18),
-
                 pw.Text(
                   l['items']!,
                   style: pw.TextStyle(
@@ -414,9 +444,7 @@ class InvoicePdfService {
                     color: primary,
                   ),
                 ),
-
                 pw.SizedBox(height: 8),
-
                 pw.Table.fromTextArray(
                   headers: [
                     'ID',
@@ -466,9 +494,7 @@ class InvoicePdfService {
                     7: const pw.FlexColumnWidth(1.2),
                   },
                 ),
-
                 pw.SizedBox(height: 18),
-
                 pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
@@ -493,7 +519,7 @@ class InvoicePdfService {
                             ),
                             pw.SizedBox(height: 6),
                             pw.Text(
-                              'Thank you for your business. Please verify the invoice details before payment.',
+                              notesText,
                               style: pw.TextStyle(
                                 fontSize: 9,
                                 color: onSurface,
@@ -519,9 +545,26 @@ class InvoicePdfService {
                             subtotal,
                             textColor: onSurface,
                           ),
+                          if (fodecRate > 0) ...[
+                            _summaryRow(
+                              'FODEC ${fodecRate.toStringAsFixed(3).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\\.$'), '')}%',
+                              fodec,
+                              textColor: onSurface,
+                            ),
+                            _summaryRow(
+                              'Base TVA',
+                              baseTva,
+                              textColor: onSurface,
+                            ),
+                          ],
                           _summaryRow(
                             l['vat']!,
                             totalVat,
+                            textColor: onSurface,
+                          ),
+                          _summaryRow(
+                            'Timbre',
+                            timbre,
                             textColor: onSurface,
                           ),
                           pw.Divider(color: outline),

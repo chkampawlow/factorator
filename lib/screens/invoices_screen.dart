@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/add_client_screen.dart';
 import 'package:my_app/screens/invoice_edit_screen.dart';
+import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/currency_service.dart';
+import 'package:my_app/services/exchange_rate_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/clients_repo.dart';
 import 'package:my_app/storage/invoices_repo.dart';
@@ -32,7 +34,61 @@ class InvoicesScreen extends StatefulWidget {
 }
 
 class _InvoicesScreenState extends State<InvoicesScreen> {
+  String _paymentMethodLabel(String raw, AppLocalizations l10n) {
+    final s = raw.trim().toUpperCase();
+    switch (s) {
+      case 'CASH':
+        return l10n.paymentCash;
+      case 'CARD':
+        return l10n.paymentCard;
+      case 'TRANSFER':
+        return l10n.paymentTransfer;
+      case 'CHECK':
+        return l10n.paymentCheck;
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _deleteDraftInvoice(int invoiceId) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.delete),
+        content: Text(l10n.deleteDraftInvoiceConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _repo.deleteInvoice(invoiceId);
+      if (!mounted) return;
+      setState(() {
+        _invoices.removeWhere((e) => _toInt(e['id']) == invoiceId);
+      });
+      AppAlerts.success(context, l10n.invoiceDeleted);
+    } catch (e) {
+      if (!mounted) return;
+      AppAlerts.error(context,
+          '${l10n.deleteFailed}: ${e.toString().replaceFirst('Exception: ', '')}');
+    }
+  }
+
   final InvoicesRepo _repo = InvoicesRepo();
+  final AuthService _authService = AuthService();
   final SettingsService _settingsService = SettingsService();
   final ClientsRepo _clientsRepo = ClientsRepo();
   final TextEditingController _searchCtrl = TextEditingController();
@@ -223,11 +279,32 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     try {
       final data = await _repo.getAllInvoices();
       final currency = await _settingsService.getCurrency();
+      final currentUser = await _authService.me();
+      final userUsesFodec =
+          ExchangeRateService.fodecEnabledFromMap(currentUser);
+      final fodecRate = userUsesFodec
+          ? ExchangeRateService.fodecRateForCurrency(currency)
+          : 0.0;
 
       if (!mounted) return;
 
       setState(() {
-        _invoices = List<Map<String, dynamic>>.from(data);
+        _invoices = data.map((invoice) {
+          final normalized = Map<String, dynamic>.from(invoice);
+          if (!userUsesFodec) {
+            final subtotal = _toDouble(normalized['subtotal']);
+            final vatAmount = _toDouble(normalized['montant_tva']);
+            final timbre = _toDouble(normalized['timbre']);
+            normalized['fodec'] = 0.0;
+            normalized['fodec_rate'] = 0.0;
+            normalized['base_tva'] = subtotal;
+            normalized['total'] = subtotal + vatAmount + timbre;
+          } else {
+            normalized['fodec'] = 1;
+            normalized['fodec_rate'] = fodecRate;
+          }
+          return normalized;
+        }).toList();
         _currency = currency;
         _loading = false;
         if (widget.initialInvoiceId > 0) {
@@ -257,7 +334,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   double _toDouble(dynamic value, [double fallback = 0.0]) {
     if (value == null) return fallback;
     if (value is num) return value.toDouble();
-    return double.tryParse(value.toString()) ?? fallback;
+    return double.tryParse(value.toString().replaceAll(',', '.')) ?? fallback;
   }
 
   DateTime _parseDate(dynamic value) {
@@ -280,25 +357,6 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     if (s == 'PAID') return l10n.paidLabel.toUpperCase();
     if (s == 'CANCELLED') return l10n.cancelledLabel.toUpperCase();
     return l10n.unpaidLabel.toUpperCase();
-  }
-
-  String _daysLeftText(DateTime due) {
-    final l10n = AppLocalizations.of(context)!;
-
-    final now = DateTime.now();
-    final d0 = DateTime(now.year, now.month, now.day);
-    final d1 = DateTime(due.year, due.month, due.day);
-    final diff = d1.difference(d0).inDays;
-
-    if (diff > 0) {
-      return l10n.dueInDays(diff.toString(), diff == 1 ? '' : 's');
-    }
-    if (diff == 0) {
-      return l10n.dueToday;
-    }
-
-    final late = diff.abs();
-    return l10n.overdueByDays(late.toString(), late == 1 ? '' : 's');
   }
 
   bool _isOverdue(String status, DateTime due) {
@@ -342,7 +400,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     return cs.onTertiaryContainer;
   }
 
-  Future<void> _updateInvoiceStatus(int invoiceId, String status) async {
+  Future<void> _updateInvoiceStatus(
+    int invoiceId,
+    String status, {
+    String? paymentMethod,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
 
     if (_updatingStatus) return;
@@ -352,7 +414,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     });
 
     try {
-      await _repo.updateInvoiceStatus(invoiceId, status);
+      await _repo.updateInvoiceStatus(
+        invoiceId,
+        status,
+        paymentMethod: paymentMethod,
+      );
       if (!mounted) return;
 
       AppAlerts.success(context, l10n.invoiceStatusUpdated);
@@ -371,6 +437,60 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         });
       }
     }
+  }
+
+  Future<String?> _pickPaymentMethod() async {
+    final l10n = AppLocalizations.of(context)!;
+    final methods = <({IconData icon, String value, String label})>[
+      (icon: Icons.payments_outlined, value: 'CASH', label: l10n.paymentCash),
+      (icon: Icons.credit_card_rounded, value: 'CARD', label: l10n.paymentCard),
+      (
+        icon: Icons.account_balance_rounded,
+        value: 'TRANSFER',
+        label: l10n.paymentTransfer
+      ),
+      (
+        icon: Icons.receipt_long_outlined,
+        value: 'CHECK',
+        label: l10n.paymentCheck
+      ),
+    ];
+
+    return showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.paymentMethod,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                for (final method in methods) ...[
+                  ListTile(
+                    leading: Icon(method.icon),
+                    title: Text(method.label),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onTap: () => Navigator.pop(context, method.value),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _showStatusSheet(int invoiceId, String currentStatus) async {
@@ -404,7 +524,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   selected: normalized == 'PAID',
                   onTap: () async {
                     Navigator.pop(context);
-                    await _updateInvoiceStatus(invoiceId, 'PAID');
+                    final paymentMethod = await _pickPaymentMethod();
+                    if (paymentMethod == null) return;
+                    await _updateInvoiceStatus(
+                      invoiceId,
+                      'PAID',
+                      paymentMethod: paymentMethod,
+                    );
                   },
                 ),
                 const SizedBox(height: 8),
@@ -456,11 +582,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createDraftAndOpenEdit,
-        icon: const Icon(Icons.add),
-        label: Text(l10n.newInvoice),
-      ),
+      floatingActionButton: _loading || _invoices.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _createDraftAndOpenEdit,
+              icon: const Icon(Icons.add),
+              label: Text(l10n.newInvoice),
+            ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _loading
@@ -575,22 +703,42 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                     final totalValue = _toDouble(inv['total']);
                                     final subtotalValue =
                                         _toDouble(inv['subtotal']);
+                                    final fodecRate =
+                                        _toDouble(inv['fodec_rate']);
+                                    final storedBaseTvaValue = _toDouble(
+                                      inv['base_tva'],
+                                      subtotalValue,
+                                    );
+                                    final calculatedFodecValue = fodecRate > 0
+                                        ? subtotalValue * (fodecRate / 100.0)
+                                        : 0.0;
+                                    final baseTvaValue = fodecRate <= 0
+                                        ? subtotalValue
+                                        : (storedBaseTvaValue <=
+                                                subtotalValue + 0.0005
+                                            ? subtotalValue +
+                                                calculatedFodecValue
+                                            : storedBaseTvaValue);
                                     final vatAmountValue =
                                         _toDouble(inv['montant_tva']);
+                                    final timbreValue =
+                                        _toDouble(inv['timbre']);
+                                    final itemTotal =
+                                        baseTvaValue + vatAmountValue;
+                                    final displayTotal = timbreValue > 0 &&
+                                            totalValue <= itemTotal + 0.0005
+                                        ? itemTotal + timbreValue
+                                        : totalValue;
                                     final total = CurrencyService.format(
-                                        totalValue, _currency);
+                                        displayTotal, _currency);
                                     final subtotal = CurrencyService.format(
                                         subtotalValue, _currency);
                                     final vatAmount = CurrencyService.format(
                                         vatAmountValue, _currency);
                                     final email =
                                         (inv['custom_email'] ?? '').toString();
-                                    final code =
-                                        (inv['custom_code'] ?? '').toString();
                                     final invoiceType =
                                         (inv['invoice_type'] ?? '').toString();
-                                    final typeDoc =
-                                        (inv['type_doc'] ?? '').toString();
                                     final clientName = (inv['client_name'] ??
                                             inv['custom_name'] ??
                                             inv['customer_name'] ??
@@ -605,63 +753,208 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                     final overdue = _isOverdue(status, due);
                                     final dueSoon = _isDueSoon(status, due);
 
-                                    return InkWell(
-                                      borderRadius: BorderRadius.circular(22),
-                                      onTap: () => _openEdit(invoiceId),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
+                                    final paymentRaw = (inv['payment_method'] ??
+                                            inv['paymentMethod'] ??
+                                            '')
+                                        .toString();
+                                    final paymentLabel =
+                                        _paymentMethodLabel(paymentRaw, l10n);
+                                    final canDelete = status == 'DRAFT';
+                                    return Dismissible(
+                                      key: ValueKey('invoice_$invoiceId'),
+                                      direction: canDelete
+                                          ? DismissDirection.horizontal
+                                          : DismissDirection.none,
+                                      confirmDismiss: (dir) async {
+                                        if (!canDelete) return false;
+                                        await _deleteDraftInvoice(invoiceId);
+                                        return false;
+                                      },
+                                      background: Container(
+                                        alignment: Alignment.centerLeft,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 18),
                                         decoration: BoxDecoration(
-                                          color: cs.surface,
+                                          color: cs.errorContainer,
                                           borderRadius:
                                               BorderRadius.circular(22),
-                                          border: Border.all(
-                                            color: overdue
-                                                ? cs.error
-                                                    .withValues(alpha: 0.30)
-                                                : (dueSoon
-                                                    ? cs.tertiary
-                                                        .withValues(alpha: 0.28)
-                                                    : cs.outlineVariant
-                                                        .withValues(
-                                                            alpha: 0.28)),
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Theme.of(context)
-                                                  .shadowColor
-                                                  .withValues(
-                                                    alpha: Theme.of(context)
-                                                                .brightness ==
-                                                            Brightness.dark
-                                                        ? 0.22
-                                                        : 0.08,
-                                                  ),
-                                              blurRadius: 20,
-                                              offset: const Offset(0, 6),
-                                            ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete_outline,
+                                                color: cs.onErrorContainer),
+                                            const SizedBox(width: 10),
+                                            Text(l10n.delete,
+                                                style: TextStyle(
+                                                    color: cs.onErrorContainer,
+                                                    fontWeight:
+                                                        FontWeight.w900)),
                                           ],
                                         ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                      ),
+                                      secondaryBackground: Container(
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 18),
+                                        decoration: BoxDecoration(
+                                          color: cs.errorContainer,
+                                          borderRadius:
+                                              BorderRadius.circular(22),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
                                           children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Expanded(
-                                                  child: Column(
+                                            Text(l10n.delete,
+                                                style: TextStyle(
+                                                    color: cs.onErrorContainer,
+                                                    fontWeight:
+                                                        FontWeight.w900)),
+                                            const SizedBox(width: 10),
+                                            Icon(Icons.delete_outline,
+                                                color: cs.onErrorContainer),
+                                          ],
+                                        ),
+                                      ),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(22),
+                                        onTap: () => _openEdit(invoiceId),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: cs.surface,
+                                            borderRadius:
+                                                BorderRadius.circular(22),
+                                            border: Border.all(
+                                              color: overdue
+                                                  ? cs.error
+                                                      .withValues(alpha: 0.30)
+                                                  : (dueSoon
+                                                      ? cs.tertiary.withValues(
+                                                          alpha: 0.28)
+                                                      : cs.outlineVariant
+                                                          .withValues(
+                                                              alpha: 0.28)),
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Theme.of(context)
+                                                    .shadowColor
+                                                    .withValues(
+                                                      alpha: Theme.of(context)
+                                                                  .brightness ==
+                                                              Brightness.dark
+                                                          ? 0.22
+                                                          : 0.08,
+                                                    ),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 6),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          invNumber.isEmpty
+                                                              ? l10n.invoice
+                                                              : invNumber,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: theme.textTheme
+                                                              .titleMedium
+                                                              ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight.w900,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 6),
+                                                        if (clientName
+                                                            .trim()
+                                                            .isNotEmpty)
+                                                          Text(
+                                                            clientName,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodyLarge
+                                                                ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                            ),
+                                                          ),
+                                                        if (email.isNotEmpty)
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    top: 3),
+                                                            child: Text(
+                                                              email,
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: theme
+                                                                  .textTheme
+                                                                  .bodyMedium
+                                                                  ?.copyWith(
+                                                                color: cs
+                                                                    .onSurfaceVariant,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Column(
                                                     crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
+                                                        CrossAxisAlignment.end,
                                                     children: [
+                                                      _StatusPill(
+                                                        text: overdue
+                                                            ? l10n.overdue
+                                                                .toUpperCase()
+                                                            : _statusLabel(
+                                                                status, l10n),
+                                                        bg: _statusBg(status,
+                                                            overdue, cs),
+                                                        fg: _statusFg(status,
+                                                            overdue, cs),
+                                                        onTap: (_updatingStatus ||
+                                                                status ==
+                                                                    'DRAFT')
+                                                            ? null
+                                                            : () =>
+                                                                _showStatusSheet(
+                                                                    invoiceId,
+                                                                    status),
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 10),
                                                       Text(
-                                                        invNumber.isEmpty
-                                                            ? l10n.invoice
-                                                            : invNumber,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                                        total,
                                                         style: theme.textTheme
                                                             .titleMedium
                                                             ?.copyWith(
@@ -669,132 +962,60 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                                               FontWeight.w900,
                                                         ),
                                                       ),
-                                                      const SizedBox(height: 6),
-                                                      if (clientName
-                                                          .trim()
-                                                          .isNotEmpty)
-                                                        Text(
-                                                          clientName,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: theme.textTheme
-                                                              .bodyLarge
-                                                              ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight.w800,
-                                                          ),
+                                                      Text(
+                                                        _currency,
+                                                        style: theme
+                                                            .textTheme.bodySmall
+                                                            ?.copyWith(
+                                                          color: cs
+                                                              .onSurfaceVariant,
+                                                          fontWeight:
+                                                              FontWeight.w700,
                                                         ),
-                                                      if (email.isNotEmpty)
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(top: 3),
-                                                          child: Text(
-                                                            email,
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            style: theme
-                                                                .textTheme
-                                                                .bodyMedium
-                                                                ?.copyWith(
-                                                              color: cs
-                                                                  .onSurfaceVariant,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                            ),
-                                                          ),
-                                                        ),
+                                                      ),
                                                     ],
                                                   ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
-                                                  children: [
-                                                    _StatusPill(
-                                                      text: overdue
-                                                          ? l10n.overdue
-                                                              .toUpperCase()
-                                                          : _statusLabel(
-                                                              status, l10n),
-                                                      bg: _statusBg(
-                                                          status, overdue, cs),
-                                                      fg: _statusFg(
-                                                          status, overdue, cs),
-                                                      onTap: (_updatingStatus ||
-                                                              status == 'DRAFT')
-                                                          ? null
-                                                          : () =>
-                                                              _showStatusSheet(
-                                                                  invoiceId,
-                                                                  status),
-                                                    ),
-                                                    const SizedBox(height: 10),
-                                                    Text(
-                                                      total,
-                                                      style: theme
-                                                          .textTheme.titleMedium
-                                                          ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w900,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      _currency,
-                                                      style: theme
-                                                          .textTheme.bodySmall
-                                                          ?.copyWith(
-                                                        color:
-                                                            cs.onSurfaceVariant,
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 14),
-                                            Wrap(
-                                              spacing: 8,
-                                              runSpacing: 8,
-                                              children: [
-                                                if (code.isNotEmpty)
+                                                ],
+                                              ),
+                                              const SizedBox(height: 14),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
                                                   _MetaChip(
-                                                      text:
-                                                          '${l10n.code}: $code'),
-                                                if (invoiceType.isNotEmpty)
-                                                  _MetaChip(
-                                                      text:
-                                                          '${l10n.type}: $invoiceType'),
-                                                if (typeDoc.isNotEmpty)
-                                                  _MetaChip(
-                                                      text:
-                                                          '${l10n.doc}: $typeDoc'),
-                                                _MetaChip(
-                                                  text:
+                                                    text: [
                                                       '${l10n.issued} ${issue.toLocal().toString().split(' ')[0]}',
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 10),
-                                            Align(
-                                              alignment: Alignment.centerRight,
-                                              child: Text(
-                                                'HT $subtotal • TVA $vatAmount',
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                  color: cs.onSurfaceVariant,
-                                                  fontWeight: FontWeight.w700,
+                                                      if (invoiceType
+                                                          .isNotEmpty)
+                                                        '${l10n.type}: $invoiceType',
+                                                      if (paymentLabel
+                                                          .isNotEmpty)
+                                                        paymentLabel,
+                                                    ].join(' • '),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: Text(
+                                                  [
+                                                    'HT $subtotal',
+                                                    if (fodecRate > 0)
+                                                      'Base TVA ${CurrencyService.format(baseTvaValue, _currency)}',
+                                                    'TVA $vatAmount',
+                                                  ].join(' • '),
+                                                  style: theme
+                                                      .textTheme.bodySmall
+                                                      ?.copyWith(
+                                                    color: cs.onSurfaceVariant,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     );

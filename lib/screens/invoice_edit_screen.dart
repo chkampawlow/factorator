@@ -6,6 +6,7 @@ import 'package:my_app/screens/add_client_screen.dart';
 import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/currency_service.dart';
+import 'package:my_app/services/exchange_rate_service.dart';
 import 'package:my_app/services/invoice_pdf_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/clients_repo.dart';
@@ -58,8 +59,10 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   String _currency = 'TND';
 
   final TextEditingController _qtyCtrl = TextEditingController(text: '1');
-  final TextEditingController _discountCtrl = TextEditingController(text: '1');
+  final TextEditingController _discountCtrl = TextEditingController(text: '0');
   final TextEditingController _customPriceCtrl = TextEditingController();
+  final TextEditingController _notesCtrl = TextEditingController();
+  bool _savingNotes = false;
 
   @override
   void initState() {
@@ -72,6 +75,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     _qtyCtrl.dispose();
     _discountCtrl.dispose();
     _customPriceCtrl.dispose();
+    _notesCtrl.dispose();
     super.dispose();
   }
 
@@ -79,6 +83,21 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     if (v == null) return fallback;
     if (v is int) return v;
     return int.tryParse(v.toString()) ?? fallback;
+  }
+
+  String _paymentMethodLabel(String raw, AppLocalizations l10n) {
+    switch (raw.trim().toUpperCase()) {
+      case 'CASH':
+        return l10n.paymentCash;
+      case 'CARD':
+        return l10n.paymentCard;
+      case 'TRANSFER':
+        return l10n.paymentTransfer;
+      case 'CHECK':
+        return l10n.paymentCheck;
+      default:
+        return '';
+    }
   }
 
   void _upsertAndSelectProduct(Map<String, dynamic> product) {
@@ -94,6 +113,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
 
     _selectedProduct = product;
     _selectedProductId = sid;
+    _fillPriceOverrideFromSelectedProduct();
   }
 
   double _toD(dynamic v, [double fallback = 0.0]) {
@@ -102,14 +122,40 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     return double.tryParse(v.toString().replaceAll(',', '.')) ?? fallback;
   }
 
+  String _formatInputAmount(double value) {
+    final fixed = value.toStringAsFixed(CurrencyService.decimals(_currency));
+    return fixed
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
+  }
+
+  double _productHtPrice([Map<String, dynamic>? product]) {
+    return _toD((product ?? _selectedProduct)?['price'], 0.0);
+  }
+
+  void _fillPriceOverrideFromSelectedProduct() {
+    if (_selectedProduct == null) {
+      _customPriceCtrl.clear();
+      return;
+    }
+
+    final next = _formatInputAmount(
+      ExchangeRateService.convert(_productHtPrice(), _currency),
+    );
+    _customPriceCtrl.value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: next.length),
+    );
+  }
+
   double _qty() =>
       double.tryParse(_qtyCtrl.text.trim().replaceAll(',', '.')) ?? 1.0;
 
   double _discountPct() => _clampDiscount(
-        double.tryParse(_discountCtrl.text.trim().replaceAll(',', '.')) ?? 1.0,
+        double.tryParse(_discountCtrl.text.trim().replaceAll(',', '.')) ?? 0.0,
       );
 
-  double _clampDiscount(double value) => value.clamp(1.0, 100.0).toDouble();
+  double _clampDiscount(double value) => value.clamp(0.0, 100.0).toDouble();
 
   void _setDiscount(double value) {
     final next = _clampDiscount(value).round().toString();
@@ -179,7 +225,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     }
   }
 
-  Future<void> _loadAll() async {
+  Future<void> _loadAll({bool recomputeTotals = true}) async {
     setState(() {
       _loading = true;
       _error = null;
@@ -187,11 +233,33 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     });
 
     try {
+      if (recomputeTotals) {
+        await _invoicesRepo.recomputeInvoiceTotals(widget.invoiceId);
+      }
+
       final remoteInv = await _invoicesRepo.getInvoiceById(widget.invoiceId);
       final products = await _productsRepo.getAllProducts();
       final items = await _invoiceItemsRepo.getInvoiceItems(widget.invoiceId);
       final currentUser = await _authService.me();
       final currency = await _settingsService.getCurrency();
+      final userUsesFodec =
+          ExchangeRateService.fodecEnabledFromMap(currentUser);
+      final invoiceFodecRate = userUsesFodec
+          ? ExchangeRateService.fodecRateForCurrency(currency)
+          : 0.0;
+      final invoiceBaseTva = invoiceFodecRate <= 0.0005
+          ? remoteInv['subtotal']
+          : (remoteInv['base_tva'] ?? remoteInv['subtotal']);
+      final fallbackTotal = _toD(invoiceBaseTva) +
+          _toD(remoteInv['montant_tva']) +
+          _toD(remoteInv['timbre'], ExchangeRateService.timbreTnd);
+      final invoiceTotal = invoiceFodecRate <= 0.0005
+          ? _toD(remoteInv['subtotal']) +
+              _toD(remoteInv['montant_tva']) +
+              _toD(remoteInv['timbre'], ExchangeRateService.timbreTnd)
+          : (_toD(remoteInv['total']) <= fallbackTotal + 0.0005
+              ? fallbackTotal
+              : remoteInv['total']);
 
       final rawClientId = remoteInv['custom_code'];
       final clientId = rawClientId is int
@@ -221,9 +289,15 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         'issueDate': remoteInv['invoice_date'],
         'dueDate': remoteInv['invoice_due_date'],
         'subtotal': remoteInv['subtotal'],
+        'baseTva': invoiceBaseTva,
+        'fodecRate': invoiceFodecRate,
         'totalVat': remoteInv['montant_tva'],
-        'total': remoteInv['total'],
+        'timbre': remoteInv['timbre'] ?? ExchangeRateService.timbreTnd,
+        'total': invoiceTotal,
+        'notes': remoteInv['notes'] ?? '',
         'status': remoteInv['status'],
+        'paymentMethod':
+            remoteInv['payment_method'] ?? remoteInv['paymentMethod'] ?? '',
         'clientName': (client != null)
             ? (client['name'] ?? '').toString()
             : (remoteInv['custom_name'] ?? '').toString(),
@@ -261,6 +335,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         _products = products;
         _items = items;
         _clientDeleted = clientDeleted;
+        _notesCtrl.text = (inv['notes'] ?? '').toString();
 
         if (products.isEmpty) {
           _selectedProduct = null;
@@ -279,6 +354,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
           }
         }
 
+        _fillPriceOverrideFromSelectedProduct();
         _loading = false;
       });
     } catch (e) {
@@ -342,10 +418,12 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     final override = _customPriceCtrl.text.trim().replaceAll(',', '.');
     if (override.isNotEmpty) {
       final p = double.tryParse(override);
-      if (p != null && p >= 0) return p;
+      if (p != null && p >= 0) {
+        return ExchangeRateService.convertToTnd(p, _currency);
+      }
     }
 
-    return _toD(_selectedProduct?['price'], 0.0);
+    return _productHtPrice();
   }
 
   double _productTvaRate() {
@@ -370,7 +448,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
 
   Future<void> _recomputeAndUpdateInvoiceTotals() async {
     await _invoicesRepo.recomputeInvoiceTotals(widget.invoiceId);
-    await _loadAll();
+    await _loadAll(recomputeTotals: false);
   }
 
   bool get _isDraftInvoice {
@@ -438,6 +516,59 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     }
   }
 
+  Future<void> _openNotesDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_invoice == null || _savingNotes) return;
+    if (!_isDraftInvoice) {
+      _toast(l10n.invoiceLockedAfterValidation, tone: AlertTone.warning);
+      return;
+    }
+
+    final notes = await showDialog<String>(
+      context: context,
+      builder: (_) => _InvoiceNoteDialog(
+        initialNote: _notesCtrl.text,
+      ),
+    );
+
+    if (notes == null) return;
+    await _saveNotes(notes);
+  }
+
+  Future<void> _saveNotes(String notes) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_invoice == null || _savingNotes) return;
+    if (!_isDraftInvoice) {
+      _toast(l10n.invoiceLockedAfterValidation, tone: AlertTone.warning);
+      return;
+    }
+
+    final cleanNotes = notes.trim();
+    setState(() => _savingNotes = true);
+
+    try {
+      await _invoicesRepo.updateInvoiceNotes(
+        id: widget.invoiceId,
+        notes: cleanNotes,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _invoice!['notes'] = cleanNotes;
+        _notesCtrl.text = cleanNotes;
+        _savingNotes = false;
+      });
+      _toast(l10n.invoiceStatusUpdated, tone: AlertTone.success);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _savingNotes = false);
+      _toast(
+        e.toString().replaceFirst('Exception: ', ''),
+        tone: AlertTone.error,
+      );
+    }
+  }
+
   Future<void> _addItem() async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -485,8 +616,8 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     );
 
     _qtyCtrl.text = '1';
-    _discountCtrl.text = '1';
-    _customPriceCtrl.clear();
+    _discountCtrl.text = '0';
+    _fillPriceOverrideFromSelectedProduct();
 
     await _recomputeAndUpdateInvoiceTotals();
     _toast(l10n.itemAdded, tone: AlertTone.success);
@@ -531,69 +662,20 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       return;
     }
 
-    final qtyCtrl = TextEditingController(text: _toD(item['qty']).toString());
-    final discountCtrl =
-        TextEditingController(text: _toD(item['discount']).toString());
-    final priceCtrl =
-        TextEditingController(text: _toD(item['price']).toString());
-
-    final saved = await showDialog<bool>(
+    final values = await showDialog<_EditItemValues>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text((item['product'] ?? l10n.editItem).toString()),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: qtyCtrl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: l10n.qty,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: priceCtrl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: l10n.price,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: discountCtrl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: l10n.discountPercent,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.save),
-          ),
-        ],
+      builder: (_) => _EditInvoiceItemDialog(
+        title: (item['product'] ?? l10n.editItem).toString(),
+        initialQty: _toD(item['qty']).toString(),
+        initialPrice: _toD(item['price']).toString(),
+        initialDiscount: _toD(item['discount']).toString(),
       ),
     );
 
-    if (saved == true) {
-      final qty = _toD(qtyCtrl.text, 1.0);
-      final price = _toD(priceCtrl.text, 0.0);
-      final discount = _toD(discountCtrl.text, 0.0);
+    if (values != null) {
+      final qty = _toD(values.qty, 1.0);
+      final price = _toD(values.price, 0.0);
+      final discount = _toD(values.discount, 0.0);
       final tvaRate = _toD(item['tva_rate'], 0.0);
 
       final totals = _computeLineTotals(
@@ -622,10 +704,6 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       await _recomputeAndUpdateInvoiceTotals();
       _toast(l10n.itemUpdated, tone: AlertTone.success);
     }
-
-    qtyCtrl.dispose();
-    discountCtrl.dispose();
-    priceCtrl.dispose();
   }
 
   Future<void> _previewPdf() async {
@@ -716,83 +794,313 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
 
     final invNum = (_invoice!['invoiceNumber'] ?? '').toString();
     final status = (_invoice!['status'] ?? 'UNPAID').toString();
+    final paymentMethod = _paymentMethodLabel(
+      (_invoice!['paymentMethod'] ?? '').toString(),
+      l10n,
+    );
     final clientName = (_invoice!['clientName'] ?? l10n.client).toString();
 
     final subtotal = _toD(_invoice!['subtotal']);
+    final fodecRate = _toD(_invoice!['fodecRate']);
+    final calculatedFodec =
+        fodecRate > 0 ? subtotal * (fodecRate / 100.0) : 0.0;
+    final storedBaseTva = _toD(_invoice!['baseTva'], subtotal);
+    final baseTva = fodecRate <= 0
+        ? subtotal
+        : (storedBaseTva <= subtotal + 0.0005
+            ? subtotal + calculatedFodec
+            : storedBaseTva);
+    final fodec =
+        fodecRate > 0 ? (baseTva - subtotal).clamp(0.0, double.infinity) : 0.0;
     final tva = _toD(_invoice!['totalVat']);
-    final total = _toD(_invoice!['total']);
+    final timbre = _toD(_invoice!['timbre'], ExchangeRateService.timbreTnd);
+    final storedTotal = _toD(_invoice!['total']);
+    final itemTotal = baseTva + tva;
+    final total =
+        storedTotal <= itemTotal + 0.0005 ? itemTotal + timbre : storedTotal;
     final currency = (_invoice!['currency'] ?? _currency).toString();
+    final note = _notesCtrl.text.trim();
+    final canShowNoteAction = _isDraftInvoice || note.isNotEmpty;
+
+    Widget amountRow(String label, double amount, {bool strong = false}) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (label.isNotEmpty) ...[
+            Text(
+              label,
+              style: TextStyle(
+                color: strong ? cs.onSurface : cs.onSurfaceVariant,
+                fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Text(
+              CurrencyService.format(amount, currency),
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: strong ? cs.onSurface : cs.onSurfaceVariant,
+                fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
+                fontSize: strong ? 16 : null,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    Widget noteButton() {
+      if (!canShowNoteAction) return const SizedBox.shrink();
+
+      return InkWell(
+        onTap: _isDraftInvoice && !_savingNotes ? _openNotesDialog : null,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: cs.primaryContainer.withValues(alpha: 0.32),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: _isDraftInvoice
+                  ? cs.primary.withValues(alpha: 0.55)
+                  : cs.outlineVariant,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _savingNotes
+                  ? const SizedBox(
+                      width: 15,
+                      height: 15,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      Icons.sticky_note_2_outlined,
+                      size: 15,
+                      color: _isDraftInvoice ? cs.primary : cs.onSurfaceVariant,
+                    ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.note,
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          note.isEmpty ? l10n.addNote : l10n.notes,
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: cs.onSurface,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_isDraftInvoice) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.edit_note_outlined,
+                  size: 15,
+                  color: cs.primary,
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget issueDateChip() {
+      return InkWell(
+        onTap: _changeIssueDate,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: cs.primaryContainer.withValues(alpha: 0.32),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: _isDraftInvoice
+                  ? cs.primary.withValues(alpha: 0.55)
+                  : cs.outlineVariant,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.calendar_month_outlined,
+                size: 15,
+                color: _isDraftInvoice ? cs.primary : cs.onSurfaceVariant,
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.issue,
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _dateOnly(_invoice!['issueDate']),
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: cs.onSurface,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_isDraftInvoice) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.edit_calendar_outlined,
+                  size: 15,
+                  color: cs.primary,
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
 
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    clientName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('${l10n.invoice}: $invNum'),
-                  const SizedBox(height: 4),
-                  Text('${l10n.status}: ${status.toUpperCase()}'),
-                  const SizedBox(height: 4),
-                  InkWell(
-                    onTap: _changeIssueDate,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              '${l10n.issue}: ${_dateOnly(_invoice!['issueDate'])}',
-                            ),
-                          ),
-                          if (_isDraftInvoice) ...[
-                            const SizedBox(width: 5),
-                            Icon(
-                              Icons.edit_calendar_outlined,
-                              size: 16,
-                              color: cs.primary,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'HT ${CurrencyService.format(subtotal, currency)}',
-                  style: TextStyle(color: cs.onSurfaceVariant),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        clientName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${l10n.invoice}: $invNum',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${l10n.status}: ${status.toUpperCase()}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (paymentMethod.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${l10n.paymentMethod}: $paymentMethod',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                Text(
-                  'TVA ${CurrencyService.format(tva, currency)}',
-                  style: TextStyle(color: cs.onSurfaceVariant),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  CurrencyService.format(total, currency),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      amountRow('HT', subtotal),
+                      const SizedBox(height: 3),
+                      if (fodecRate > 0) ...[
+                        amountRow(
+                          'FODEC ${_formatInputAmount(fodecRate)}%',
+                          fodec,
+                        ),
+                        const SizedBox(height: 3),
+                        amountRow('Base TVA', baseTva),
+                        const SizedBox(height: 3),
+                      ],
+                      amountRow('TVA', tva),
+                      const SizedBox(height: 3),
+                      amountRow('Timbre', timbre),
+                      const SizedBox(height: 5),
+                      amountRow('', total, strong: true),
+                    ],
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (canShowNoteAction) ...[
+                  Expanded(
+                    child: noteButton(),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: issueDateChip(),
+                ),
+              ],
+            ),
+            if (note.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  note,
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -987,7 +1295,9 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                                   final code = (p['code'] ?? '').toString();
                                   final unit = (p['unit'] ?? '').toString();
                                   final price = CurrencyService.format(
-                                      _toD(p['price']), _currency);
+                                    _productHtPrice(p),
+                                    _currency,
+                                  );
                                   final tva =
                                       _toD(p['tva_rate']).toStringAsFixed(0);
 
@@ -1154,6 +1464,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       setState(() {
         _selectedProduct = selected;
         _selectedProductId = _toInt(selected['id']);
+        _fillPriceOverrideFromSelectedProduct();
       });
     }
   }
@@ -1161,18 +1472,9 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   Widget _buildAddItemCard(ColorScheme cs) {
     final l10n = AppLocalizations.of(context)!;
 
-    final lineTotals = _selectedProduct == null
-        ? _LineTotals(ht: 0, tva: 0, ttc: 0)
-        : _computeLineTotals(
-            qty: _qty(),
-            price: _productPrice(),
-            discountPct: _discountPct(),
-            tvaRate: _productTvaRate(),
-          );
-
     final selectedProductLabel = _selectedProduct == null
         ? l10n.selectProduct
-        : '${(_selectedProduct!['name'] ?? '').toString()} • ${CurrencyService.format(_productPrice(), _currency)}';
+        : '${(_selectedProduct!['name'] ?? '').toString()} • ${CurrencyService.format(_productHtPrice(), _currency)}';
 
     return Card(
       child: Padding(
@@ -1256,56 +1558,58 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
             Row(
               children: [
                 Expanded(
-                  child: InputDecorator(
+                  child: TextField(
+                    controller: _discountCtrl,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(3),
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                     decoration: InputDecoration(
                       labelText: l10n.discountPercent,
                       border: const OutlineInputBorder(),
-                    ),
-                    child: Row(
-                      children: [
-                        _DiscountStepButton(
+                      suffixText: '%',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: _DiscountStepButton(
                           icon: Icons.remove_rounded,
                           onTap: () => _stepDiscount(-1),
                         ),
-                        Expanded(
-                          child: TextField(
-                            controller: _discountCtrl,
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(3),
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                              suffixText: '%',
-                            ),
-                            onChanged: (value) {
-                              if (value.isEmpty) {
-                                setState(() {});
-                                return;
-                              }
-                              final parsed = int.tryParse(value);
-                              if (parsed == null) return;
-                              if (parsed < 1 || parsed > 100) {
-                                _setDiscount(parsed.toDouble());
-                              } else {
-                                setState(() {});
-                              }
-                            },
-                            onEditingComplete: () {
-                              _setDiscount(_discountPct());
-                              FocusScope.of(context).unfocus();
-                            },
-                          ),
-                        ),
-                        _DiscountStepButton(
+                      ),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 54,
+                        minHeight: 54,
+                      ),
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: _DiscountStepButton(
                           icon: Icons.add_rounded,
                           onTap: () => _stepDiscount(1),
                         ),
-                      ],
+                      ),
+                      suffixIconConstraints: const BoxConstraints(
+                        minWidth: 54,
+                        minHeight: 54,
+                      ),
                     ),
+                    onChanged: (value) {
+                      if (value.isEmpty) {
+                        setState(() {});
+                        return;
+                      }
+                      final parsed = int.tryParse(value);
+                      if (parsed == null) return;
+                      if (parsed < 0 || parsed > 100) {
+                        _setDiscount(parsed.toDouble());
+                      } else {
+                        setState(() {});
+                      }
+                    },
+                    onEditingComplete: () {
+                      _setDiscount(_discountPct());
+                      FocusScope.of(context).unfocus();
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -1317,81 +1621,16 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                     decoration: InputDecoration(
                       labelText: l10n.priceOverride,
                       border: const OutlineInputBorder(),
+                      suffixText: _currency,
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    _linePreviewRow(
-                      context,
-                      label: 'HT',
-                      value: CurrencyService.format(lineTotals.ht, _currency),
-                    ),
-                    const SizedBox(height: 8),
-                    _linePreviewRow(
-                      context,
-                      label: 'TTC',
-                      value: CurrencyService.format(
-                        lineTotals.ttc,
-                        _currency,
-                      ),
-                      isTotal: true,
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _linePreviewRow(
-    BuildContext context, {
-    required String label,
-    required String value,
-    bool isTotal = false,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Row(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: cs.onSurfaceVariant,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: TextStyle(
-              fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
-              color: isTotal ? cs.onSurface : cs.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -1480,18 +1719,34 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                     subtitle: Text(
                       '${qty.toStringAsFixed(2)} × ${CurrencyService.format(price, _currency)}',
                     ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('HT ${CurrencyService.format(ht, _currency)}'),
-                        Text(
-                          'TTC ${CurrencyService.format(ttc, _currency)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                          ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('HT ${CurrencyService.format(ht, _currency)}'),
+                            Text(
+                              'TTC ${CurrencyService.format(ttc, _currency)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
                         ),
+                        if (_isDraftInvoice && itemId > 0) ...[
+                          const SizedBox(width: 8),
+                          IconButton(
+                            tooltip: l10n.deleteItem,
+                            onPressed: () => _deleteItem(itemId),
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: cs.error,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     onTap: _isDraftInvoice ? () => _editItem(it) : null,
@@ -1693,6 +1948,180 @@ class _LineTotals {
     required this.tva,
     required this.ttc,
   });
+}
+
+class _InvoiceNoteDialog extends StatefulWidget {
+  final String initialNote;
+
+  const _InvoiceNoteDialog({
+    required this.initialNote,
+  });
+
+  @override
+  State<_InvoiceNoteDialog> createState() => _InvoiceNoteDialogState();
+}
+
+class _InvoiceNoteDialogState extends State<_InvoiceNoteDialog> {
+  late final TextEditingController _noteCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteCtrl = TextEditingController(text: widget.initialNote);
+  }
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return AlertDialog(
+      title: Text(l10n.notes),
+      content: SizedBox(
+        width: 360,
+        child: TextField(
+          controller: _noteCtrl,
+          autofocus: true,
+          minLines: 3,
+          maxLines: 5,
+          textInputAction: TextInputAction.newline,
+          decoration: InputDecoration(
+            hintText: l10n.addNote,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton.icon(
+          onPressed: () => Navigator.pop(context, _noteCtrl.text),
+          icon: const Icon(Icons.save_outlined),
+          label: Text(l10n.save),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditItemValues {
+  final String qty;
+  final String price;
+  final String discount;
+
+  const _EditItemValues({
+    required this.qty,
+    required this.price,
+    required this.discount,
+  });
+}
+
+class _EditInvoiceItemDialog extends StatefulWidget {
+  final String title;
+  final String initialQty;
+  final String initialPrice;
+  final String initialDiscount;
+
+  const _EditInvoiceItemDialog({
+    required this.title,
+    required this.initialQty,
+    required this.initialPrice,
+    required this.initialDiscount,
+  });
+
+  @override
+  State<_EditInvoiceItemDialog> createState() => _EditInvoiceItemDialogState();
+}
+
+class _EditInvoiceItemDialogState extends State<_EditInvoiceItemDialog> {
+  late final TextEditingController _qtyCtrl;
+  late final TextEditingController _priceCtrl;
+  late final TextEditingController _discountCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _qtyCtrl = TextEditingController(text: widget.initialQty);
+    _priceCtrl = TextEditingController(text: widget.initialPrice);
+    _discountCtrl = TextEditingController(text: widget.initialDiscount);
+  }
+
+  @override
+  void dispose() {
+    _qtyCtrl.dispose();
+    _priceCtrl.dispose();
+    _discountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _qtyCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: l10n.qty,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _priceCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: l10n.price,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _discountCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: l10n.discountPercent,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            context,
+            _EditItemValues(
+              qty: _qtyCtrl.text,
+              price: _priceCtrl.text,
+              discount: _discountCtrl.text,
+            ),
+          ),
+          child: Text(l10n.save),
+        ),
+      ],
+    );
+  }
 }
 
 class _DiscountStepButton extends StatelessWidget {

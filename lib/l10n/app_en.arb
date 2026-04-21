@@ -325,6 +325,22 @@
   "@notes": {
     "description": "Notes section title in invoice PDF"
   },
+  "note": "Note",
+  "@note": {
+    "description": "Short invoice note button label"
+  },
+  "addNote": "Add note",
+  "@addNote": {
+    "description": "Button and hint used to add an invoice note"
+  },
+  "paymentMethod": "Payment method",
+  "@paymentMethod": {
+    "description": "Payment method selection title"
+  },
+  "paymentCash": "Cash",
+  "paymentCard": "Card",
+  "paymentTransfer": "Bank transfer",
+  "paymentCheck": "Check",
   "subtotal": "Subtotal",
   "@subtotal": {
     "description": "Subtotal label in invoice PDF"
@@ -588,5 +604,8 @@
   "noProductsYet": "No products yet",
   "createYourFirstProduct": "Create your first product to start adding items to this invoice.",
   "addProduct": "Add product",
-  "productAdded": "Product added"
+  "productAdded": "Product added",
+    "deleteDraftInvoiceConfirm": "Delete this draft invoice? This action cannot be undone.",
+  "invoiceDeleted": "Invoice deleted.",
+  "deleteFailed": "Delete failed"
 }

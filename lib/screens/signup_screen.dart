@@ -31,6 +31,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _error;
+  bool _isFodec = false;
 
   String _phonePrefix = '+216';
 
@@ -219,6 +220,7 @@ class _SignupScreenState extends State<SignupScreen> {
         phone: _phoneCtrl.text.trim(),
         password: _passwordCtrl.text,
         confirmPassword: _confirmPasswordCtrl.text,
+        isFodec: _isFodec,
       );
 
       if (!mounted) return;
@@ -504,6 +506,26 @@ class _SignupScreenState extends State<SignupScreen> {
               l10n.phone,
               _phoneCtrl.text.isEmpty ? '-' : _phoneCtrl.text,
             ),
+            const Divider(height: 22),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _isFodec,
+              onChanged: _loading
+                  ? null
+                  : (v) {
+                      setState(() {
+                        _isFodec = v ?? false;
+                      });
+                    },
+              title: const Text(
+                'FODEC',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle:
+                  const Text('Check if your organization is subject to FODEC.'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            _reviewRow('FODEC', _isFodec ? 'Yes' : 'No'),
           ],
         ),
       ],

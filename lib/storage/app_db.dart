@@ -16,7 +16,7 @@ class AppDb {
 
     return openDatabase(
       path,
-      version: 9, // ✅ Design A migration
+      version: 11, // ✅ Design A migration + timbre + FODEC/base TVA
       onCreate: (db, version) async {
         // ---------- CLIENTS ----------
         await db.execute('''
@@ -54,15 +54,21 @@ class AppDb {
             dueDate TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'open',
             subtotal REAL NOT NULL DEFAULT 0.0,
+            fodec REAL NOT NULL DEFAULT 0.0,
+            baseTva REAL NOT NULL DEFAULT 0.0,
             totalVat REAL NOT NULL DEFAULT 0.0,
+            timbre REAL NOT NULL DEFAULT 1.0,
             total REAL NOT NULL DEFAULT 0.0,
             FOREIGN KEY (clientId) REFERENCES clients(id)
           )
         ''');
 
-        await db.execute("CREATE INDEX idx_invoices_clientId ON invoices(clientId)");
-        await db.execute("CREATE INDEX idx_invoices_issueDate ON invoices(issueDate)");
-        await db.execute("CREATE INDEX idx_invoices_status ON invoices(status)");
+        await db.execute(
+            "CREATE INDEX idx_invoices_clientId ON invoices(clientId)");
+        await db.execute(
+            "CREATE INDEX idx_invoices_issueDate ON invoices(issueDate)");
+        await db
+            .execute("CREATE INDEX idx_invoices_status ON invoices(status)");
 
         // ---------- INVOICE ITEMS (Lines) - Design A ----------
         await db.execute('''
@@ -97,9 +103,12 @@ class AppDb {
         ''');
 
         // indexes
-        await db.execute("CREATE INDEX idx_items_invoice_id ON invoice_items(invoice_id)");
-        await db.execute("CREATE INDEX idx_items_invoice ON invoice_items(invoice)");
-        await db.execute("CREATE INDEX idx_items_product_id ON invoice_items(product_id)");
+        await db.execute(
+            "CREATE INDEX idx_items_invoice_id ON invoice_items(invoice_id)");
+        await db.execute(
+            "CREATE INDEX idx_items_invoice ON invoice_items(invoice)");
+        await db.execute(
+            "CREATE INDEX idx_items_product_id ON invoice_items(product_id)");
       },
 
       onUpgrade: (db, oldVersion, newVersion) async {
@@ -158,23 +167,54 @@ class AppDb {
 
           // 3) Replace old table
           await db.execute('DROP TABLE invoice_items');
-          await db.execute('ALTER TABLE invoice_items_new RENAME TO invoice_items');
+          await db
+              .execute('ALTER TABLE invoice_items_new RENAME TO invoice_items');
 
           // 4) Recreate indexes
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_items_invoice_id ON invoice_items(invoice_id)");
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_items_invoice ON invoice_items(invoice)");
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_items_product_id ON invoice_items(product_id)");
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_items_invoice_id ON invoice_items(invoice_id)");
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_items_invoice ON invoice_items(invoice)");
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_items_product_id ON invoice_items(product_id)");
 
           // also add missing invoice indexes if needed
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_invoices_clientId ON invoices(clientId)");
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_invoices_issueDate ON invoices(issueDate)");
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status)");
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_invoices_clientId ON invoices(clientId)");
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_invoices_issueDate ON invoices(issueDate)");
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status)");
+        }
+
+        if (oldVersion < 10) {
+          await _tryAddColumn(
+            db,
+            "invoices",
+            "timbre",
+            "REAL NOT NULL DEFAULT 1.0",
+          );
+        }
+        if (oldVersion < 11) {
+          await _tryAddColumn(
+            db,
+            "invoices",
+            "fodec",
+            "REAL NOT NULL DEFAULT 0.0",
+          );
+          await _tryAddColumn(
+            db,
+            "invoices",
+            "baseTva",
+            "REAL NOT NULL DEFAULT 0.0",
+          );
         }
       },
     );
   }
 
-  static Future<void> _tryAddColumn(Database db, String table, String col, String type) async {
+  static Future<void> _tryAddColumn(
+      Database db, String table, String col, String type) async {
     try {
       await db.execute("ALTER TABLE $table ADD COLUMN $col $type");
     } catch (_) {

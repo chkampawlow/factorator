@@ -326,6 +326,22 @@
   "@notes": {
     "description": "Titre de la section notes dans le PDF de facture"
   },
+  "note": "Note",
+  "@note": {
+    "description": "Libellé court du bouton de note de facture"
+  },
+  "addNote": "Ajouter une note",
+  "@addNote": {
+    "description": "Bouton et indication pour ajouter une note à la facture"
+  },
+  "paymentMethod": "Méthode de paiement",
+  "@paymentMethod": {
+    "description": "Titre de sélection du mode de paiement"
+  },
+  "paymentCash": "Espèces",
+  "paymentCard": "Carte",
+  "paymentTransfer": "Virement",
+  "paymentCheck": "Chèque",
   "subtotal": "Sous-total",
   "@subtotal": {
     "description": "Libellé du sous-total dans le PDF de facture"
@@ -608,6 +624,9 @@
   "noProductsYet": "Aucun produit pour le moment",
   "createYourFirstProduct": "Créez votre premier produit pour commencer à ajouter des lignes à cette facture.",
   "addProduct": "Ajouter un produit",
-  "productAdded": "Produit ajouté"
+  "productAdded": "Produit ajouté",
+    "deleteDraftInvoiceConfirm": "Supprimer cette facture brouillon ? Cette action est irréversible.",
+  "invoiceDeleted": "Facture supprimée.",
+  "deleteFailed": "Échec de suppression"
 
 }

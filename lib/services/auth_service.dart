@@ -92,6 +92,7 @@ class AuthService {
     required String phone,
     required String password,
     required String confirmPassword,
+    bool isFodec = false,
   }) async {
     final Map<String, dynamic> data = await _api.post(
       ApiConfig.signup,
@@ -102,6 +103,8 @@ class AuthService {
         'phone': phone,
         'password': password,
         'confirm_password': confirmPassword,
+        'fodec': isFodec ? 1 : 0,
+        'is_fodec': isFodec,
       },
     ) as Map<String, dynamic>;
 
@@ -205,59 +208,60 @@ class AuthService {
   }
 
   Future<void> confirm2fa(String code) async {
-  final Map<String, dynamic> data = await _api.post(
-    ApiConfig.confirm2fa,
-    authRequired: true,
-    body: {
-      'code': code,
-    },
-  ) as Map<String, dynamic>;
+    final Map<String, dynamic> data = await _api.post(
+      ApiConfig.confirm2fa,
+      authRequired: true,
+      body: {
+        'code': code,
+      },
+    ) as Map<String, dynamic>;
 
-  if (data['success'] == true) {
-    return;
+    if (data['success'] == true) {
+      return;
+    }
+
+    throw Exception(data['message'] ?? 'Failed to confirm 2FA');
   }
 
-  throw Exception(data['message'] ?? 'Failed to confirm 2FA');
-}
-Future<Map<String, dynamic>> enable2fa() async {
-  final Map<String, dynamic> data = await _api.post(
-    ApiConfig.enable2fa,
-    authRequired: true,
-  ) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> enable2fa() async {
+    final Map<String, dynamic> data = await _api.post(
+      ApiConfig.enable2fa,
+      authRequired: true,
+    ) as Map<String, dynamic>;
 
-  if (data['success'] == true) {
-    return data;
+    if (data['success'] == true) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Failed to initialize 2FA');
   }
 
-  throw Exception(data['message'] ?? 'Failed to initialize 2FA');
-}
-Future<void> disable2fa(String code) async {
-  final Map<String, dynamic> data = await _api.post(
-    ApiConfig.disable2fa,
-    authRequired: true,
-    body: {
-      'code': code,
-    },
-  ) as Map<String, dynamic>;
+  Future<void> disable2fa(String code) async {
+    final Map<String, dynamic> data = await _api.post(
+      ApiConfig.disable2fa,
+      authRequired: true,
+      body: {
+        'code': code,
+      },
+    ) as Map<String, dynamic>;
 
-  if (data['success'] == true) {
-    return;
+    if (data['success'] == true) {
+      return;
+    }
+
+    throw Exception(data['message'] ?? 'Failed to disable 2FA');
   }
 
-  throw Exception(data['message'] ?? 'Failed to disable 2FA');
-}
+  Future<bool> get2faStatus() async {
+    final Map<String, dynamic> data = await _api.get(
+      ApiConfig.twofaStatus,
+      authRequired: true,
+    ) as Map<String, dynamic>;
 
-Future<bool> get2faStatus() async {
-  final Map<String, dynamic> data = await _api.get(
-    ApiConfig.twofaStatus,
-    authRequired: true,
-  ) as Map<String, dynamic>;
+    if (data['success'] == true) {
+      return data['enabled'] == true;
+    }
 
-  if (data['success'] == true) {
-    return data['enabled'] == true;
+    throw Exception(data['message'] ?? 'Failed to fetch 2FA status');
   }
-
-  throw Exception(data['message'] ?? 'Failed to fetch 2FA status');
-}
-
 }
