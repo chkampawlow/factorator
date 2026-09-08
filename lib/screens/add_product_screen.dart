@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/services/currency_service.dart';
 
-
 import 'package:my_app/widgets/app_alerts.dart';
 
 import '../services/settings_service.dart';
@@ -22,6 +21,17 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen>
     with SingleTickerProviderStateMixin {
+  static const List<String> _unitOptions = <String>[
+    'pcs',
+    'kg',
+    'g',
+    'L',
+    'm',
+    'h',
+    'day',
+    'service',
+  ];
+
   final _repo = ProductsRepo();
   final _settingsService = SettingsService();
 
@@ -32,6 +42,7 @@ class _AddProductScreenState extends State<AddProductScreen>
   final _tvaRate = TextEditingController();
   final _unit = TextEditingController();
   final _code = TextEditingController();
+  final _barcode = TextEditingController();
 
   bool _loading = false;
   String _currency = 'TND';
@@ -72,6 +83,7 @@ class _AddProductScreenState extends State<AddProductScreen>
 
     if (p != null) {
       _code.text = (p['code'] ?? '').toString();
+      _barcode.text = (p['barcode'] ?? '').toString();
       _name.text = (p['name'] ?? '').toString();
       _price.text = (p['price'] ?? '').toString();
       _tvaRate.text = (p['tva_rate'] ?? p['tvaRate'] ?? 0).toString();
@@ -103,6 +115,7 @@ class _AddProductScreenState extends State<AddProductScreen>
     _unit.removeListener(_refresh);
 
     _code.dispose();
+    _barcode.dispose();
     _name.dispose();
     _price.dispose();
     _tvaRate.dispose();
@@ -155,11 +168,6 @@ class _AddProductScreenState extends State<AddProductScreen>
     return entered * rate;
   }
 
-  String _pricePreview() {
-    final base = _priceBaseTnd();
-    return CurrencyService.format(base, _currency);
-  }
-
   double _priceTtcBaseTnd() {
     final ht = _priceBaseTnd();
     final rate = _tvaValue() / 100.0;
@@ -184,6 +192,12 @@ class _AddProductScreenState extends State<AddProductScreen>
     return CurrencyService.format(_priceTtcBaseTnd(), _currency);
   }
 
+  String? _normalizedUnitValue() {
+    final value = _unit.text.trim();
+    if (value.isEmpty) return null;
+    return _unitOptions.contains(value) ? value : null;
+  }
+
   double _tvaValue() {
     return _parseNum(_tvaRate.text) ?? 0.0;
   }
@@ -201,8 +215,16 @@ class _AddProductScreenState extends State<AddProductScreen>
 
     try {
       final code = _code.text.trim().isEmpty ? null : _code.text.trim();
+      final barcode =
+          _barcode.text.trim().isEmpty ? null : _barcode.text.trim();
       final name = _name.text.trim();
       final unit = _unit.text.trim().isEmpty ? null : _unit.text.trim();
+      final itemType = isEdit
+          ? (widget.product!['item_type'] ??
+                  (unit?.toLowerCase() == 'service' ? 'SERVICE' : 'PRODUCT'))
+              .toString()
+              .toUpperCase()
+          : (unit?.toLowerCase() == 'service' ? 'SERVICE' : 'PRODUCT');
 
       final entered = _parseNum(_price.text);
       final tvaRate = _parseNum(_tvaRate.text);
@@ -223,21 +245,26 @@ class _AddProductScreenState extends State<AddProductScreen>
           throw Exception(l10n.invalidProductId);
         }
 
-        await _repo.updateProduct(
+        final updatedProduct = await _repo.updateProduct(
           id: id,
           code: code,
+          barcode: barcode,
           name: name,
+          itemType: itemType,
           price: price,
           tvaRate: tvaRate,
           unit: unit,
         );
+        created = updatedProduct;
 
         if (!mounted) return;
         AppAlerts.success(context, l10n.productUpdatedSuccessfully);
       } else {
         final createdProduct = await _repo.addProduct(
           code: code,
+          barcode: barcode,
           name: name,
+          itemType: itemType,
           price: price,
           tvaRate: tvaRate,
           unit: unit,
@@ -254,10 +281,15 @@ class _AddProductScreenState extends State<AddProductScreen>
         final merged = <String, dynamic>{
           ...?widget.product,
           'code': code,
+          'barcode': barcode,
           'name': name,
+          'item_type': itemType,
           'price': price,
           'tva_rate': tvaRate,
           'unit': unit,
+          // Prefer canonical server values (including an auto-generated
+          // barcode) over the values originally entered in the form.
+          ...created,
         };
         Navigator.pop(context, merged);
       } else {
@@ -371,7 +403,8 @@ class _AddProductScreenState extends State<AddProductScreen>
                                       color: cs.surface.withOpacity(0.7),
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: cs.outlineVariant.withOpacity(0.18),
+                                        color:
+                                            cs.outlineVariant.withOpacity(0.18),
                                       ),
                                     ),
                                     child: Icon(
@@ -382,10 +415,13 @@ class _AddProductScreenState extends State<AddProductScreen>
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isEdit ? l10n.editProduct : l10n.addProduct,
+                                          isEdit
+                                              ? l10n.editProduct
+                                              : l10n.addProduct,
                                           style: t.titleLarge?.copyWith(
                                             fontWeight: FontWeight.w900,
                                           ),
@@ -413,15 +449,18 @@ class _AddProductScreenState extends State<AddProductScreen>
                             ClipRRect(
                               borderRadius: BorderRadius.circular(22),
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                filter:
+                                    ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                                 child: Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: cs.surfaceContainerHighest.withOpacity(0.55),
+                                    color: cs.surfaceContainerHighest
+                                        .withOpacity(0.55),
                                     borderRadius: BorderRadius.circular(22),
                                     border: Border.all(
-                                      color: cs.outlineVariant.withOpacity(0.28),
+                                      color:
+                                          cs.outlineVariant.withOpacity(0.28),
                                     ),
                                   ),
                                   child: Column(
@@ -435,6 +474,18 @@ class _AddProductScreenState extends State<AddProductScreen>
                                           icon: Icons.qr_code_2_outlined,
                                         ),
                                         textInputAction: TextInputAction.next,
+                                      ),
+                                      const SizedBox(height: 14),
+                                      TextFormField(
+                                        controller: _barcode,
+                                        textCapitalization:
+                                            TextCapitalization.characters,
+                                        decoration: _fieldDeco(
+                                          context,
+                                          label: 'Barcode (optional)',
+                                          hint: 'EAN, UPC or internal barcode',
+                                          icon: Icons.barcode_reader,
+                                        ),
                                       ),
                                       const SizedBox(height: 12),
                                       TextFormField(
@@ -451,27 +502,32 @@ class _AddProductScreenState extends State<AddProductScreen>
                                       const SizedBox(height: 12),
                                       TextFormField(
                                         controller: _price,
-                                        keyboardType:
-                                            const TextInputType.numberWithOptions(decimal: true),
+                                        keyboardType: const TextInputType
+                                            .numberWithOptions(decimal: true),
                                         decoration: _fieldDeco(
                                           context,
                                           label: l10n.price,
                                           hint: l10n.priceExample,
                                           icon: Icons.payments_outlined,
                                           suffixIcon: Padding(
-                                            padding: const EdgeInsets.only(right: 8),
+                                            padding:
+                                                const EdgeInsets.only(right: 8),
                                             child: DropdownButtonHideUnderline(
                                               child: DropdownButton<String>(
                                                 value: _currency,
                                                 isDense: true,
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                                 items: const [
                                                   DropdownMenuItem(
-                                                      value: 'TND', child: Text('TND')),
+                                                      value: 'TND',
+                                                      child: Text('TND')),
                                                   DropdownMenuItem(
-                                                      value: 'EUR', child: Text('EUR')),
+                                                      value: 'EUR',
+                                                      child: Text('EUR')),
                                                   DropdownMenuItem(
-                                                      value: 'USD', child: Text('USD')),
+                                                      value: 'USD',
+                                                      child: Text('USD')),
                                                 ],
                                                 onChanged: (v) {
                                                   if (v == null) return;
@@ -487,8 +543,8 @@ class _AddProductScreenState extends State<AddProductScreen>
                                       const SizedBox(height: 12),
                                       TextFormField(
                                         controller: _tvaRate,
-                                        keyboardType:
-                                            const TextInputType.numberWithOptions(decimal: true),
+                                        keyboardType: const TextInputType
+                                            .numberWithOptions(decimal: true),
                                         decoration: _fieldDeco(
                                           context,
                                           label: l10n.tvaPercent,
@@ -501,7 +557,7 @@ class _AddProductScreenState extends State<AddProductScreen>
                                       ),
                                       const SizedBox(height: 12),
                                       DropdownButtonFormField<String>(
-                                        value: _unit.text.isEmpty ? null : _unit.text,
+                                        initialValue: _normalizedUnitValue(),
                                         decoration: _fieldDeco(
                                           context,
                                           label: l10n.unitOptional,
@@ -542,8 +598,7 @@ class _AddProductScreenState extends State<AddProductScreen>
                                           ),
                                         ],
                                         onChanged: (v) {
-                                          if (v == null) return;
-                                          setState(() => _unit.text = v);
+                                          setState(() => _unit.text = v ?? '');
                                         },
                                       ),
                                     ],
@@ -580,7 +635,8 @@ class _AddProductScreenState extends State<AddProductScreen>
                                   ),
                                   const SizedBox(height: 8),
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
@@ -651,10 +707,13 @@ class _AddProductScreenState extends State<AddProductScreen>
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2,
                                               valueColor:
-                                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      cs.onPrimary),
                                             ),
                                           )
-                                        : Text(isEdit ? l10n.saveChanges : l10n.saveProduct),
+                                        : Text(isEdit
+                                            ? l10n.saveChanges
+                                            : l10n.saveProduct),
                                   ),
                                 ),
                               ],

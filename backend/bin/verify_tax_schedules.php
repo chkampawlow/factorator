@@ -1,0 +1,7 @@
+<?php
+declare(strict_types=1);if(PHP_SAPI!=='cli'){http_response_code(404);exit;}$_SERVER['REQUEST_METHOD']='CLI';require_once __DIR__.'/../config/db.php';$c=db();$failed=false;$checks=[
+'amount ranges'=>"SELECT COUNT(*) n FROM erp_tax_schedule_entries WHERE gross_amount<0 OR accounting_amount<0 OR fiscal_amount<0 OR fiscal_addition<0 OR fiscal_deduction<0",
+'fiscal bridge formulas'=>"SELECT COUNT(*) n FROM erp_tax_schedule_entries WHERE ABS(fiscal_addition-(CASE WHEN schedule_type='SUBSIDY' THEN GREATEST(fiscal_amount-accounting_amount,0) ELSE GREATEST(accounting_amount-fiscal_amount,0) END))>0.001 OR ABS(fiscal_deduction-(CASE WHEN schedule_type='SUBSIDY' THEN GREATEST(accounting_amount-fiscal_amount,0) ELSE GREATEST(fiscal_amount-accounting_amount,0) END))>0.001",
+'depreciation values'=>"SELECT COUNT(*) n FROM erp_tax_schedule_entries WHERE schedule_type='DEPRECIATION' AND(opening_book_value IS NULL OR annual_rate IS NULL OR closing_book_value IS NULL OR ABS(closing_book_value-GREATEST(opening_book_value-accounting_amount,0))>0.001)",
+'required evidence metadata'=>"SELECT COUNT(*) n FROM erp_tax_schedule_entries WHERE reference='' OR description='' OR legal_basis='' OR YEAR(event_date)<>fiscal_year"];
+foreach($checks as $label=>$sql){$n=(int)$c->query($sql)->fetch_assoc()['n'];if($n){$failed=true;fwrite(STDERR,"FAIL $label: $n mismatch(es)\n");}else echo "PASS $label reconciles\n";}exit($failed?1:0);

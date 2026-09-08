@@ -213,7 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      await _authService.signup(
+      final result = await _authService.signup(
         organizationName: _organizationCtrl.text.trim(),
         fiscalId: _fiscalIdCtrl.text.trim().toUpperCase(),
         email: _emailCtrl.text.trim(),
@@ -225,7 +225,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (!mounted) return;
 
-      AppAlerts.success(context, l10n.accountCreatedSuccessfully);
+      AppAlerts.success(
+        context,
+        result['requires_approval'] == true
+            ? l10n.accountAwaitingApproval
+            : l10n.accountCreatedSuccessfully,
+      );
 
       Navigator.pop(context);
     } catch (e) {

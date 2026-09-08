@@ -379,6 +379,270 @@ abstract class AppLocalizations {
   /// **'Load failed'**
   String get loadFailed;
 
+  /// No description provided for @serverUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to reach the server. Check your connection and try again.'**
+  String get serverUnavailable;
+
+  /// No description provided for @requestTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The server took too long to respond. Please try again.'**
+  String get requestTimedOut;
+
+  /// No description provided for @accountingServerUpdateRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounting Review is not installed on the server yet. Deploy the latest backend, then try again.'**
+  String get accountingServerUpdateRequired;
+
+  /// No description provided for @captureCenterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture'**
+  String get captureCenterTitle;
+
+  /// No description provided for @captureCenterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a document, choose PDF/images, or look up a product barcode.'**
+  String get captureCenterSubtitle;
+
+  /// No description provided for @captureTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get captureTakePhoto;
+
+  /// No description provided for @captureChooseFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose PDF or images'**
+  String get captureChooseFiles;
+
+  /// No description provided for @captureScanBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan product barcode'**
+  String get captureScanBarcode;
+
+  /// No description provided for @extractorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Document extractor'**
+  String get extractorTitle;
+
+  /// No description provided for @extractorReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose up to 10 files, then run extraction.'**
+  String get extractorReady;
+
+  /// No description provided for @extractorSelectedFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} file(s) selected'**
+  String extractorSelectedFiles(int count);
+
+  /// No description provided for @extractorRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run extraction'**
+  String get extractorRun;
+
+  /// No description provided for @extractorUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading {percent}%'**
+  String extractorUploading(int percent);
+
+  /// No description provided for @extractorProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload complete. Extracting document fields…'**
+  String get extractorProcessing;
+
+  /// No description provided for @extractorReviewRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Extraction never validates a financial document. Review every field before creating a draft.'**
+  String get extractorReviewRequired;
+
+  /// No description provided for @extractorBatchSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{processed} of {requested} file(s) processed'**
+  String extractorBatchSummary(int processed, int requested);
+
+  /// No description provided for @extractorSuccessRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Success rate'**
+  String get extractorSuccessRate;
+
+  /// No description provided for @extractorPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Pages'**
+  String get extractorPages;
+
+  /// No description provided for @extractorFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Extraction failed'**
+  String get extractorFailed;
+
+  /// No description provided for @extractorReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review fields'**
+  String get extractorReview;
+
+  /// No description provided for @extractorReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Human review'**
+  String get extractorReviewTitle;
+
+  /// No description provided for @extractorReviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct extracted values and choose the intended document type.'**
+  String get extractorReviewSubtitle;
+
+  /// No description provided for @extractorDocumentType.
+  ///
+  /// In en, this message translates to:
+  /// **'Document type'**
+  String get extractorDocumentType;
+
+  /// No description provided for @extractorExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense receipt'**
+  String get extractorExpense;
+
+  /// No description provided for @extractorSupplierInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier invoice'**
+  String get extractorSupplierInvoice;
+
+  /// No description provided for @extractorSupplierDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier delivery document'**
+  String get extractorSupplierDelivery;
+
+  /// No description provided for @extractorPurchaseOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase order'**
+  String get extractorPurchaseOrder;
+
+  /// No description provided for @extractorWarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Review warnings'**
+  String get extractorWarnings;
+
+  /// No description provided for @extractorLineItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Extracted line items'**
+  String get extractorLineItems;
+
+  /// No description provided for @extractorNoLineItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No line items were detected.'**
+  String get extractorNoLineItems;
+
+  /// No description provided for @extractorConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence: {percent}%'**
+  String extractorConfidence(int percent);
+
+  /// No description provided for @extractorConfirmReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'I reviewed and corrected the extracted values.'**
+  String get extractorConfirmReviewed;
+
+  /// No description provided for @extractorCreatePendingExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare pending expense'**
+  String get extractorCreatePendingExpense;
+
+  /// No description provided for @extractorDraftNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This opens a prefilled form. Nothing is saved until you review and submit it, and the new expense always starts as pending.'**
+  String get extractorDraftNotice;
+
+  /// No description provided for @extractorDestinationNeedsWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'This destination needs authoritative supplier, order, reception, product, and tax-profile matching. Complete it in the web workspace for now.'**
+  String get extractorDestinationNeedsWeb;
+
+  /// No description provided for @extractorPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Your role can capture documents but cannot use the extractor.'**
+  String get extractorPermissionDenied;
+
+  /// No description provided for @extractorExpensePermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Your role cannot create expense notes.'**
+  String get extractorExpensePermissionDenied;
+
+  /// No description provided for @extractorServerUpdateRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'The extractor is not installed on the deployed server yet.'**
+  String get extractorServerUpdateRequired;
+
+  /// No description provided for @extractorRemoveFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove file'**
+  String get extractorRemoveFile;
+
+  /// No description provided for @extractorRawText.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw extracted text'**
+  String get extractorRawText;
+
+  /// No description provided for @extractorFileLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF, PNG, JPG, TIFF, BMP or WebP · 15 MB per file · 50 MB per batch'**
+  String get extractorFileLimits;
+
+  /// No description provided for @extractorNoFilesSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one PDF or image.'**
+  String get extractorNoFilesSelected;
+
+  /// No description provided for @extractorExtractedData.
+  ///
+  /// In en, this message translates to:
+  /// **'Extracted data'**
+  String get extractorExtractedData;
+
+  /// No description provided for @extractorTaxAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax amount'**
+  String get extractorTaxAmount;
+
   /// No description provided for @invalidNumber.
   ///
   /// In en, this message translates to:
@@ -850,7 +1114,7 @@ abstract class AppLocalizations {
   /// No description provided for @overdue.
   ///
   /// In en, this message translates to:
-  /// **'Overdue'**
+  /// **'overdue'**
   String get overdue;
 
   /// No description provided for @code.
@@ -1086,6 +1350,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account created successfully'**
   String get accountCreatedSuccessfully;
+
+  /// No description provided for @accountAwaitingApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created and awaiting administrator approval.'**
+  String get accountAwaitingApproval;
 
   /// No description provided for @whoAreYou.
   ///
@@ -2412,6 +2682,1098 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invoice deleted.'**
   String get invoiceDeleted;
+
+  /// No description provided for @mobileSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search clients, products, documents…'**
+  String get mobileSearchHint;
+
+  /// No description provided for @enterTwoCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 2 characters'**
+  String get enterTwoCharacters;
+
+  /// No description provided for @noPermittedResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No permitted results found'**
+  String get noPermittedResults;
+
+  /// No description provided for @scanProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan product'**
+  String get scanProduct;
+
+  /// No description provided for @lookingUpBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking up barcode'**
+  String get lookingUpBarcode;
+
+  /// No description provided for @productNotFoundBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Product not found. Try another barcode.'**
+  String get productNotFoundBarcode;
+
+  /// No description provided for @pointCameraBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at a product barcode'**
+  String get pointCameraBarcode;
+
+  /// No description provided for @toggleTorch.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle flashlight'**
+  String get toggleTorch;
+
+  /// No description provided for @documentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get documentsTitle;
+
+  /// No description provided for @documentSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search number, client or supplier'**
+  String get documentSearchHint;
+
+  /// No description provided for @searchAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchAction;
+
+  /// No description provided for @allDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'All documents'**
+  String get allDocuments;
+
+  /// No description provided for @dates.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates'**
+  String get dates;
+
+  /// No description provided for @clearDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear dates'**
+  String get clearDates;
+
+  /// No description provided for @documentSourcesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'document sources could not be loaded.'**
+  String get documentSourcesFailed;
+
+  /// No description provided for @noDocumentsFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents match these filters.'**
+  String get noDocumentsFilters;
+
+  /// No description provided for @cannotViewDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot view this document.'**
+  String get cannotViewDocument;
+
+  /// No description provided for @cannotViewRelatedDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot view this related document.'**
+  String get cannotViewRelatedDocument;
+
+  /// No description provided for @previewOrSharePdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview or share PDF'**
+  String get previewOrSharePdf;
+
+  /// No description provided for @relatedDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Related documents'**
+  String get relatedDocuments;
+
+  /// No description provided for @lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Lines'**
+  String get lines;
+
+  /// No description provided for @party.
+  ///
+  /// In en, this message translates to:
+  /// **'Party'**
+  String get party;
+
+  /// No description provided for @dueExpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Due / expected'**
+  String get dueExpected;
+
+  /// No description provided for @balance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get balance;
+
+  /// No description provided for @match.
+  ///
+  /// In en, this message translates to:
+  /// **'Match'**
+  String get match;
+
+  /// No description provided for @sourceOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Source order'**
+  String get sourceOrder;
+
+  /// No description provided for @invoiceNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice number'**
+  String get invoiceNumber;
+
+  /// No description provided for @deliveryNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery note'**
+  String get deliveryNote;
+
+  /// No description provided for @exception.
+  ///
+  /// In en, this message translates to:
+  /// **'Exception'**
+  String get exception;
+
+  /// No description provided for @exceptionReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Exception reason'**
+  String get exceptionReason;
+
+  /// No description provided for @source.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get source;
+
+  /// No description provided for @descriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get descriptionLabel;
+
+  /// No description provided for @documentLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Document line'**
+  String get documentLine;
+
+  /// No description provided for @accepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get accepted;
+
+  /// No description provided for @damaged.
+  ///
+  /// In en, this message translates to:
+  /// **'Damaged'**
+  String get damaged;
+
+  /// No description provided for @rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get rejected;
+
+  /// No description provided for @quantityShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Qty'**
+  String get quantityShort;
+
+  /// No description provided for @allStatuses.
+  ///
+  /// In en, this message translates to:
+  /// **'All statuses'**
+  String get allStatuses;
+
+  /// No description provided for @statusDraftMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get statusDraftMobile;
+
+  /// No description provided for @statusOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get statusOpen;
+
+  /// No description provided for @statusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get statusCompleted;
+
+  /// No description provided for @statusCancelledMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get statusCancelledMobile;
+
+  /// No description provided for @kindInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice'**
+  String get kindInvoice;
+
+  /// No description provided for @kindQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotation'**
+  String get kindQuotation;
+
+  /// No description provided for @kindCreditNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit note'**
+  String get kindCreditNote;
+
+  /// No description provided for @kindSalesOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales order'**
+  String get kindSalesOrder;
+
+  /// No description provided for @kindDeliveryNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery note'**
+  String get kindDeliveryNote;
+
+  /// No description provided for @kindSupplierOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier PO'**
+  String get kindSupplierOrder;
+
+  /// No description provided for @kindSupplierReception.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier reception'**
+  String get kindSupplierReception;
+
+  /// No description provided for @kindSupplierInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier invoice'**
+  String get kindSupplierInvoice;
+
+  /// No description provided for @kindExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get kindExpense;
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get markAllRead;
+
+  /// No description provided for @allNotificationsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'All notifications marked as read.'**
+  String get allNotificationsRead;
+
+  /// No description provided for @notificationNoDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'This notification has no mobile destination.'**
+  String get notificationNoDestination;
+
+  /// No description provided for @searchNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Search notifications'**
+  String get searchNotifications;
+
+  /// No description provided for @unread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get unread;
+
+  /// No description provided for @read.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get read;
+
+  /// No description provided for @allAreas.
+  ///
+  /// In en, this message translates to:
+  /// **'All areas'**
+  String get allAreas;
+
+  /// No description provided for @nothingNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing needs your attention.'**
+  String get nothingNeedsAttention;
+
+  /// No description provided for @notificationOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification options'**
+  String get notificationOptions;
+
+  /// No description provided for @markUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark unread'**
+  String get markUnread;
+
+  /// No description provided for @markRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark read'**
+  String get markRead;
+
+  /// No description provided for @unreadNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread notifications'**
+  String get unreadNotifications;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @salesArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales'**
+  String get salesArea;
+
+  /// No description provided for @stockArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock'**
+  String get stockArea;
+
+  /// No description provided for @logisticsArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Logistics'**
+  String get logisticsArea;
+
+  /// No description provided for @purchasingArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchasing'**
+  String get purchasingArea;
+
+  /// No description provided for @accountingArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounting'**
+  String get accountingArea;
+
+  /// No description provided for @financeReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance review'**
+  String get financeReview;
+
+  /// No description provided for @refreshBalances.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh balances'**
+  String get refreshBalances;
+
+  /// No description provided for @noMobileDocumentLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'No mobile document is linked to this entry.'**
+  String get noMobileDocumentLinked;
+
+  /// No description provided for @reviewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get reviewTab;
+
+  /// No description provided for @receivables.
+  ///
+  /// In en, this message translates to:
+  /// **'Receivables'**
+  String get receivables;
+
+  /// No description provided for @payables.
+  ///
+  /// In en, this message translates to:
+  /// **'Payables'**
+  String get payables;
+
+  /// No description provided for @expensesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses'**
+  String get expensesTab;
+
+  /// No description provided for @activityTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get activityTab;
+
+  /// No description provided for @searchPartyDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Search party or document'**
+  String get searchPartyDocument;
+
+  /// No description provided for @needsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get needsAttention;
+
+  /// No description provided for @nothingReviewQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing in this review queue.'**
+  String get nothingReviewQueue;
+
+  /// No description provided for @accountingAttentionQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounting attention queue'**
+  String get accountingAttentionQueue;
+
+  /// No description provided for @authoritativeBalances.
+  ///
+  /// In en, this message translates to:
+  /// **'Authoritative backend balances'**
+  String get authoritativeBalances;
+
+  /// No description provided for @updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get updated;
+
+  /// No description provided for @expenseReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense review'**
+  String get expenseReview;
+
+  /// No description provided for @matchingIssues.
+  ///
+  /// In en, this message translates to:
+  /// **'Matching issues'**
+  String get matchingIssues;
+
+  /// No description provided for @certificatesPending.
+  ///
+  /// In en, this message translates to:
+  /// **'certificates pending'**
+  String get certificatesPending;
+
+  /// No description provided for @approveExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve expenses'**
+  String get approveExpenses;
+
+  /// No description provided for @viewExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'View expenses'**
+  String get viewExpenses;
+
+  /// No description provided for @yourFinanceAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Your finance access'**
+  String get yourFinanceAccess;
+
+  /// No description provided for @customerPaymentLedger.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer payment ledger'**
+  String get customerPaymentLedger;
+
+  /// No description provided for @withholdingCertificates.
+  ///
+  /// In en, this message translates to:
+  /// **'Withholding certificates'**
+  String get withholdingCertificates;
+
+  /// No description provided for @supplierPaymentRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier payment recording'**
+  String get supplierPaymentRecording;
+
+  /// No description provided for @supplierCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier credits'**
+  String get supplierCredits;
+
+  /// No description provided for @supplierReturns.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier returns'**
+  String get supplierReturns;
+
+  /// No description provided for @accountingReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounting reports'**
+  String get accountingReports;
+
+  /// No description provided for @backendAmountsNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts are calculated by the backend. Recording and validation still use the existing audited workflows.'**
+  String get backendAmountsNotice;
+
+  /// No description provided for @salesOrdersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales orders'**
+  String get salesOrdersTitle;
+
+  /// No description provided for @deliveriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deliveries'**
+  String get deliveriesTitle;
+
+  /// No description provided for @searchOrderClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Search order or client'**
+  String get searchOrderClient;
+
+  /// No description provided for @searchDeliveryClientOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search delivery, client or order'**
+  String get searchDeliveryClientOrder;
+
+  /// No description provided for @salesOrderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales order'**
+  String get salesOrderLabel;
+
+  /// No description provided for @deliveryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery'**
+  String get deliveryLabel;
+
+  /// No description provided for @sourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get sourceLabel;
+
+  /// No description provided for @itemsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get itemsLabel;
+
+  /// No description provided for @quantityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get quantityLabel;
+
+  /// No description provided for @invoicesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'invoices'**
+  String get invoicesLabel;
+
+  /// No description provided for @deliveriesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'deliveries'**
+  String get deliveriesLabel;
+
+  /// No description provided for @confirmDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm delivery'**
+  String get confirmDelivery;
+
+  /// No description provided for @markDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as delivered'**
+  String get markDelivered;
+
+  /// No description provided for @cancelDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel delivery'**
+  String get cancelDelivery;
+
+  /// No description provided for @readyToInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to invoice'**
+  String get readyToInvoice;
+
+  /// No description provided for @supplierReceptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier receptions'**
+  String get supplierReceptionsTitle;
+
+  /// No description provided for @cannotCreateReception.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot create supplier receptions.'**
+  String get cannotCreateReception;
+
+  /// No description provided for @noSupplierOrderAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No sent or partially received supplier order is available.'**
+  String get noSupplierOrderAvailable;
+
+  /// No description provided for @selectSupplierOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a supplier order'**
+  String get selectSupplierOrder;
+
+  /// No description provided for @purchaseOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase order'**
+  String get purchaseOrder;
+
+  /// No description provided for @receiveOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive order'**
+  String get receiveOrder;
+
+  /// No description provided for @searchSupplierOrderDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Search supplier, order or document number'**
+  String get searchSupplierOrderDocument;
+
+  /// No description provided for @noSupplierReceptions.
+  ///
+  /// In en, this message translates to:
+  /// **'No supplier receptions found.'**
+  String get noSupplierReceptions;
+
+  /// No description provided for @receptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception'**
+  String get receptionLabel;
+
+  /// No description provided for @confirmSupplierReception.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm supplier reception?'**
+  String get confirmSupplierReception;
+
+  /// No description provided for @atomicStockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted quantities will be posted to stock atomically. The reception cannot be edited afterwards.'**
+  String get atomicStockNotice;
+
+  /// No description provided for @createLinkedExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Create linked expense'**
+  String get createLinkedExpense;
+
+  /// No description provided for @confirmPostStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm and post stock'**
+  String get confirmPostStock;
+
+  /// No description provided for @receptionConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception confirmed.'**
+  String get receptionConfirmed;
+
+  /// No description provided for @productLinesPosted.
+  ///
+  /// In en, this message translates to:
+  /// **'product line(s) posted to stock.'**
+  String get productLinesPosted;
+
+  /// No description provided for @receptionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception details'**
+  String get receptionDetails;
+
+  /// No description provided for @editDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit draft'**
+  String get editDraft;
+
+  /// No description provided for @stockPosted.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock posted'**
+  String get stockPosted;
+
+  /// No description provided for @stockPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock pending'**
+  String get stockPending;
+
+  /// No description provided for @supplierDeliveryNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier delivery note'**
+  String get supplierDeliveryNote;
+
+  /// No description provided for @supplierInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier invoice'**
+  String get supplierInvoice;
+
+  /// No description provided for @received.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get received;
+
+  /// No description provided for @receptionLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception lines'**
+  String get receptionLines;
+
+  /// No description provided for @totalHt.
+  ///
+  /// In en, this message translates to:
+  /// **'Total excl. tax'**
+  String get totalHt;
+
+  /// No description provided for @vat.
+  ///
+  /// In en, this message translates to:
+  /// **'VAT'**
+  String get vat;
+
+  /// No description provided for @totalTtc.
+  ///
+  /// In en, this message translates to:
+  /// **'Total incl. tax'**
+  String get totalTtc;
+
+  /// No description provided for @postingStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting stock…'**
+  String get postingStock;
+
+  /// No description provided for @editReception.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit reception'**
+  String get editReception;
+
+  /// No description provided for @newReception.
+  ///
+  /// In en, this message translates to:
+  /// **'New reception'**
+  String get newReception;
+
+  /// No description provided for @receptionWithoutOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception without purchase order'**
+  String get receptionWithoutOrder;
+
+  /// No description provided for @supplierInvoiceOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier invoice number (optional)'**
+  String get supplierInvoiceOptional;
+
+  /// No description provided for @supplierDeliveryNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier delivery-note number'**
+  String get supplierDeliveryNumber;
+
+  /// No description provided for @invoiceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice date'**
+  String get invoiceDate;
+
+  /// No description provided for @receivedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Received date'**
+  String get receivedDate;
+
+  /// No description provided for @deliveryDateOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery-note date (optional)'**
+  String get deliveryDateOptional;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSet;
+
+  /// No description provided for @receivedQuantities.
+  ///
+  /// In en, this message translates to:
+  /// **'Received quantities'**
+  String get receivedQuantities;
+
+  /// No description provided for @receptionException.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception exception'**
+  String get receptionException;
+
+  /// No description provided for @none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get none;
+
+  /// No description provided for @overdelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdelivery'**
+  String get overdelivery;
+
+  /// No description provided for @noPurchaseOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'No purchase order'**
+  String get noPurchaseOrder;
+
+  /// No description provided for @internalNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal notes'**
+  String get internalNotes;
+
+  /// No description provided for @takeEvidencePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take evidence photo'**
+  String get takeEvidencePhoto;
+
+  /// No description provided for @chooseEvidencePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose evidence photo'**
+  String get chooseEvidencePhoto;
+
+  /// No description provided for @couldNotSelectPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not select photo'**
+  String get couldNotSelectPhoto;
+
+  /// No description provided for @negativeReceptionQuantities.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception quantities cannot be negative.'**
+  String get negativeReceptionQuantities;
+
+  /// No description provided for @enterReceivedQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a received quantity or remove the line.'**
+  String get enterReceivedQuantity;
+
+  /// No description provided for @discrepancyReasonRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'A discrepancy reason is required.'**
+  String get discrepancyReasonRequired;
+
+  /// No description provided for @selectReceptionLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Select at least one line for this reception.'**
+  String get selectReceptionLine;
+
+  /// No description provided for @explainReceptionException.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain the reception exception before saving.'**
+  String get explainReceptionException;
+
+  /// No description provided for @evidenceUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception saved, but the evidence photo could not be uploaded.'**
+  String get evidenceUploadFailed;
+
+  /// No description provided for @receptionDraftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier reception draft saved.'**
+  String get receptionDraftSaved;
+
+  /// No description provided for @addDiscrepancyEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Add discrepancy evidence'**
+  String get addDiscrepancyEvidence;
+
+  /// No description provided for @evidenceFileHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'JPEG, PNG or WebP; maximum 10 MB'**
+  String get evidenceFileHelp;
+
+  /// No description provided for @receptionTotals.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception totals'**
+  String get receptionTotals;
+
+  /// No description provided for @saveReceptionDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Save reception draft'**
+  String get saveReceptionDraft;
+
+  /// No description provided for @ordered.
+  ///
+  /// In en, this message translates to:
+  /// **'Ordered'**
+  String get ordered;
+
+  /// No description provided for @remaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get remaining;
+
+  /// No description provided for @discrepancyReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Discrepancy reason'**
+  String get discrepancyReason;
+
+  /// No description provided for @statusConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get statusConfirmed;
+
+  /// No description provided for @statusDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get statusDelivered;
+
+  /// No description provided for @statusInvoiced.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoiced'**
+  String get statusInvoiced;
+
+  /// No description provided for @statusReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed'**
+  String get statusReviewed;
+
+  /// No description provided for @statusPartiallyDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially delivered'**
+  String get statusPartiallyDelivered;
+
+  /// No description provided for @statusPartiallyReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially received'**
+  String get statusPartiallyReceived;
+
+  /// No description provided for @statusSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get statusSent;
+
+  /// No description provided for @supplierLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier'**
+  String get supplierLabel;
+
+  /// No description provided for @more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get more;
+
+  /// No description provided for @noMobileFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'No mobile features are assigned to this user.'**
+  String get noMobileFeatures;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

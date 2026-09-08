@@ -25,7 +25,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(68);
 
   Future<String?> _profileImagePath() async {
     final prefs = await SharedPreferences.getInstance();
@@ -57,19 +57,49 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     final cs = theme.colorScheme;
 
     return AppBar(
-      titleSpacing: 24,
-      title: Text(
-        title,
-        style: theme.textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.2,
-        ),
+      titleSpacing: 18,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: cs.primary.withValues(alpha: 0.22),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              'assets/icons/el-fatoura-icon.png',
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+        ],
       ),
       actions: [
         ...actions,
         if (showProfileAction)
           Padding(
-            padding: const EdgeInsetsDirectional.only(end: 16, start: 4),
+            padding: const EdgeInsetsDirectional.only(end: 14, start: 4),
             child: FutureBuilder<String?>(
               future: _profileImagePath(),
               builder: (context, snapshot) {
@@ -78,14 +108,24 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                 return InkWell(
                   onTap: () => _openProfile(context),
                   customBorder: const CircleBorder(),
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: cs.primaryContainer,
-                    foregroundColor: cs.onPrimaryContainer,
-                    backgroundImage: path == null ? null : FileImage(File(path)),
-                    child: path == null
-                        ? const Icon(Icons.person_outline_rounded)
-                        : null,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: cs.primary.withValues(alpha: 0.22),
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: cs.primaryContainer,
+                      foregroundColor: cs.primary,
+                      backgroundImage:
+                          path == null ? null : FileImage(File(path)),
+                      child: path == null
+                          ? const Icon(Icons.person_outline_rounded, size: 20)
+                          : null,
+                    ),
                   ),
                 );
               },

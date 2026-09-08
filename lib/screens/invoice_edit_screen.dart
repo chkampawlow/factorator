@@ -67,7 +67,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAll();
+    _loadAll(recomputeTotals: false);
   }
 
   @override
@@ -233,11 +233,18 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     });
 
     try {
-      if (recomputeTotals) {
+      var remoteInv = await _invoicesRepo.getInvoiceById(widget.invoiceId);
+      final isValidated = _toInt(remoteInv['is_validated']) == 1;
+      final invoiceType =
+          (remoteInv['invoice_type'] ?? '').toString().trim().toUpperCase();
+      final canRecompute =
+          recomputeTotals && !isValidated && invoiceType != 'AVOIR';
+
+      if (canRecompute) {
         await _invoicesRepo.recomputeInvoiceTotals(widget.invoiceId);
+        remoteInv = await _invoicesRepo.getInvoiceById(widget.invoiceId);
       }
 
-      final remoteInv = await _invoicesRepo.getInvoiceById(widget.invoiceId);
       final products = await _productsRepo.getAllProducts();
       final items = await _invoiceItemsRepo.getInvoiceItems(widget.invoiceId);
       final currentUser = await _authService.me();
@@ -2504,12 +2511,15 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
                                   final cin = (c['cin'] ?? '').toString();
 
                                   final subtitleParts = <String>[];
-                                  if (email.trim().isNotEmpty)
+                                  if (email.trim().isNotEmpty) {
                                     subtitleParts.add(email.trim());
-                                  if (mf.trim().isNotEmpty)
+                                  }
+                                  if (mf.trim().isNotEmpty) {
                                     subtitleParts.add('MF: ${mf.trim()}');
-                                  if (cin.trim().isNotEmpty)
+                                  }
+                                  if (cin.trim().isNotEmpty) {
                                     subtitleParts.add('CIN: ${cin.trim()}');
+                                  }
 
                                   return ListTile(
                                     title: Text(

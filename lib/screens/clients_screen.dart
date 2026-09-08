@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/core/access_scope.dart';
+import 'package:my_app/core/client_identity.dart';
+import 'package:my_app/core/permission_service.dart';
 import 'dart:async';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/widgets/app_top_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../storage/clients_repo.dart';
 import 'add_client_screen.dart';
 
@@ -66,7 +70,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
         _filtered = base.where((c) {
           final name = (c['name'] ?? '').toString().toLowerCase();
           final fiscalId = _getFiscalId(c).toLowerCase();
-          final cin = (c['cin'] ?? '').toString().toLowerCase();
+          final cin = clientCin(c).toLowerCase();
           final email = (c['email'] ?? '').toString().toLowerCase();
           final phone = (c['phone'] ?? '').toString().toLowerCase();
 
@@ -109,12 +113,11 @@ class _ClientsScreenState extends State<ClientsScreen> {
   }
 
   bool _isCompany(Map<String, dynamic> c) {
-    return (c['type']?.toString().trim().toLowerCase() ?? 'individual') ==
-        'company';
+    return clientIsCompany(c);
   }
 
   String _getFiscalId(Map<String, dynamic> c) {
-    return (c['fiscalId'] ?? c['fiscal_id'] ?? '').toString();
+    return clientFiscalId(c);
   }
 
   int? _clientId(Map<String, dynamic> c) {
@@ -129,7 +132,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
       final mf = _getFiscalId(c);
       return '${AppLocalizations.of(context)!.mfLabel}: ${mf.isEmpty ? '-' : mf}';
     } else {
-      final cin = (c['cin'] ?? '').toString();
+      final cin = clientCin(c);
       return '${AppLocalizations.of(context)!.cin}: ${cin.isEmpty ? '-' : cin}';
     }
   }
@@ -138,7 +141,36 @@ class _ClientsScreenState extends State<ClientsScreen> {
     return _isCompany(c) ? Icons.business_outlined : Icons.person_outline;
   }
 
+  Future<void> _callClient(Map<String, dynamic> client) async {
+    final phoneUri = clientPhoneUri(client);
+    if (phoneUri == null) {
+      AppAlerts.error(
+          context, AppLocalizations.of(context)!.phoneNumberInvalid);
+      return;
+    }
+
+    try {
+      final opened = await launchUrl(
+        phoneUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && mounted) {
+        AppAlerts.error(context, _dialerUnavailableMessage());
+      }
+    } catch (_) {
+      if (mounted) AppAlerts.error(context, _dialerUnavailableMessage());
+    }
+  }
+
+  String _dialerUnavailableMessage() =>
+      switch (Localizations.localeOf(context).languageCode) {
+        'fr' => "Impossible d’ouvrir l’application Téléphone.",
+        'ar' => 'تعذّر فتح تطبيق الهاتف.',
+        _ => 'Could not open the phone dialer.',
+      };
+
   Future<void> _editClient(Map<String, dynamic> client) async {
+    if (!_requirePermission(AppPermission.clientsUpdate)) return;
     final saved = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -154,6 +186,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
   }
 
   Future<bool> _confirmDelete(Map<String, dynamic> client) async {
+    if (!_requirePermission(AppPermission.clientsDelete)) return false;
     final name = (client['name'] ?? '').toString();
     final int? id = _clientId(client);
     if (id == null || id <= 0) {
@@ -223,8 +256,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
     final subtitle = _clientSubtitle(c);
     final icon = _clientIcon(c);
 
-    final cardBg = cs.surfaceContainerHighest.withOpacity(.45);
-    final border = cs.outlineVariant.withOpacity(.18);
+    final cardBg = cs.surfaceContainerHighest.withValues(alpha: .45);
+    final border = cs.outlineVariant.withValues(alpha: .18);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
@@ -234,8 +267,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color:
-                Theme.of(context).shadowColor.withOpacity(isDark ? 0.22 : 0.08),
+            color: Theme.of(context)
+                .shadowColor
+                .withValues(alpha: isDark ? 0.22 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -247,9 +281,10 @@ class _ClientsScreenState extends State<ClientsScreen> {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: cs.surface.withOpacity(.65),
+              color: cs.surface.withValues(alpha: .65),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: cs.outlineVariant.withOpacity(.18)),
+              border:
+                  Border.all(color: cs.outlineVariant.withValues(alpha: .18)),
             ),
             child: Icon(icon, color: cs.primary),
           ),
@@ -270,22 +305,56 @@ class _ClientsScreenState extends State<ClientsScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: t.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurfaceVariant,
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: cs.primary.withValues(alpha: .10),
+                      borderRadius: BorderRadius.circular(10),
+                      border:
+                          Border.all(color: cs.primary.withValues(alpha: .16)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.badge_outlined,
+                          size: 15,
+                          color: cs.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: t.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          if (clientPhoneUri(c) != null) ...[
+            IconButton.filledTonal(
+              tooltip: AppLocalizations.of(context)!.phone,
+              onPressed: () => _callClient(c),
+              icon: const Icon(Icons.phone_rounded),
+            ),
+            const SizedBox(width: 2),
+          ],
           Icon(
             Icons.chevron_right,
-            size: 30,
-            color: cs.onSurface.withOpacity(.55),
+            size: 28,
+            color: cs.onSurface.withValues(alpha: .55),
           ),
         ],
       ),
@@ -305,7 +374,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        color: color.withOpacity(.75),
+        color: color.withValues(alpha: .75),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
@@ -339,7 +408,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
           child: Icon(
             Icons.people_alt_outlined,
             size: 74,
-            color: cs.onSurfaceVariant.withOpacity(0.55),
+            color: cs.onSurfaceVariant.withValues(alpha: 0.55),
           ),
         ),
         const SizedBox(height: 18),
@@ -365,28 +434,29 @@ class _ClientsScreenState extends State<ClientsScreen> {
           ),
         ),
         const SizedBox(height: 22),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: SizedBox(
-            height: 52,
-            child: FilledButton.icon(
-              icon: const Icon(Icons.person_add_alt_1),
-              label: Text(
-                l10n.createCustomer,
-                style: const TextStyle(fontWeight: FontWeight.w900),
+        if (_can(AppPermission.clientsCreate))
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: SizedBox(
+              height: 52,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.person_add_alt_1),
+                label: Text(
+                  l10n.createCustomer,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                onPressed: () async {
+                  final saved = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AddClientScreen()),
+                  );
+                  if (saved == true) {
+                    await _loadClients();
+                  }
+                },
               ),
-              onPressed: () async {
-                final saved = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddClientScreen()),
-                );
-                if (saved == true) {
-                  await _loadClients();
-                }
-              },
             ),
           ),
-        ),
         const SizedBox(height: 24),
       ],
     );
@@ -405,7 +475,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
-      floatingActionButton: _filtered.isEmpty
+      floatingActionButton: _filtered.isEmpty ||
+              !_can(AppPermission.clientsCreate)
           ? null
           : FloatingActionButton.extended(
               onPressed: () async {
@@ -450,7 +521,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: cs.outlineVariant.withOpacity(0.35),
+                          color: cs.outlineVariant.withValues(alpha: 0.35),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -512,6 +583,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: Dismissible(
                                     key: ValueKey('client_$keyId'),
+                                    direction: _dismissDirection(
+                                      canUpdate:
+                                          _can(AppPermission.clientsUpdate),
+                                      canDelete:
+                                          _can(AppPermission.clientsDelete),
+                                    ),
                                     confirmDismiss: (direction) async {
                                       if (direction ==
                                           DismissDirection.startToEnd) {
@@ -542,7 +619,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
                                     ),
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(22),
-                                      onTap: () async => _editClient(c),
+                                      onTap: _can(AppPermission.clientsUpdate)
+                                          ? () async => _editClient(c)
+                                          : null,
                                       child: _premiumClientCard(context, c),
                                     ),
                                   ),
@@ -555,5 +634,24 @@ class _ClientsScreenState extends State<ClientsScreen> {
               ),
             ),
     );
+  }
+
+  bool _can(AppPermission permission) =>
+      AccessScope.maybeOf(context)?.permissions.can(permission) ?? false;
+
+  bool _requirePermission(AppPermission permission) {
+    if (_can(permission)) return true;
+    AppAlerts.error(context, 'You do not have permission for this action.');
+    return false;
+  }
+
+  DismissDirection _dismissDirection({
+    required bool canUpdate,
+    required bool canDelete,
+  }) {
+    if (canUpdate && canDelete) return DismissDirection.horizontal;
+    if (canUpdate) return DismissDirection.startToEnd;
+    if (canDelete) return DismissDirection.endToStart;
+    return DismissDirection.none;
   }
 }

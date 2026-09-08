@@ -126,7 +126,8 @@ class _ScanInvoiceScreenState extends State<ScanInvoiceScreen> {
     }
 
     final picker = ImagePicker();
-    final x = await picker.pickImage(source: ImageSource.gallery, imageQuality: 95);
+    final x =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 95);
     if (x == null) return;
 
     if (!mounted) return;
@@ -143,7 +144,8 @@ class _ScanInvoiceScreenState extends State<ScanInvoiceScreen> {
 
       // Optionally copy to app dir for stable path
       final dir = await getApplicationDocumentsDirectory();
-      final out = File('${dir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final out =
+          File('${dir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg');
       await File(x.path).copy(out.path);
 
       if (!mounted) return;
@@ -199,7 +201,6 @@ class _ScanInvoiceScreenState extends State<ScanInvoiceScreen> {
 
   Widget _buildCameraUi(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final cs = Theme.of(context).colorScheme;
     final c = _controller!;
 
     return Stack(
@@ -231,11 +232,11 @@ class _ScanInvoiceScreenState extends State<ScanInvoiceScreen> {
         ),
 
         // scan frame corners
-        Positioned.fill(
+        const Positioned.fill(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(28, 90, 28, 160),
+            padding: EdgeInsets.fromLTRB(28, 90, 28, 160),
             child: CustomPaint(
-              painter: _ScanFramePainter(color: const Color(0xFF16C7FF)),
+              painter: _ScanFramePainter(color: Color(0xFF16C7FF)),
             ),
           ),
         ),
@@ -254,11 +255,13 @@ class _ScanInvoiceScreenState extends State<ScanInvoiceScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.receipt_long_outlined, color: Colors.white, size: 18),
+                const Icon(Icons.receipt_long_outlined,
+                    color: Colors.white, size: 18),
                 const SizedBox(width: 10),
                 Text(
                   l10n.invoice,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w800),
                 ),
               ],
             ),
@@ -289,12 +292,14 @@ class _ScanInvoiceScreenState extends State<ScanInvoiceScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.auto_awesome_rounded, color: Color(0xFF16C7FF), size: 20),
+                const Icon(Icons.auto_awesome_rounded,
+                    color: Color(0xFF16C7FF), size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     l10n.scanInvoiceAlign, // “Alignez la facture dans le cadre”
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w700),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -376,7 +381,8 @@ class _CaptureButton extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFF16C7FF).withOpacity(0.55), width: 3),
+          border: Border.all(
+              color: const Color(0xFF16C7FF).withOpacity(0.55), width: 3),
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -390,7 +396,8 @@ class _CaptureButton extends StatelessWidget {
               )
             ],
           ),
-          child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 34),
+          child: const Icon(Icons.camera_alt_rounded,
+              color: Colors.white, size: 34),
         ),
       ),
     );
@@ -413,19 +420,28 @@ class _ScanFramePainter extends CustomPainter {
     final rect = Offset.zero & size;
 
     // top-left
-    canvas.drawLine(rect.topLeft, rect.topLeft + const Offset(corner, 0), paint);
-    canvas.drawLine(rect.topLeft, rect.topLeft + const Offset(0, corner), paint);
+    canvas.drawLine(
+        rect.topLeft, rect.topLeft + const Offset(corner, 0), paint);
+    canvas.drawLine(
+        rect.topLeft, rect.topLeft + const Offset(0, corner), paint);
     // top-right
-    canvas.drawLine(rect.topRight, rect.topRight + const Offset(-corner, 0), paint);
-    canvas.drawLine(rect.topRight, rect.topRight + const Offset(0, corner), paint);
+    canvas.drawLine(
+        rect.topRight, rect.topRight + const Offset(-corner, 0), paint);
+    canvas.drawLine(
+        rect.topRight, rect.topRight + const Offset(0, corner), paint);
     // bottom-left
-    canvas.drawLine(rect.bottomLeft, rect.bottomLeft + const Offset(corner, 0), paint);
-    canvas.drawLine(rect.bottomLeft, rect.bottomLeft + const Offset(0, -corner), paint);
+    canvas.drawLine(
+        rect.bottomLeft, rect.bottomLeft + const Offset(corner, 0), paint);
+    canvas.drawLine(
+        rect.bottomLeft, rect.bottomLeft + const Offset(0, -corner), paint);
     // bottom-right
-    canvas.drawLine(rect.bottomRight, rect.bottomRight + const Offset(-corner, 0), paint);
-    canvas.drawLine(rect.bottomRight, rect.bottomRight + const Offset(0, -corner), paint);
+    canvas.drawLine(
+        rect.bottomRight, rect.bottomRight + const Offset(-corner, 0), paint);
+    canvas.drawLine(
+        rect.bottomRight, rect.bottomRight + const Offset(0, -corner), paint);
   }
 
   @override
-  bool shouldRepaint(covariant _ScanFramePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _ScanFramePainter oldDelegate) =>
+      oldDelegate.color != color;
 }

@@ -682,8 +682,9 @@ class _AddClientScreenState extends State<AddClientScreen>
                                               ),
                                               validator: (v) {
                                                 final s = (v ?? '').trim();
-                                                if (s.isEmpty)
+                                                if (s.isEmpty) {
                                                   return null; // empty => default +216
+                                                }
                                                 if (!RegExp(r'^\+\d{1,3}$')
                                                     .hasMatch(s)) {
                                                   return l10n
@@ -718,15 +719,17 @@ class _AddClientScreenState extends State<AddClientScreen>
                                                 // Tunisia default: exactly 8 digits when +216 or empty
                                                 if (code.isEmpty ||
                                                     code == '+216') {
-                                                  if (s.length != 8)
+                                                  if (s.length != 8) {
                                                     return l10n
                                                         .invalidPhoneNumber;
+                                                  }
                                                 } else {
                                                   // Generic: 6..12 digits
                                                   if (s.length < 6 ||
-                                                      s.length > 12)
+                                                      s.length > 12) {
                                                     return l10n
                                                         .invalidPhoneNumber;
+                                                  }
                                                 }
                                                 return null;
                                               },

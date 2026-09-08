@@ -16,33 +16,42 @@ class ActionTile extends StatelessWidget {
     required this.onTap,
   });
 
-  bool _isDarkColor(Color color) {
-    return color.computeLuminance() < 0.5;
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-
-    final textColor = fg ?? (_isDarkColor(bg) ? Colors.white : Colors.black87);
+    final cs = Theme.of(context).colorScheme;
+    final tone = bg;
+    final textColor = cs.onSurface;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
         decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(8),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              tone.withValues(alpha: 0.24),
+              tone.withValues(alpha: 0.10),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: tone.withValues(alpha: 0.28)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: textColor,
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: tone.withValues(alpha: 0.20),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, size: 19, color: tone),
             ),
             const SizedBox(height: 6),
             Text(
@@ -52,7 +61,7 @@ class ActionTile extends StatelessWidget {
               textAlign: TextAlign.center,
               softWrap: true,
               style: t.labelMedium?.copyWith(
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
                 color: textColor,
                 height: 1.05,
               ),

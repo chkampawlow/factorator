@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/core/access_scope.dart';
+import 'package:my_app/core/permission_service.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/screens/capture_extractor_screen.dart';
 import 'package:my_app/screens/create_expense_note_screen.dart';
 import 'package:my_app/screens/edit_expense_note_screen.dart';
-import 'package:my_app/screens/scan_invoice_screen.dart';
 import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/expense_notes_repo.dart';
@@ -104,11 +106,12 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ScanInvoiceScreen(
+        builder: (_) => CaptureExtractorScreen(
           onToggleTheme: widget.onToggleTheme,
           onChangePrimaryColor: widget.onChangePrimaryColor,
           onChangeLanguage: widget.onChangeLanguage,
           currentPrimaryColor: widget.currentPrimaryColor,
+          permissions: AccessScope.of(context).permissions,
         ),
       ),
     );
@@ -118,6 +121,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
   }
 
   Future<void> _openCreateOptions() async {
+    if (!_requirePermission(AppPermission.expensesCreate)) return;
     final l10n = AppLocalizations.of(context)!;
 
     final mode = await showModalBottomSheet<_ExpenseEntryMode>(
@@ -171,6 +175,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
   }
 
   Future<void> _openEdit(Map<String, dynamic> note) async {
+    if (!_requirePermission(AppPermission.expensesUpdate)) return;
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -262,6 +267,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
   }
 
   Future<void> _deleteExpenseNote(int id) async {
+    if (!_requirePermission(AppPermission.expensesDelete)) return;
     final l10n = AppLocalizations.of(context)!;
 
     try {
@@ -283,6 +289,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
   }
 
   Future<void> _updateExpenseStatus(int id, String status) async {
+    if (!_requirePermission(AppPermission.expensesApprove)) return;
     final l10n = AppLocalizations.of(context)!;
 
     if (_updatingStatus) return;
@@ -299,7 +306,13 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
       setState(() {
         final index = _notes.indexWhere((e) => _toInt(e['id']) == id);
         if (index != -1) {
-          _notes[index]['status'] = status;
+          final workflowStatus = status.trim().toUpperCase();
+          _notes[index]['workflow_status'] = workflowStatus;
+          _notes[index]['status'] = switch (workflowStatus) {
+            'APPROVED' || 'REIMBURSED' => 'paid',
+            'REJECTED' => 'rejected',
+            _ => 'pending',
+          };
         }
       });
       AppAlerts.success(context, l10n.expenseStatusUpdated);
@@ -351,7 +364,7 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
 
   Future<void> _showStatusSheet(int noteId, String currentStatus) async {
     final l10n = AppLocalizations.of(context)!;
-    final normalized = _normalizedStatus(currentStatus);
+    final workflowStatus = currentStatus.trim().toUpperCase();
 
     await showModalBottomSheet<void>(
       context: context,
@@ -371,35 +384,36 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                       ),
                 ),
                 const SizedBox(height: 14),
-                _StatusActionTile(
-                  icon: Icons.check_circle_outline,
-                  title: l10n.markAsPaid,
-                  selected: normalized == 'paid',
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _updateExpenseStatus(noteId, 'paid');
-                  },
-                ),
-                const SizedBox(height: 8),
-                _StatusActionTile(
-                  icon: Icons.schedule_outlined,
-                  title: l10n.markAsPending,
-                  selected: normalized == 'pending',
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _updateExpenseStatus(noteId, 'pending');
-                  },
-                ),
-                const SizedBox(height: 8),
-                _StatusActionTile(
-                  icon: Icons.cancel_outlined,
-                  title: l10n.markAsRejected,
-                  selected: normalized == 'rejected',
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _updateExpenseStatus(noteId, 'rejected');
-                  },
-                ),
+                if (workflowStatus == 'PENDING') ...[
+                  _StatusActionTile(
+                    icon: Icons.check_circle_outline,
+                    title: l10n.approveExpenses,
+                    selected: false,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _updateExpenseStatus(noteId, 'APPROVED');
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _StatusActionTile(
+                    icon: Icons.cancel_outlined,
+                    title: l10n.markAsRejected,
+                    selected: false,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _updateExpenseStatus(noteId, 'REJECTED');
+                    },
+                  ),
+                ] else if (workflowStatus == 'APPROVED')
+                  _StatusActionTile(
+                    icon: Icons.payments_outlined,
+                    title: l10n.markAsPaid,
+                    selected: false,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _updateExpenseStatus(noteId, 'REIMBURSED');
+                    },
+                  ),
               ],
             ),
           ),
@@ -429,13 +443,14 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
-      floatingActionButton: _notes.isEmpty
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _openCreateOptions,
-              icon: const Icon(Icons.add),
-              label: Text(l10n.createExpenseNoteTitle),
-            ),
+      floatingActionButton:
+          _notes.isEmpty || !_can(AppPermission.expensesCreate)
+              ? null
+              : FloatingActionButton.extended(
+                  onPressed: _openCreateOptions,
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.createExpenseNoteTitle),
+                ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _loading
@@ -514,7 +529,11 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                   const SizedBox(height: 14),
                   Expanded(
                     child: _notes.isEmpty
-                        ? _EmptyExpenseNotes(onCreate: _openCreateOptions)
+                        ? _EmptyExpenseNotes(
+                            onCreate: _can(AppPermission.expensesCreate)
+                                ? _openCreateOptions
+                                : null,
+                          )
                         : filteredNotes.isEmpty
                             ? ListView(
                                 physics: const AlwaysScrollableScrollPhysics(),
@@ -546,6 +565,11 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                     final status = _normalizedStatus(
                                       (note['status'] ?? 'pending').toString(),
                                     );
+                                    final workflowStatus =
+                                        (note['workflow_status'] ?? 'PENDING')
+                                            .toString()
+                                            .trim()
+                                            .toUpperCase();
                                     final date = _parseDate(note['date']);
                                     final amountValue =
                                         _toDouble(note['amount']);
@@ -558,7 +582,10 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
 
                                     return Dismissible(
                                       key: ValueKey('expense_note_$noteId'),
-                                      direction: DismissDirection.endToStart,
+                                      direction:
+                                          _can(AppPermission.expensesDelete)
+                                              ? DismissDirection.endToStart
+                                              : DismissDirection.none,
                                       confirmDismiss: (_) async {
                                         final confirmed =
                                             await _confirmDeleteExpenseNote();
@@ -584,7 +611,10 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                       ),
                                       child: InkWell(
                                         borderRadius: BorderRadius.circular(22),
-                                        onTap: () => _openEdit(note),
+                                        onTap:
+                                            _can(AppPermission.expensesUpdate)
+                                                ? () => _openEdit(note)
+                                                : null,
                                         child: Container(
                                           padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
@@ -673,12 +703,19 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
                                                             status, cs),
                                                         fg: _statusFg(
                                                             status, cs),
-                                                        onTap: _updatingStatus
+                                                        onTap: _updatingStatus ||
+                                                                !_can(AppPermission
+                                                                    .expensesApprove) ||
+                                                                !const [
+                                                                  'PENDING',
+                                                                  'APPROVED'
+                                                                ].contains(
+                                                                    workflowStatus)
                                                             ? null
                                                             : () =>
                                                                 _showStatusSheet(
                                                                   noteId,
-                                                                  status,
+                                                                  workflowStatus,
                                                                 ),
                                                       ),
                                                       const SizedBox(
@@ -769,6 +806,15 @@ class _ExpenseNotesScreenState extends State<ExpenseNotesScreen> {
               ),
       ),
     );
+  }
+
+  bool _can(AppPermission permission) =>
+      AccessScope.maybeOf(context)?.permissions.can(permission) ?? false;
+
+  bool _requirePermission(AppPermission permission) {
+    if (_can(permission)) return true;
+    AppAlerts.error(context, 'You do not have permission for this action.');
+    return false;
   }
 }
 
@@ -928,7 +974,7 @@ class _StatusActionTile extends StatelessWidget {
 }
 
 class _EmptyExpenseNotes extends StatelessWidget {
-  final Future<void> Function() onCreate;
+  final Future<void> Function()? onCreate;
 
   const _EmptyExpenseNotes({required this.onCreate});
 
@@ -965,17 +1011,18 @@ class _EmptyExpenseNotes extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: SizedBox(
-            height: 48,
-            child: FilledButton.icon(
-              onPressed: onCreate,
-              icon: const Icon(Icons.add),
-              label: Text(l10n.createExpenseNoteTitle),
+        if (onCreate != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: SizedBox(
+              height: 48,
+              child: FilledButton.icon(
+                onPressed: onCreate,
+                icon: const Icon(Icons.add),
+                label: Text(l10n.createExpenseNoteTitle),
+              ),
             ),
           ),
-        ),
       ],
     );
   }

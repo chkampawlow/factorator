@@ -1,0 +1,23 @@
+{
+    "name": "chkampawlow/facturation_api",
+    "description": "Backend API for the El Fatoura invoicing and accounting application.",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "chkampawlow",
+            "email": "medkarim.checambou@esprit.tn"
+        }
+    ],
+    "require": {
+        "firebase/php-jwt": "^7.0",
+        "phpmailer/phpmailer": "^7.0",
+        "pragmarx/google2fa": "^9.0",
+        "dompdf/dompdf": "^3.1"
+    },
+    "scripts": {
+        "security-audit": [
+            "composer validate --strict",
+            "composer audit --locked"
+        ]
+    }
+}

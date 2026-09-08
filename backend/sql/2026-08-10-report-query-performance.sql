@@ -1,0 +1,3 @@
+CREATE INDEX IF NOT EXISTS idx_supplier_payment_invoice_date_voided ON erp_supplier_payments(supplier_invoice_id,payment_date,voided_at);
+CREATE INDEX IF NOT EXISTS idx_supplier_payment_company_date_voided ON erp_supplier_payments(user_id,payment_date,voided_at);
+CREATE INDEX IF NOT EXISTS idx_withholding_invoice_status_date ON erp_invoice_withholdings(invoice_id,certificate_status,certificate_date);

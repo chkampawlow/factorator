@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/core/api_exception.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/forgot_password_screen.dart';
 import 'package:my_app/screens/two_factor_login_screen.dart';
@@ -91,6 +92,17 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       Navigator.pushReplacementNamed(context, '/dashboard');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final message = switch (e.code) {
+        'NETWORK_UNAVAILABLE' => l10n.serverUnavailable,
+        'NETWORK_TIMEOUT' => l10n.requestTimedOut,
+        _ => e.toString(),
+      };
+      setState(() {
+        _error = message;
+      });
+      AppAlerts.error(context, _error!);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -136,34 +148,39 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const SizedBox(height: 12),
                   Center(
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: cs.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: cs.outlineVariant.withValues(alpha: 0.35),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: cs.shadow.withValues(alpha: 0.12),
-                            blurRadius: 22,
-                            offset: const Offset(0, 8),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 76,
+                          height: 76,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: cs.primary.withValues(alpha: 0.24),
+                                blurRadius: 24,
+                                offset: const Offset(0, 9),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Transform.scale(
-                          scale: 1.42,
+                          clipBehavior: Clip.antiAlias,
                           child: Image.asset(
-                            'assets/fonts/logo.png',
+                            'assets/icons/el-fatoura-icon.png',
                             fit: BoxFit.cover,
                             filterQuality: FilterQuality.high,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'El Fatoura',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),

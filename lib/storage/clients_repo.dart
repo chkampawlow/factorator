@@ -37,53 +37,19 @@ class ClientsRepo {
   }
 
   Future<List<Map<String, dynamic>>> getAllClients() async {
-    final response = await _api.get(
+    return _api.getAllPages(
       ApiConfig.getClients,
-      authRequired: true,
+      resourceName: 'clients',
     );
-
-    if (response is Map<String, dynamic>) {
-      final data = response['data'];
-      if (data is List) {
-        return data
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
-      }
-    }
-
-    if (response is List) {
-      return response
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-    }
-
-    throw Exception('Invalid clients response');
   }
 
   Future<List<Map<String, dynamic>>> getAllClientsarchived() async {
     // Backward-compatible name: we no longer support archived clients.
     // This now returns the same list as getAllClients().
-    final response = await _api.get(
+    return _api.getAllPages(
       ApiConfig.getClients,
-      authRequired: true,
+      resourceName: 'clients',
     );
-
-    if (response is Map<String, dynamic>) {
-      final data = response['data'];
-      if (data is List) {
-        return data
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
-      }
-    }
-
-    if (response is List) {
-      return response
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-    }
-
-    throw Exception('Invalid clients response');
   }
 
   Future<int> updateClient({
@@ -144,6 +110,7 @@ class ClientsRepo {
       );
     }
   }
+
   Future<Map<String, dynamic>> getClientById(int id) async {
     final items = await getAllClients();
 

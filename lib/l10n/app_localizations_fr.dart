@@ -158,6 +158,146 @@ class AppLocalizationsFr extends AppLocalizations {
   String get loadFailed => 'Échec du chargement';
 
   @override
+  String get serverUnavailable => 'Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.';
+
+  @override
+  String get requestTimedOut => 'Le serveur met trop de temps à répondre. Veuillez réessayer.';
+
+  @override
+  String get accountingServerUpdateRequired => 'Le module de révision comptable n’est pas encore installé sur le serveur. Déployez la dernière version du backend, puis réessayez.';
+
+  @override
+  String get captureCenterTitle => 'Capture';
+
+  @override
+  String get captureCenterSubtitle => 'Scannez un document, choisissez des PDF/images ou recherchez un produit par code-barres.';
+
+  @override
+  String get captureTakePhoto => 'Prendre une photo';
+
+  @override
+  String get captureChooseFiles => 'Choisir des PDF ou images';
+
+  @override
+  String get captureScanBarcode => 'Scanner un code-barres produit';
+
+  @override
+  String get extractorTitle => 'Extracteur de documents';
+
+  @override
+  String get extractorReady => 'Choisissez jusqu’à 10 fichiers, puis lancez l’extraction.';
+
+  @override
+  String extractorSelectedFiles(int count) {
+    return '$count fichier(s) sélectionné(s)';
+  }
+
+  @override
+  String get extractorRun => 'Lancer l’extraction';
+
+  @override
+  String extractorUploading(int percent) {
+    return 'Téléversement $percent%';
+  }
+
+  @override
+  String get extractorProcessing => 'Téléversement terminé. Extraction des champs…';
+
+  @override
+  String get extractorReviewRequired => 'L’extraction ne valide jamais un document financier. Vérifiez chaque champ avant de créer un brouillon.';
+
+  @override
+  String extractorBatchSummary(int processed, int requested) {
+    return '$processed fichier(s) traité(s) sur $requested';
+  }
+
+  @override
+  String get extractorSuccessRate => 'Taux de réussite';
+
+  @override
+  String get extractorPages => 'Pages';
+
+  @override
+  String get extractorFailed => 'Échec de l’extraction';
+
+  @override
+  String get extractorReview => 'Vérifier les champs';
+
+  @override
+  String get extractorReviewTitle => 'Vérification humaine';
+
+  @override
+  String get extractorReviewSubtitle => 'Corrigez les valeurs extraites et choisissez le type de document prévu.';
+
+  @override
+  String get extractorDocumentType => 'Type de document';
+
+  @override
+  String get extractorExpense => 'Reçu de dépense';
+
+  @override
+  String get extractorSupplierInvoice => 'Facture fournisseur';
+
+  @override
+  String get extractorSupplierDelivery => 'Bon de livraison fournisseur';
+
+  @override
+  String get extractorPurchaseOrder => 'Bon de commande';
+
+  @override
+  String get extractorWarnings => 'Avertissements à vérifier';
+
+  @override
+  String get extractorLineItems => 'Lignes extraites';
+
+  @override
+  String get extractorNoLineItems => 'Aucune ligne n’a été détectée.';
+
+  @override
+  String extractorConfidence(int percent) {
+    return 'Confiance : $percent%';
+  }
+
+  @override
+  String get extractorConfirmReviewed => 'J’ai vérifié et corrigé les valeurs extraites.';
+
+  @override
+  String get extractorCreatePendingExpense => 'Préparer une dépense en attente';
+
+  @override
+  String get extractorDraftNotice => 'Un formulaire prérempli sera ouvert. Rien n’est enregistré avant votre vérification et votre envoi, et la nouvelle dépense commence toujours avec le statut en attente.';
+
+  @override
+  String get extractorDestinationNeedsWeb => 'Cette destination nécessite la correspondance officielle du fournisseur, de la commande, de la réception, des produits et du profil fiscal. Terminez-la dans l’espace Web pour le moment.';
+
+  @override
+  String get extractorPermissionDenied => 'Votre rôle peut capturer des documents, mais ne peut pas utiliser l’extracteur.';
+
+  @override
+  String get extractorExpensePermissionDenied => 'Votre rôle ne peut pas créer de notes de frais.';
+
+  @override
+  String get extractorServerUpdateRequired => 'L’extracteur n’est pas encore installé sur le serveur déployé.';
+
+  @override
+  String get extractorRemoveFile => 'Retirer le fichier';
+
+  @override
+  String get extractorRawText => 'Texte brut extrait';
+
+  @override
+  String get extractorFileLimits => 'PDF, PNG, JPG, TIFF, BMP ou WebP · 15 Mo par fichier · 50 Mo par lot';
+
+  @override
+  String get extractorNoFilesSelected => 'Choisissez au moins un PDF ou une image.';
+
+  @override
+  String get extractorExtractedData => 'Données extraites';
+
+  @override
+  String get extractorTaxAmount => 'Montant de la taxe';
+
+  @override
   String get invalidNumber => 'Nombre invalide';
 
   @override
@@ -394,7 +534,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get invoices => 'Factures';
 
   @override
-  String get overdue => 'En retard';
+  String get overdue => 'en retard';
 
   @override
   String get code => 'Code';
@@ -520,6 +660,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get accountCreatedSuccessfully => 'Compte créé avec succès';
+
+  @override
+  String get accountAwaitingApproval => 'Compte créé et en attente de l’approbation de l’administrateur.';
 
   @override
   String get whoAreYou => 'Qui êtes-vous ?';
@@ -1191,4 +1334,550 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get invoiceDeleted => 'Facture supprimée.';
+
+  @override
+  String get mobileSearchHint => 'Rechercher clients, produits, documents…';
+
+  @override
+  String get enterTwoCharacters => 'Saisissez au moins 2 caractères';
+
+  @override
+  String get noPermittedResults => 'Aucun résultat autorisé';
+
+  @override
+  String get scanProduct => 'Scanner un produit';
+
+  @override
+  String get lookingUpBarcode => 'Recherche du code-barres';
+
+  @override
+  String get productNotFoundBarcode => 'Produit introuvable. Essayez un autre code-barres.';
+
+  @override
+  String get pointCameraBarcode => 'Dirigez la caméra vers le code-barres du produit';
+
+  @override
+  String get toggleTorch => 'Activer ou désactiver la lampe';
+
+  @override
+  String get documentsTitle => 'Documents';
+
+  @override
+  String get documentSearchHint => 'Rechercher un numéro, client ou fournisseur';
+
+  @override
+  String get searchAction => 'Rechercher';
+
+  @override
+  String get allDocuments => 'Tous les documents';
+
+  @override
+  String get dates => 'Dates';
+
+  @override
+  String get clearDates => 'Effacer les dates';
+
+  @override
+  String get documentSourcesFailed => 'sources de documents n’ont pas pu être chargées.';
+
+  @override
+  String get noDocumentsFilters => 'Aucun document ne correspond à ces filtres.';
+
+  @override
+  String get cannotViewDocument => 'Vous ne pouvez pas consulter ce document.';
+
+  @override
+  String get cannotViewRelatedDocument => 'Vous ne pouvez pas consulter ce document lié.';
+
+  @override
+  String get previewOrSharePdf => 'Prévisualiser ou partager le PDF';
+
+  @override
+  String get relatedDocuments => 'Documents liés';
+
+  @override
+  String get lines => 'Lignes';
+
+  @override
+  String get party => 'Tiers';
+
+  @override
+  String get dueExpected => 'Échéance / prévue';
+
+  @override
+  String get balance => 'Solde';
+
+  @override
+  String get match => 'Rapprochement';
+
+  @override
+  String get sourceOrder => 'Commande source';
+
+  @override
+  String get invoiceNumber => 'Numéro de facture';
+
+  @override
+  String get deliveryNote => 'Bon de livraison';
+
+  @override
+  String get exception => 'Exception';
+
+  @override
+  String get exceptionReason => 'Motif de l’exception';
+
+  @override
+  String get source => 'Source';
+
+  @override
+  String get descriptionLabel => 'Description';
+
+  @override
+  String get documentLine => 'Ligne de document';
+
+  @override
+  String get accepted => 'Acceptée';
+
+  @override
+  String get damaged => 'Endommagée';
+
+  @override
+  String get rejected => 'Rejetée';
+
+  @override
+  String get quantityShort => 'Qté';
+
+  @override
+  String get allStatuses => 'Tous les statuts';
+
+  @override
+  String get statusDraftMobile => 'Brouillon';
+
+  @override
+  String get statusOpen => 'Ouvert';
+
+  @override
+  String get statusCompleted => 'Terminé';
+
+  @override
+  String get statusCancelledMobile => 'Annulé';
+
+  @override
+  String get kindInvoice => 'Facture';
+
+  @override
+  String get kindQuotation => 'Devis';
+
+  @override
+  String get kindCreditNote => 'Avoir';
+
+  @override
+  String get kindSalesOrder => 'Commande client';
+
+  @override
+  String get kindDeliveryNote => 'Bon de livraison';
+
+  @override
+  String get kindSupplierOrder => 'Commande fournisseur';
+
+  @override
+  String get kindSupplierReception => 'Réception fournisseur';
+
+  @override
+  String get kindSupplierInvoice => 'Facture fournisseur';
+
+  @override
+  String get kindExpense => 'Dépense';
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get markAllRead => 'Tout marquer comme lu';
+
+  @override
+  String get allNotificationsRead => 'Toutes les notifications ont été marquées comme lues.';
+
+  @override
+  String get notificationNoDestination => 'Cette notification n’a pas de destination mobile.';
+
+  @override
+  String get searchNotifications => 'Rechercher des notifications';
+
+  @override
+  String get unread => 'Non lues';
+
+  @override
+  String get read => 'Lues';
+
+  @override
+  String get allAreas => 'Tous les domaines';
+
+  @override
+  String get nothingNeedsAttention => 'Aucun élément ne nécessite votre attention.';
+
+  @override
+  String get notificationOptions => 'Options de notification';
+
+  @override
+  String get markUnread => 'Marquer comme non lue';
+
+  @override
+  String get markRead => 'Marquer comme lue';
+
+  @override
+  String get unreadNotifications => 'Notifications non lues';
+
+  @override
+  String get today => 'Aujourd’hui';
+
+  @override
+  String get yesterday => 'Hier';
+
+  @override
+  String get salesArea => 'Ventes';
+
+  @override
+  String get stockArea => 'Stock';
+
+  @override
+  String get logisticsArea => 'Logistique';
+
+  @override
+  String get purchasingArea => 'Achats';
+
+  @override
+  String get accountingArea => 'Comptabilité';
+
+  @override
+  String get financeReview => 'Revue financière';
+
+  @override
+  String get refreshBalances => 'Actualiser les soldes';
+
+  @override
+  String get noMobileDocumentLinked => 'Aucun document mobile n’est lié à cette entrée.';
+
+  @override
+  String get reviewTab => 'Revue';
+
+  @override
+  String get receivables => 'Créances clients';
+
+  @override
+  String get payables => 'Dettes fournisseurs';
+
+  @override
+  String get expensesTab => 'Dépenses';
+
+  @override
+  String get activityTab => 'Activité';
+
+  @override
+  String get searchPartyDocument => 'Rechercher un tiers ou un document';
+
+  @override
+  String get needsAttention => 'À vérifier';
+
+  @override
+  String get nothingReviewQueue => 'Aucun élément dans cette file de revue.';
+
+  @override
+  String get accountingAttentionQueue => 'File d’attention comptable';
+
+  @override
+  String get authoritativeBalances => 'Soldes de référence du serveur';
+
+  @override
+  String get updated => 'Mis à jour';
+
+  @override
+  String get expenseReview => 'Revue des dépenses';
+
+  @override
+  String get matchingIssues => 'Écarts de rapprochement';
+
+  @override
+  String get certificatesPending => 'certificats en attente';
+
+  @override
+  String get approveExpenses => 'Approuver les dépenses';
+
+  @override
+  String get viewExpenses => 'Voir les dépenses';
+
+  @override
+  String get yourFinanceAccess => 'Vos accès financiers';
+
+  @override
+  String get customerPaymentLedger => 'Registre des paiements clients';
+
+  @override
+  String get withholdingCertificates => 'Certificats de retenue';
+
+  @override
+  String get supplierPaymentRecording => 'Saisie des paiements fournisseurs';
+
+  @override
+  String get supplierCredits => 'Avoirs fournisseurs';
+
+  @override
+  String get supplierReturns => 'Retours fournisseurs';
+
+  @override
+  String get accountingReports => 'Rapports comptables';
+
+  @override
+  String get backendAmountsNotice => 'Les montants sont calculés par le serveur. La saisie et la validation utilisent toujours les workflows audités existants.';
+
+  @override
+  String get salesOrdersTitle => 'Commandes clients';
+
+  @override
+  String get deliveriesTitle => 'Livraisons';
+
+  @override
+  String get searchOrderClient => 'Rechercher une commande ou un client';
+
+  @override
+  String get searchDeliveryClientOrder => 'Rechercher une livraison, un client ou une commande';
+
+  @override
+  String get salesOrderLabel => 'Commande client';
+
+  @override
+  String get deliveryLabel => 'Livraison';
+
+  @override
+  String get sourceLabel => 'Source';
+
+  @override
+  String get itemsLabel => 'Articles';
+
+  @override
+  String get quantityLabel => 'Quantité';
+
+  @override
+  String get invoicesLabel => 'factures';
+
+  @override
+  String get deliveriesLabel => 'livraisons';
+
+  @override
+  String get confirmDelivery => 'Confirmer la livraison';
+
+  @override
+  String get markDelivered => 'Marquer comme livrée';
+
+  @override
+  String get cancelDelivery => 'Annuler la livraison';
+
+  @override
+  String get readyToInvoice => 'Prête à facturer';
+
+  @override
+  String get supplierReceptionsTitle => 'Réceptions fournisseurs';
+
+  @override
+  String get cannotCreateReception => 'Vous ne pouvez pas créer de réceptions fournisseurs.';
+
+  @override
+  String get noSupplierOrderAvailable => 'Aucune commande fournisseur envoyée ou partiellement reçue n’est disponible.';
+
+  @override
+  String get selectSupplierOrder => 'Sélectionner une commande fournisseur';
+
+  @override
+  String get purchaseOrder => 'Commande fournisseur';
+
+  @override
+  String get receiveOrder => 'Réceptionner une commande';
+
+  @override
+  String get searchSupplierOrderDocument => 'Rechercher un fournisseur, une commande ou un document';
+
+  @override
+  String get noSupplierReceptions => 'Aucune réception fournisseur trouvée.';
+
+  @override
+  String get receptionLabel => 'Réception';
+
+  @override
+  String get confirmSupplierReception => 'Confirmer la réception fournisseur ?';
+
+  @override
+  String get atomicStockNotice => 'Les quantités acceptées seront ajoutées au stock de façon atomique. La réception ne pourra plus être modifiée.';
+
+  @override
+  String get createLinkedExpense => 'Créer la dépense liée';
+
+  @override
+  String get confirmPostStock => 'Confirmer et comptabiliser le stock';
+
+  @override
+  String get receptionConfirmed => 'Réception confirmée.';
+
+  @override
+  String get productLinesPosted => 'ligne(s) produit comptabilisée(s) en stock.';
+
+  @override
+  String get receptionDetails => 'Détails de la réception';
+
+  @override
+  String get editDraft => 'Modifier le brouillon';
+
+  @override
+  String get stockPosted => 'Stock comptabilisé';
+
+  @override
+  String get stockPending => 'Stock en attente';
+
+  @override
+  String get supplierDeliveryNote => 'Bon de livraison fournisseur';
+
+  @override
+  String get supplierInvoice => 'Facture fournisseur';
+
+  @override
+  String get received => 'Reçu';
+
+  @override
+  String get receptionLines => 'Lignes de réception';
+
+  @override
+  String get totalHt => 'Total HT';
+
+  @override
+  String get vat => 'TVA';
+
+  @override
+  String get totalTtc => 'Total TTC';
+
+  @override
+  String get postingStock => 'Comptabilisation du stock…';
+
+  @override
+  String get editReception => 'Modifier la réception';
+
+  @override
+  String get newReception => 'Nouvelle réception';
+
+  @override
+  String get receptionWithoutOrder => 'Réception sans commande fournisseur';
+
+  @override
+  String get supplierInvoiceOptional => 'Numéro de facture fournisseur (facultatif)';
+
+  @override
+  String get supplierDeliveryNumber => 'Numéro du bon de livraison fournisseur';
+
+  @override
+  String get invoiceDate => 'Date de facture';
+
+  @override
+  String get receivedDate => 'Date de réception';
+
+  @override
+  String get deliveryDateOptional => 'Date du bon de livraison (facultatif)';
+
+  @override
+  String get notSet => 'Non définie';
+
+  @override
+  String get receivedQuantities => 'Quantités reçues';
+
+  @override
+  String get receptionException => 'Exception de réception';
+
+  @override
+  String get none => 'Aucune';
+
+  @override
+  String get overdelivery => 'Sur-livraison';
+
+  @override
+  String get noPurchaseOrder => 'Sans commande fournisseur';
+
+  @override
+  String get internalNotes => 'Notes internes';
+
+  @override
+  String get takeEvidencePhoto => 'Prendre une photo de preuve';
+
+  @override
+  String get chooseEvidencePhoto => 'Choisir une photo de preuve';
+
+  @override
+  String get couldNotSelectPhoto => 'Impossible de sélectionner la photo';
+
+  @override
+  String get negativeReceptionQuantities => 'Les quantités reçues ne peuvent pas être négatives.';
+
+  @override
+  String get enterReceivedQuantity => 'Saisissez une quantité reçue ou retirez la ligne.';
+
+  @override
+  String get discrepancyReasonRequired => 'Un motif d’écart est obligatoire.';
+
+  @override
+  String get selectReceptionLine => 'Sélectionnez au moins une ligne pour cette réception.';
+
+  @override
+  String get explainReceptionException => 'Expliquez l’exception de réception avant d’enregistrer.';
+
+  @override
+  String get evidenceUploadFailed => 'La réception est enregistrée, mais la photo de preuve n’a pas pu être envoyée.';
+
+  @override
+  String get receptionDraftSaved => 'Le brouillon de réception fournisseur est enregistré.';
+
+  @override
+  String get addDiscrepancyEvidence => 'Ajouter une preuve d’écart';
+
+  @override
+  String get evidenceFileHelp => 'JPEG, PNG ou WebP ; 10 Mo maximum';
+
+  @override
+  String get receptionTotals => 'Totaux de la réception';
+
+  @override
+  String get saveReceptionDraft => 'Enregistrer le brouillon';
+
+  @override
+  String get ordered => 'Commandé';
+
+  @override
+  String get remaining => 'Restant';
+
+  @override
+  String get discrepancyReason => 'Motif de l’écart';
+
+  @override
+  String get statusConfirmed => 'Confirmé';
+
+  @override
+  String get statusDelivered => 'Livré';
+
+  @override
+  String get statusInvoiced => 'Facturé';
+
+  @override
+  String get statusReviewed => 'Révisé';
+
+  @override
+  String get statusPartiallyDelivered => 'Partiellement livré';
+
+  @override
+  String get statusPartiallyReceived => 'Partiellement reçu';
+
+  @override
+  String get statusSent => 'Envoyé';
+
+  @override
+  String get supplierLabel => 'Fournisseur';
+
+  @override
+  String get more => 'Plus';
+
+  @override
+  String get noMobileFeatures => 'Aucune fonctionnalité mobile n’est attribuée à cet utilisateur.';
 }

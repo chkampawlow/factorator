@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/core/access_scope.dart';
+import 'package:my_app/core/permission_service.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/widgets/app_top_bar.dart';
@@ -6,12 +8,15 @@ import 'package:my_app/services/currency_service.dart';
 import '../services/settings_service.dart';
 import '../storage/products_repo.dart';
 import 'add_product_screen.dart';
+import 'product_barcode_scanner_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
   final void Function(String code) onChangeLanguage;
   final Color currentPrimaryColor;
+  final String initialFilter;
+  final String initialQuery;
 
   const ProductsScreen({
     super.key,
@@ -19,6 +24,8 @@ class ProductsScreen extends StatefulWidget {
     required this.onChangePrimaryColor,
     required this.onChangeLanguage,
     required this.currentPrimaryColor,
+    this.initialFilter = 'all',
+    this.initialQuery = '',
   });
 
   @override
@@ -28,8 +35,10 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   final _repo = ProductsRepo();
   final _settingsService = SettingsService();
-  final _searchCtrl = TextEditingController();
+  late final TextEditingController _searchCtrl;
 
+  String _activeKind = 'all';
+  late String _attentionFilter;
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _filtered = [];
   bool _loading = true;
@@ -38,6 +47,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void initState() {
     super.initState();
+    _searchCtrl = TextEditingController(text: widget.initialQuery);
+    _attentionFilter = widget.initialFilter;
     _loadProducts();
 
     _searchCtrl.addListener(_applyFilter);
@@ -52,9 +63,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void _applyFilter() {
     final q = _searchCtrl.text.trim().toLowerCase();
     setState(() {
+      final scoped = _products.where((p) {
+        final isService = _isService(p);
+        if (_activeKind == 'service') return isService;
+        if (_activeKind == 'product') return !isService;
+        return true;
+      }).toList();
+
       _filtered = q.isEmpty
-          ? List<Map<String, dynamic>>.from(_products)
-          : _products.where((p) {
+          ? scoped
+          : scoped.where((p) {
               final name = (p['name'] ?? '').toString().toLowerCase();
               final unit = (p['unit'] ?? '').toString().toLowerCase();
               final tvaRate = (p['tva_rate'] ?? '').toString().toLowerCase();
@@ -68,13 +86,22 @@ class _ProductsScreenState extends State<ProductsScreen> {
     });
   }
 
+  bool _isService(Map<String, dynamic> product) {
+    final itemType = (product['item_type'] ?? '').toString().toUpperCase();
+    if (itemType.isNotEmpty) return itemType == 'SERVICE';
+    return (product['unit'] ?? '').toString().trim().toLowerCase() == 'service';
+  }
+
   Future<void> _loadProducts() async {
     if (mounted) {
       setState(() => _loading = true);
     }
 
     try {
-      final data = await _repo.getAllProducts();
+      final data = await _repo.getAllProducts(
+        stock: _attentionFilter == 'low' ? 'low' : '',
+        pricing: _attentionFilter == 'pricing' ? 'required' : '',
+      );
       final currency = await _settingsService.getCurrency();
 
       if (!mounted) return;
@@ -104,6 +131,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<void> _editProduct(Map<String, dynamic> product) async {
+    if (!_requirePermission(AppPermission.productsUpdate)) return;
     final res = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -139,6 +167,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<bool> _confirmDelete(Map<String, dynamic> product) async {
+    if (!_requirePermission(AppPermission.productsDelete)) return false;
     final l10n = AppLocalizations.of(context)!;
     final name = (product['name'] ?? '').toString();
 
@@ -248,6 +277,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final unit = (p['unit'] ?? '-').toString();
     final code = (p['code'] ?? '').toString();
     final tvaRate = (p['tva_rate'] ?? 0).toString();
+    final isService = _isService(p);
     final priceValue = (p['price'] is num)
         ? (p['price'] as num).toDouble()
         : double.tryParse(p['price'].toString()) ?? 0.0;
@@ -302,6 +332,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 const SizedBox(height: 6),
                 Text(
                   [
+                    isService ? l10n.unitService : l10n.product,
                     if (code.isNotEmpty) '${l10n.code}: $code',
                     '${l10n.unit}: $unit',
                     'TVA $tvaRate%',
@@ -340,6 +371,209 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
   }
 
+  Future<void> _openInventoryDetail(Map<String, dynamic> summary) async {
+    final id = int.tryParse('${summary['id']}') ?? 0;
+    if (id <= 0) return;
+    try {
+      final canViewHistory = _can(AppPermission.stockView);
+      final product = await _repo.getInventoryDetail(
+        id,
+        includeHistory: canViewHistory,
+      );
+      if (!mounted) return;
+      final stock = double.tryParse('${product['current_stock'] ?? 0}') ?? 0;
+      final reorder = double.tryParse('${product['reorder_point'] ?? 0}') ?? 0;
+      final hasReorderPoint = product.containsKey('reorder_point');
+      final movements = product['movements'] as List? ?? const [];
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: .82,
+          builder: (_, controller) => ListView(
+            controller: controller,
+            padding: const EdgeInsets.all(20),
+            children: [
+              Text('${product['name'] ?? ''}',
+                  style: Theme.of(context).textTheme.headlineSmall),
+              Text('${product['code'] ?? ''} • ${product['unit'] ?? ''}'),
+              const SizedBox(height: 18),
+              Card(
+                color: hasReorderPoint && stock <= reorder
+                    ? Theme.of(context).colorScheme.errorContainer
+                    : null,
+                child: ListTile(
+                  leading: const Icon(Icons.inventory_2_outlined),
+                  title: Text('Physical stock: $stock'),
+                  subtitle: hasReorderPoint
+                      ? Text('Reorder point: $reorder')
+                      : const Text('Current product availability'),
+                  trailing: hasReorderPoint && stock <= reorder
+                      ? const Icon(Icons.warning_amber_rounded)
+                      : const Icon(Icons.check_circle_outline),
+                ),
+              ),
+              if (hasReorderPoint && stock <= reorder)
+                const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Reorder recommended',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              if (canViewHistory) ...[
+                const SizedBox(height: 12),
+                Text('Recent movements',
+                    style: Theme.of(context).textTheme.titleMedium),
+                if (movements.isEmpty)
+                  const ListTile(title: Text('No stock movements yet')),
+                ...movements.whereType<Map>().map((movement) {
+                  final quantity =
+                      double.tryParse('${movement['quantity'] ?? 0}') ?? 0;
+                  return ListTile(
+                    leading: Icon(quantity >= 0
+                        ? Icons.south_west_rounded
+                        : Icons.north_east_rounded),
+                    title: Text('${movement['movement_type'] ?? 'Movement'}'),
+                    subtitle: Text(
+                        '${movement['created_at'] ?? ''}\n${movement['note'] ?? ''}'),
+                    isThreeLine: true,
+                    trailing: Text(
+                      '${quantity >= 0 ? '+' : ''}$quantity\n${movement['balance_after'] ?? ''}',
+                      textAlign: TextAlign.end,
+                    ),
+                  );
+                }),
+              ],
+              if (_can(AppPermission.stockAdjust) &&
+                  '${product['item_type']}'.toUpperCase() != 'SERVICE') ...[
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _adjustStock(product, stock);
+                  },
+                  icon: const Icon(Icons.tune_rounded),
+                  label: const Text('Adjust stock'),
+                ),
+              ],
+              if (_can(AppPermission.productsUpdate)) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _editProduct(product);
+                  },
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Edit product'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  Future<void> _adjustStock(
+      Map<String, dynamic> product, double currentStock) async {
+    if (!_requirePermission(AppPermission.stockAdjust)) return;
+    final quantity = TextEditingController();
+    final detail = TextEditingController();
+    var reason = 'COUNT_CORRECTION';
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Adjust ${product['name'] ?? 'stock'}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Current physical stock: $currentStock'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: quantity,
+                  keyboardType: const TextInputType.numberWithOptions(
+                      signed: true, decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Quantity change',
+                    hintText: 'Example: 5 or -2',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: reason,
+                  decoration: const InputDecoration(labelText: 'Reason'),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'COUNT_CORRECTION',
+                        child: Text('Physical count correction')),
+                    DropdownMenuItem(
+                        value: 'DAMAGE', child: Text('Damaged stock')),
+                    DropdownMenuItem(value: 'LOSS', child: Text('Loss')),
+                    DropdownMenuItem(
+                        value: 'FOUND', child: Text('Stock found')),
+                    DropdownMenuItem(value: 'OTHER', child: Text('Other')),
+                  ],
+                  onChanged: (value) =>
+                      setDialogState(() => reason = value ?? reason),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: detail,
+                  maxLength: 255,
+                  decoration:
+                      const InputDecoration(labelText: 'Required explanation'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel')),
+            FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Record adjustment')),
+          ],
+        ),
+      ),
+    );
+    final quantityText = quantity.text.trim();
+    final detailText = detail.text.trim();
+    quantity.dispose();
+    detail.dispose();
+    if (submitted != true) return;
+    final delta = double.tryParse(quantityText.replaceAll(',', '.'));
+    if (delta == null || delta.abs() < .0001 || detailText.isEmpty) {
+      if (mounted) {
+        AppAlerts.error(
+            context, 'Enter a non-zero quantity and an explanation.');
+      }
+      return;
+    }
+    try {
+      await _repo.createStockAdjustment(
+        productId: int.parse('${product['id']}'),
+        quantityDelta: delta,
+        reasonCode: reason,
+        reasonDetail: detailText,
+      );
+      if (!mounted) return;
+      AppAlerts.success(context, 'Stock adjustment recorded.');
+      await _loadProducts();
+      await _openInventoryDetail(product);
+    } catch (error) {
+      if (mounted) {
+        AppAlerts.error(context, '$error'.replaceFirst('Exception: ', ''));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -348,12 +582,27 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return Scaffold(
       appBar: AppTopBar(
         title: l10n.productsServices,
+        actions: [
+          IconButton(
+            tooltip: 'Scan product barcode',
+            icon: const Icon(Icons.barcode_reader),
+            onPressed: () async {
+              final product = await Navigator.push<Map<String, dynamic>>(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ProductBarcodeScannerScreen()),
+              );
+              if (product != null && mounted) _openInventoryDetail(product);
+            },
+          ),
+        ],
         onToggleTheme: widget.onToggleTheme,
         onChangePrimaryColor: widget.onChangePrimaryColor,
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
-      floatingActionButton: _filtered.isEmpty
+      floatingActionButton: _filtered.isEmpty ||
+              !_can(AppPermission.productsCreate)
           ? null
           : FloatingActionButton.extended(
               onPressed: () async {
@@ -423,6 +672,51 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
+                  SizedBox(
+                    height: 44,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _attentionChip(
+                            'all', 'All inventory', Icons.inventory_outlined),
+                        const SizedBox(width: 10),
+                        _attentionChip('low', 'Low stock', Icons.warning_amber),
+                        const SizedBox(width: 10),
+                        _attentionChip(
+                            'pricing', 'Pricing required', Icons.sell_outlined),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 44,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _kindChip(
+                          context,
+                          value: 'all',
+                          label: l10n.all,
+                          icon: Icons.grid_view_rounded,
+                        ),
+                        const SizedBox(width: 10),
+                        _kindChip(
+                          context,
+                          value: 'product',
+                          label: l10n.product,
+                          icon: Icons.inventory_2_outlined,
+                        ),
+                        const SizedBox(width: 10),
+                        _kindChip(
+                          context,
+                          value: 'service',
+                          label: l10n.unitService,
+                          icon: Icons.design_services_outlined,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   Expanded(
                     child: _filtered.isEmpty
                         ? _emptyProductsState(context)
@@ -439,6 +733,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: Dismissible(
                                     key: ValueKey('product_$id'),
+                                    direction: _dismissDirection(
+                                      canUpdate:
+                                          _can(AppPermission.productsUpdate),
+                                      canDelete:
+                                          _can(AppPermission.productsDelete),
+                                    ),
                                     confirmDismiss: (direction) async {
                                       if (direction ==
                                           DismissDirection.startToEnd) {
@@ -470,7 +770,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                     ),
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(22),
-                                      onTap: () => _editProduct(p),
+                                      onTap: () => _openInventoryDetail(p),
                                       child: _premiumProductCard(context, p),
                                     ),
                                   ),
@@ -521,42 +821,123 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                SizedBox(
-                  width: 220,
-                  height: 48,
-                  child: FilledButton.icon(
-                    onPressed: () async {
-                      final res = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AddProductScreen(),
-                        ),
-                      );
+                if (_can(AppPermission.productsCreate))
+                  SizedBox(
+                    width: 220,
+                    height: 48,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        final res = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AddProductScreen(),
+                          ),
+                        );
 
-                      if (res is Map) {
-                        final created = Map<String, dynamic>.from(res);
-                        if (!mounted) return;
-                        setState(() {
-                          _products.insert(0, created);
-                        });
-                        _applyFilter();
-                        return;
-                      }
+                        if (res is Map) {
+                          final created = Map<String, dynamic>.from(res);
+                          if (!mounted) return;
+                          setState(() {
+                            _products.insert(0, created);
+                          });
+                          _applyFilter();
+                          return;
+                        }
 
-                      if (res == true) {
-                        await _loadProducts();
-                      }
-                    },
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n.add),
+                        if (res == true) {
+                          await _loadProducts();
+                        }
+                      },
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.add),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
         ),
         const SizedBox(height: 24),
       ],
+    );
+  }
+
+  bool _can(AppPermission permission) =>
+      AccessScope.maybeOf(context)?.permissions.can(permission) ?? false;
+
+  bool _requirePermission(AppPermission permission) {
+    if (_can(permission)) return true;
+    AppAlerts.error(context, 'You do not have permission for this action.');
+    return false;
+  }
+
+  DismissDirection _dismissDirection({
+    required bool canUpdate,
+    required bool canDelete,
+  }) {
+    if (canUpdate && canDelete) return DismissDirection.horizontal;
+    if (canUpdate) return DismissDirection.startToEnd;
+    if (canDelete) return DismissDirection.endToStart;
+    return DismissDirection.none;
+  }
+
+  Widget _kindChip(
+    BuildContext context, {
+    required String value,
+    required String label,
+    required IconData icon,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final isActive = _activeKind == value;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: () {
+        setState(() => _activeKind = value);
+        _applyFilter();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? cs.primary : cs.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isActive ? cs.primary : cs.outlineVariant.withOpacity(0.35),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isActive ? cs.onPrimary : cs.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: isActive ? cs.onPrimary : cs.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _attentionChip(String value, String label, IconData icon) {
+    final selected = _attentionFilter == value;
+    return FilterChip(
+      avatar: Icon(icon, size: 17),
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) {
+        setState(() => _attentionFilter = value);
+        _loadProducts();
+      },
     );
   }
 }

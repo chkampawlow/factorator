@@ -46,7 +46,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _user;
 
   String _currency = 'TND';
-  String _language = 'fr';
   String _region = '';
   late Color _selectedPrimaryColor;
 
@@ -87,7 +86,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = await _authService.me();
       final currency = await _settingsService.getCurrency();
-      final language = (await _settingsService.getLanguage()).toLowerCase();
       final imagePath = await _getSavedProfileImagePath();
 
       String region;
@@ -102,7 +100,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _user = user;
         _currency = currency;
-        _language = ['fr', 'en', 'ar'].contains(language) ? language : 'fr';
         _region = region;
         _profileImagePath = imagePath;
         _loading = false;
@@ -317,10 +314,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!mounted) return;
 
-    setState(() {
-      _language = normalized;
-    });
-
     widget.onChangeLanguage(normalized);
 
     AppAlerts.success(context, l10n.languageChangedTo(normalized));
@@ -357,18 +350,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context,
       '/login',
       (route) => false,
-    );
-  }
-
-  Widget _infoTile({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      subtitle: Text(value.isEmpty ? '-' : value),
     );
   }
 
@@ -627,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               const SizedBox(height: 14),
                               DropdownButtonFormField<String>(
-                                value: _currency,
+                                initialValue: _currency,
                                 decoration: InputDecoration(
                                   labelText: l10n.selectCurrency,
                                   prefixIcon: const Icon(Icons.attach_money),
@@ -685,7 +666,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               const SizedBox(height: 14),
                               DropdownButtonFormField<String>(
-                                value: dropdownLanguage,
+                                initialValue: dropdownLanguage,
                                 decoration: InputDecoration(
                                   labelText: l10n.selectLanguage,
                                   prefixIcon: const Icon(Icons.language),

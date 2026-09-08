@@ -178,8 +178,8 @@ class InvoicePdfService {
     final onSurface = _pdfColor(colorScheme.onSurface);
     final onSurfaceVariant = _pdfColor(colorScheme.onSurfaceVariant);
     final primaryContainer = _pdfColor(colorScheme.primaryContainer);
-    final successColor = PdfColors.green700;
-    final warningColor = PdfColors.orange700;
+    const successColor = PdfColors.green700;
+    const warningColor = PdfColors.orange700;
 
     final invoiceNumber = _safe(invoice['invoiceNumber'], 'N/A');
     final issueDate = _safe(invoice['issueDate'], '-');

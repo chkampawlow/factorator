@@ -5,22 +5,15 @@ class ExpenseNotesRepo {
   final ApiClient _api = ApiClient.instance;
 
   Future<List<Map<String, dynamic>>> listExpenseNotes() async {
-    final raw = await _api.get(
+    final items = await _api.getAllPages(
       ApiConfig.expenseNotesList,
-      authRequired: true,
+      resourceName: 'expense notes',
+      keys: const ['data', 'items', 'results'],
     );
-    final res = Map<String, dynamic>.from(raw as Map);
 
-    if (res['success'] != true) {
-      throw Exception(res['message'] ?? 'Failed to load expense notes');
-    }
-
-    final items = res['items'];
-    if (items is! List) return [];
-
-    return items.map<Map<String, dynamic>>((item) {
-      final map = Map<String, dynamic>.from(item as Map);
-
+    return items.map<Map<String, dynamic>>((map) {
+      final workflowStatus =
+          (map['status'] ?? 'PENDING').toString().trim().toUpperCase();
       return {
         ...map,
         'id': map['id'],
@@ -30,7 +23,8 @@ class ExpenseNotesRepo {
         'description': map['description'] ?? '',
         'receipt_path': map['receipt_path'] ?? '',
         'date': map['expense_date'] ?? map['date'] ?? '',
-        'status': _uiStatusFromBackend((map['status'] ?? 'PENDING').toString()),
+        'status': _uiStatusFromBackend(workflowStatus),
+        'workflow_status': workflowStatus,
       };
     }).toList();
   }
@@ -140,8 +134,9 @@ class ExpenseNotesRepo {
     switch (status.trim().toLowerCase()) {
       case 'paid':
       case 'approved':
+        return 'APPROVED';
       case 'reimbursed':
-        return 'PAID';
+        return 'REIMBURSED';
       case 'cancelled':
       case 'canceled':
       case 'rejected':
@@ -154,7 +149,9 @@ class ExpenseNotesRepo {
   }
 
   String _backendStatusFromUi(String status) {
-    return _backendWorkflowStatusFromUi(status);
+    // Creation and regular editing are only legal while an expense is pending.
+    // Approval/rejection/reimbursement use updateExpenseNoteStatus instead.
+    return 'PENDING';
   }
 
   String _uiStatusFromBackend(String status) {

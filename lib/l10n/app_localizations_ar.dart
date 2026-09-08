@@ -158,6 +158,146 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loadFailed => 'فشل في التحميل';
 
   @override
+  String get serverUnavailable => 'تعذّر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.';
+
+  @override
+  String get requestTimedOut => 'استغرق الخادم وقتًا طويلًا للرد. حاول مرة أخرى.';
+
+  @override
+  String get accountingServerUpdateRequired => 'وحدة المراجعة المحاسبية غير مثبتة على الخادم بعد. انشر أحدث إصدار من الواجهة الخلفية ثم حاول مرة أخرى.';
+
+  @override
+  String get captureCenterTitle => 'الالتقاط';
+
+  @override
+  String get captureCenterSubtitle => 'امسح مستندًا أو اختر ملفات PDF وصورًا أو ابحث عن منتج بالرمز الشريطي.';
+
+  @override
+  String get captureTakePhoto => 'التقاط صورة';
+
+  @override
+  String get captureChooseFiles => 'اختيار PDF أو صور';
+
+  @override
+  String get captureScanBarcode => 'مسح الرمز الشريطي للمنتج';
+
+  @override
+  String get extractorTitle => 'مستخرج المستندات';
+
+  @override
+  String get extractorReady => 'اختر حتى 10 ملفات ثم شغّل الاستخراج.';
+
+  @override
+  String extractorSelectedFiles(int count) {
+    return 'تم اختيار $count ملف';
+  }
+
+  @override
+  String get extractorRun => 'تشغيل الاستخراج';
+
+  @override
+  String extractorUploading(int percent) {
+    return 'جارٍ الرفع $percent%';
+  }
+
+  @override
+  String get extractorProcessing => 'اكتمل الرفع. جارٍ استخراج حقول المستند…';
+
+  @override
+  String get extractorReviewRequired => 'لا يقوم الاستخراج أبدًا باعتماد مستند مالي. راجع كل حقل قبل إنشاء المسودة.';
+
+  @override
+  String extractorBatchSummary(int processed, int requested) {
+    return 'تمت معالجة $processed من $requested ملف';
+  }
+
+  @override
+  String get extractorSuccessRate => 'نسبة النجاح';
+
+  @override
+  String get extractorPages => 'الصفحات';
+
+  @override
+  String get extractorFailed => 'فشل الاستخراج';
+
+  @override
+  String get extractorReview => 'مراجعة الحقول';
+
+  @override
+  String get extractorReviewTitle => 'مراجعة بشرية';
+
+  @override
+  String get extractorReviewSubtitle => 'صحح القيم المستخرجة واختر نوع المستند المقصود.';
+
+  @override
+  String get extractorDocumentType => 'نوع المستند';
+
+  @override
+  String get extractorExpense => 'وصل مصروف';
+
+  @override
+  String get extractorSupplierInvoice => 'فاتورة مورد';
+
+  @override
+  String get extractorSupplierDelivery => 'وثيقة تسليم مورد';
+
+  @override
+  String get extractorPurchaseOrder => 'طلب شراء';
+
+  @override
+  String get extractorWarnings => 'تحذيرات المراجعة';
+
+  @override
+  String get extractorLineItems => 'البنود المستخرجة';
+
+  @override
+  String get extractorNoLineItems => 'لم يتم اكتشاف أي بنود.';
+
+  @override
+  String extractorConfidence(int percent) {
+    return 'نسبة الثقة: $percent%';
+  }
+
+  @override
+  String get extractorConfirmReviewed => 'راجعت القيم المستخرجة وصححتها.';
+
+  @override
+  String get extractorCreatePendingExpense => 'إعداد مصروف قيد الانتظار';
+
+  @override
+  String get extractorDraftNotice => 'سيتم فتح نموذج معبأ مسبقًا. لن يتم حفظ شيء قبل مراجعته وإرساله، ويبدأ المصروف الجديد دائمًا بحالة قيد الانتظار.';
+
+  @override
+  String get extractorDestinationNeedsWeb => 'تحتاج هذه الوجهة إلى مطابقة معتمدة للمورد والطلب والاستلام والمنتجات والملف الضريبي. أكملها في مساحة الويب حاليًا.';
+
+  @override
+  String get extractorPermissionDenied => 'يمكن لدورك التقاط المستندات لكنه لا يستطيع استخدام المستخرج.';
+
+  @override
+  String get extractorExpensePermissionDenied => 'لا يسمح دورك بإنشاء ملاحظات المصروفات.';
+
+  @override
+  String get extractorServerUpdateRequired => 'المستخرج غير مثبت على الخادم المنشور بعد.';
+
+  @override
+  String get extractorRemoveFile => 'إزالة الملف';
+
+  @override
+  String get extractorRawText => 'النص الخام المستخرج';
+
+  @override
+  String get extractorFileLimits => 'PDF أو PNG أو JPG أو TIFF أو BMP أو WebP · ‏15 م.ب لكل ملف · ‏50 م.ب لكل دفعة';
+
+  @override
+  String get extractorNoFilesSelected => 'اختر ملف PDF أو صورة واحدة على الأقل.';
+
+  @override
+  String get extractorExtractedData => 'البيانات المستخرجة';
+
+  @override
+  String get extractorTaxAmount => 'مبلغ الضريبة';
+
+  @override
   String get invalidNumber => 'رقم غير صالح';
 
   @override
@@ -394,7 +534,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get invoices => 'الفواتير';
 
   @override
-  String get overdue => 'متأخرة';
+  String get overdue => 'متأخر';
 
   @override
   String get code => 'رمز الدولة';
@@ -522,6 +662,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get accountCreatedSuccessfully => 'تم إنشاء الحساب بنجاح';
 
   @override
+  String get accountAwaitingApproval => 'تم إنشاء الحساب وهو في انتظار موافقة المسؤول.';
+
+  @override
   String get whoAreYou => 'من أنت؟';
 
   @override
@@ -645,10 +788,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get region => 'المنطقة';
 
   @override
-  String get name => 'Name';
+  String get name => 'الاسم';
 
   @override
-  String get identifier => 'Identifier';
+  String get identifier => 'المعرّف';
 
   @override
   String get notes => 'ملاحظات';
@@ -675,10 +818,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentCheck => 'شيك';
 
   @override
-  String get subtotal => 'Subtotal';
+  String get subtotal => 'المجموع الفرعي';
 
   @override
-  String get total => 'Total';
+  String get total => 'الإجمالي';
 
   @override
   String get verifyEmail => 'تحقق من بريدك الإلكتروني';
@@ -1191,4 +1334,550 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get invoiceDeleted => 'تم حذف الفاتورة.';
+
+  @override
+  String get mobileSearchHint => 'ابحث عن العملاء والمنتجات والمستندات…';
+
+  @override
+  String get enterTwoCharacters => 'أدخل حرفين على الأقل';
+
+  @override
+  String get noPermittedResults => 'لا توجد نتائج مسموح بها';
+
+  @override
+  String get scanProduct => 'مسح منتج';
+
+  @override
+  String get lookingUpBarcode => 'جارٍ البحث عن الرمز الشريطي';
+
+  @override
+  String get productNotFoundBarcode => 'لم يتم العثور على المنتج. جرّب رمزًا آخر.';
+
+  @override
+  String get pointCameraBarcode => 'وجّه الكاميرا نحو الرمز الشريطي للمنتج';
+
+  @override
+  String get toggleTorch => 'تشغيل أو إيقاف المصباح';
+
+  @override
+  String get documentsTitle => 'المستندات';
+
+  @override
+  String get documentSearchHint => 'ابحث بالرقم أو العميل أو المورّد';
+
+  @override
+  String get searchAction => 'بحث';
+
+  @override
+  String get allDocuments => 'كل المستندات';
+
+  @override
+  String get dates => 'التواريخ';
+
+  @override
+  String get clearDates => 'مسح التواريخ';
+
+  @override
+  String get documentSourcesFailed => 'مصادر مستندات تعذّر تحميلها.';
+
+  @override
+  String get noDocumentsFilters => 'لا توجد مستندات مطابقة لهذه المرشحات.';
+
+  @override
+  String get cannotViewDocument => 'لا يمكنك عرض هذا المستند.';
+
+  @override
+  String get cannotViewRelatedDocument => 'لا يمكنك عرض هذا المستند المرتبط.';
+
+  @override
+  String get previewOrSharePdf => 'معاينة ملف PDF أو مشاركته';
+
+  @override
+  String get relatedDocuments => 'المستندات المرتبطة';
+
+  @override
+  String get lines => 'الأسطر';
+
+  @override
+  String get party => 'الطرف';
+
+  @override
+  String get dueExpected => 'الاستحقاق / المتوقع';
+
+  @override
+  String get balance => 'الرصيد';
+
+  @override
+  String get match => 'المطابقة';
+
+  @override
+  String get sourceOrder => 'الطلب المصدر';
+
+  @override
+  String get invoiceNumber => 'رقم الفاتورة';
+
+  @override
+  String get deliveryNote => 'وصل التسليم';
+
+  @override
+  String get exception => 'استثناء';
+
+  @override
+  String get exceptionReason => 'سبب الاستثناء';
+
+  @override
+  String get source => 'المصدر';
+
+  @override
+  String get descriptionLabel => 'الوصف';
+
+  @override
+  String get documentLine => 'سطر المستند';
+
+  @override
+  String get accepted => 'مقبولة';
+
+  @override
+  String get damaged => 'تالفة';
+
+  @override
+  String get rejected => 'مرفوضة';
+
+  @override
+  String get quantityShort => 'الكمية';
+
+  @override
+  String get allStatuses => 'كل الحالات';
+
+  @override
+  String get statusDraftMobile => 'مسودة';
+
+  @override
+  String get statusOpen => 'مفتوح';
+
+  @override
+  String get statusCompleted => 'مكتمل';
+
+  @override
+  String get statusCancelledMobile => 'ملغى';
+
+  @override
+  String get kindInvoice => 'فاتورة';
+
+  @override
+  String get kindQuotation => 'عرض سعر';
+
+  @override
+  String get kindCreditNote => 'إشعار دائن';
+
+  @override
+  String get kindSalesOrder => 'طلب بيع';
+
+  @override
+  String get kindDeliveryNote => 'وصل تسليم';
+
+  @override
+  String get kindSupplierOrder => 'طلب مورّد';
+
+  @override
+  String get kindSupplierReception => 'استلام من المورّد';
+
+  @override
+  String get kindSupplierInvoice => 'فاتورة مورّد';
+
+  @override
+  String get kindExpense => 'مصروف';
+
+  @override
+  String get notificationsTitle => 'الإشعارات';
+
+  @override
+  String get markAllRead => 'تعليم الكل كمقروء';
+
+  @override
+  String get allNotificationsRead => 'تم تعليم كل الإشعارات كمقروءة.';
+
+  @override
+  String get notificationNoDestination => 'لا توجد وجهة على الهاتف لهذا الإشعار.';
+
+  @override
+  String get searchNotifications => 'البحث في الإشعارات';
+
+  @override
+  String get unread => 'غير مقروءة';
+
+  @override
+  String get read => 'مقروءة';
+
+  @override
+  String get allAreas => 'كل المجالات';
+
+  @override
+  String get nothingNeedsAttention => 'لا يوجد ما يتطلب انتباهك.';
+
+  @override
+  String get notificationOptions => 'خيارات الإشعار';
+
+  @override
+  String get markUnread => 'تعليم كغير مقروء';
+
+  @override
+  String get markRead => 'تعليم كمقروء';
+
+  @override
+  String get unreadNotifications => 'الإشعارات غير المقروءة';
+
+  @override
+  String get today => 'اليوم';
+
+  @override
+  String get yesterday => 'أمس';
+
+  @override
+  String get salesArea => 'المبيعات';
+
+  @override
+  String get stockArea => 'المخزون';
+
+  @override
+  String get logisticsArea => 'اللوجستيات';
+
+  @override
+  String get purchasingArea => 'المشتريات';
+
+  @override
+  String get accountingArea => 'المحاسبة';
+
+  @override
+  String get financeReview => 'المراجعة المالية';
+
+  @override
+  String get refreshBalances => 'تحديث الأرصدة';
+
+  @override
+  String get noMobileDocumentLinked => 'لا يوجد مستند على الهاتف مرتبط بهذا القيد.';
+
+  @override
+  String get reviewTab => 'المراجعة';
+
+  @override
+  String get receivables => 'المبالغ المستحقة لنا';
+
+  @override
+  String get payables => 'المبالغ المستحقة علينا';
+
+  @override
+  String get expensesTab => 'المصاريف';
+
+  @override
+  String get activityTab => 'النشاط';
+
+  @override
+  String get searchPartyDocument => 'ابحث عن طرف أو مستند';
+
+  @override
+  String get needsAttention => 'يحتاج إلى انتباه';
+
+  @override
+  String get nothingReviewQueue => 'لا توجد عناصر في قائمة المراجعة.';
+
+  @override
+  String get accountingAttentionQueue => 'قائمة الاهتمام المحاسبي';
+
+  @override
+  String get authoritativeBalances => 'الأرصدة المعتمدة من الخادم';
+
+  @override
+  String get updated => 'آخر تحديث';
+
+  @override
+  String get expenseReview => 'مراجعة المصاريف';
+
+  @override
+  String get matchingIssues => 'مشكلات المطابقة';
+
+  @override
+  String get certificatesPending => 'شهادات قيد الانتظار';
+
+  @override
+  String get approveExpenses => 'الموافقة على المصاريف';
+
+  @override
+  String get viewExpenses => 'عرض المصاريف';
+
+  @override
+  String get yourFinanceAccess => 'صلاحياتك المالية';
+
+  @override
+  String get customerPaymentLedger => 'سجل دفعات العملاء';
+
+  @override
+  String get withholdingCertificates => 'شهادات الخصم من المورد';
+
+  @override
+  String get supplierPaymentRecording => 'تسجيل دفعات المورّدين';
+
+  @override
+  String get supplierCredits => 'إشعارات دائنة للمورّدين';
+
+  @override
+  String get supplierReturns => 'مرتجعات المورّدين';
+
+  @override
+  String get accountingReports => 'التقارير المحاسبية';
+
+  @override
+  String get backendAmountsNotice => 'يحسب الخادم المبالغ. ويستمر التسجيل والتحقق عبر مسارات العمل الحالية الخاضعة للتدقيق.';
+
+  @override
+  String get salesOrdersTitle => 'طلبات البيع';
+
+  @override
+  String get deliveriesTitle => 'التسليمات';
+
+  @override
+  String get searchOrderClient => 'ابحث عن طلب أو عميل';
+
+  @override
+  String get searchDeliveryClientOrder => 'ابحث عن تسليم أو عميل أو طلب';
+
+  @override
+  String get salesOrderLabel => 'طلب بيع';
+
+  @override
+  String get deliveryLabel => 'تسليم';
+
+  @override
+  String get sourceLabel => 'المصدر';
+
+  @override
+  String get itemsLabel => 'العناصر';
+
+  @override
+  String get quantityLabel => 'الكمية';
+
+  @override
+  String get invoicesLabel => 'فواتير';
+
+  @override
+  String get deliveriesLabel => 'تسليمات';
+
+  @override
+  String get confirmDelivery => 'تأكيد التسليم';
+
+  @override
+  String get markDelivered => 'تعليم كمُسلَّم';
+
+  @override
+  String get cancelDelivery => 'إلغاء التسليم';
+
+  @override
+  String get readyToInvoice => 'جاهز للفوترة';
+
+  @override
+  String get supplierReceptionsTitle => 'استلامات المورّدين';
+
+  @override
+  String get cannotCreateReception => 'لا يمكنك إنشاء استلامات من المورّدين.';
+
+  @override
+  String get noSupplierOrderAvailable => 'لا يوجد طلب مورّد مرسل أو مستلم جزئيًا متاح.';
+
+  @override
+  String get selectSupplierOrder => 'اختر طلب مورّد';
+
+  @override
+  String get purchaseOrder => 'طلب مورّد';
+
+  @override
+  String get receiveOrder => 'استلام طلب';
+
+  @override
+  String get searchSupplierOrderDocument => 'ابحث عن مورّد أو طلب أو رقم مستند';
+
+  @override
+  String get noSupplierReceptions => 'لم يتم العثور على استلامات مورّدين.';
+
+  @override
+  String get receptionLabel => 'استلام';
+
+  @override
+  String get confirmSupplierReception => 'تأكيد الاستلام من المورّد؟';
+
+  @override
+  String get atomicStockNotice => 'ستُضاف الكميات المقبولة إلى المخزون بشكل ذري. ولا يمكن تعديل الاستلام بعد ذلك.';
+
+  @override
+  String get createLinkedExpense => 'إنشاء المصروف المرتبط';
+
+  @override
+  String get confirmPostStock => 'التأكيد وترحيل المخزون';
+
+  @override
+  String get receptionConfirmed => 'تم تأكيد الاستلام.';
+
+  @override
+  String get productLinesPosted => 'سطر منتج تم ترحيله إلى المخزون.';
+
+  @override
+  String get receptionDetails => 'تفاصيل الاستلام';
+
+  @override
+  String get editDraft => 'تعديل المسودة';
+
+  @override
+  String get stockPosted => 'تم ترحيل المخزون';
+
+  @override
+  String get stockPending => 'المخزون في الانتظار';
+
+  @override
+  String get supplierDeliveryNote => 'وصل تسليم المورّد';
+
+  @override
+  String get supplierInvoice => 'فاتورة المورّد';
+
+  @override
+  String get received => 'المستلم';
+
+  @override
+  String get receptionLines => 'أسطر الاستلام';
+
+  @override
+  String get totalHt => 'الإجمالي دون الضريبة';
+
+  @override
+  String get vat => 'الأداء على القيمة المضافة';
+
+  @override
+  String get totalTtc => 'الإجمالي مع الضريبة';
+
+  @override
+  String get postingStock => 'جارٍ ترحيل المخزون…';
+
+  @override
+  String get editReception => 'تعديل الاستلام';
+
+  @override
+  String get newReception => 'استلام جديد';
+
+  @override
+  String get receptionWithoutOrder => 'استلام دون طلب مورّد';
+
+  @override
+  String get supplierInvoiceOptional => 'رقم فاتورة المورّد (اختياري)';
+
+  @override
+  String get supplierDeliveryNumber => 'رقم وصل تسليم المورّد';
+
+  @override
+  String get invoiceDate => 'تاريخ الفاتورة';
+
+  @override
+  String get receivedDate => 'تاريخ الاستلام';
+
+  @override
+  String get deliveryDateOptional => 'تاريخ وصل التسليم (اختياري)';
+
+  @override
+  String get notSet => 'غير محدد';
+
+  @override
+  String get receivedQuantities => 'الكميات المستلمة';
+
+  @override
+  String get receptionException => 'استثناء الاستلام';
+
+  @override
+  String get none => 'لا يوجد';
+
+  @override
+  String get overdelivery => 'تسليم زائد';
+
+  @override
+  String get noPurchaseOrder => 'دون طلب مورّد';
+
+  @override
+  String get internalNotes => 'ملاحظات داخلية';
+
+  @override
+  String get takeEvidencePhoto => 'التقاط صورة إثبات';
+
+  @override
+  String get chooseEvidencePhoto => 'اختيار صورة إثبات';
+
+  @override
+  String get couldNotSelectPhoto => 'تعذّر اختيار الصورة';
+
+  @override
+  String get negativeReceptionQuantities => 'لا يمكن أن تكون كميات الاستلام سالبة.';
+
+  @override
+  String get enterReceivedQuantity => 'أدخل كمية مستلمة أو أزل السطر.';
+
+  @override
+  String get discrepancyReasonRequired => 'سبب الاختلاف مطلوب.';
+
+  @override
+  String get selectReceptionLine => 'اختر سطرًا واحدًا على الأقل لهذا الاستلام.';
+
+  @override
+  String get explainReceptionException => 'اشرح استثناء الاستلام قبل الحفظ.';
+
+  @override
+  String get evidenceUploadFailed => 'تم حفظ الاستلام، لكن تعذّر رفع صورة الإثبات.';
+
+  @override
+  String get receptionDraftSaved => 'تم حفظ مسودة استلام المورّد.';
+
+  @override
+  String get addDiscrepancyEvidence => 'إضافة إثبات الاختلاف';
+
+  @override
+  String get evidenceFileHelp => 'JPEG أو PNG أو WebP؛ بحد أقصى 10 ميغابايت';
+
+  @override
+  String get receptionTotals => 'إجماليات الاستلام';
+
+  @override
+  String get saveReceptionDraft => 'حفظ مسودة الاستلام';
+
+  @override
+  String get ordered => 'المطلوب';
+
+  @override
+  String get remaining => 'المتبقي';
+
+  @override
+  String get discrepancyReason => 'سبب الاختلاف';
+
+  @override
+  String get statusConfirmed => 'مؤكد';
+
+  @override
+  String get statusDelivered => 'تم التسليم';
+
+  @override
+  String get statusInvoiced => 'تمت فوترته';
+
+  @override
+  String get statusReviewed => 'تمت مراجعته';
+
+  @override
+  String get statusPartiallyDelivered => 'تم التسليم جزئيًا';
+
+  @override
+  String get statusPartiallyReceived => 'تم الاستلام جزئيًا';
+
+  @override
+  String get statusSent => 'تم الإرسال';
+
+  @override
+  String get supplierLabel => 'المورّد';
+
+  @override
+  String get more => 'المزيد';
+
+  @override
+  String get noMobileFeatures => 'لم يتم تعيين أي ميزات للهاتف لهذا المستخدم.';
 }

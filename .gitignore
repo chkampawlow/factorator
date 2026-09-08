@@ -15,5 +15,13 @@ ios/.symlinks/
 ios/Flutter/
 
 # Misc
+.DS_Store
 *.log
 *.tmp
+
+# Backend secrets and runtime data
+backend/.env
+backend/storage/cache/*
+!backend/storage/cache/.gitkeep
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep

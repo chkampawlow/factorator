@@ -35,7 +35,7 @@ class XmlPreviewScreen extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: cs.surfaceVariant.withOpacity(.4),
+            color: cs.surfaceContainerHighest.withOpacity(.4),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: cs.outline.withOpacity(.25),

@@ -25,7 +25,7 @@ class PrimaryButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: cs.primary,
           foregroundColor: cs.onPrimary,
-          disabledBackgroundColor: cs.surfaceVariant,
+          disabledBackgroundColor: cs.surfaceContainerHighest,
           disabledForegroundColor: cs.onSurfaceVariant,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),

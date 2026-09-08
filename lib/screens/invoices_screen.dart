@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/core/access_scope.dart';
+import 'package:my_app/core/permission_service.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/add_client_screen.dart';
 import 'package:my_app/screens/invoice_edit_screen.dart';
+import 'package:my_app/screens/sales_orders_screen.dart';
+import 'package:my_app/screens/deliveries_screen.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/exchange_rate_service.dart';
@@ -51,6 +55,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   Future<void> _deleteDraftInvoice(int invoiceId) async {
+    if (!_requirePermission(AppPermission.invoicesDelete)) return;
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -98,6 +103,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   bool _updatingStatus = false;
   String _currency = 'TND';
   String _statusFilter = 'all';
+  String _documentFilter = 'all';
   List<Map<String, dynamic>> _invoices = [];
 
   List<Map<String, dynamic>> get _filteredInvoices {
@@ -119,8 +125,18 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       final status = _normalizedStatus((inv['status'] ?? 'UNPAID').toString())
           .toLowerCase();
 
-      final matchesStatus =
-          _statusFilter == 'all' ? true : status == _statusFilter;
+      final matchesStatus = _statusFilter == 'all'
+          ? true
+          : _statusFilter == 'overdue'
+              ? _isOverdue(
+                  _normalizedStatus((inv['status'] ?? 'UNPAID').toString()),
+                  _parseDate(inv['invoice_due_date']),
+                )
+              : status == _statusFilter;
+      final matchesDocument = _documentFilter == 'all' ||
+          (_documentFilter == 'FACTURE'
+              ? invoiceType != 'devis' && invoiceType != 'avoir'
+              : invoiceType == _documentFilter.toLowerCase());
 
       final matchesQuery = query.isEmpty ||
           invoiceNumber.contains(query) ||
@@ -130,7 +146,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
           typeDoc.contains(query) ||
           clientName.contains(query);
 
-      return matchesStatus && matchesQuery;
+      return matchesStatus && matchesDocument && matchesQuery;
     }).toList();
 
     filtered.sort((a, b) {
@@ -154,6 +170,18 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
     return filtered;
   }
+
+  bool _canEditDocument(String type) => switch (type.toUpperCase()) {
+        'DEVIS' => _can(AppPermission.devisUpdate),
+        'AVOIR' => _can(AppPermission.creditNotesUpdate),
+        _ => _can(AppPermission.invoicesUpdate),
+      };
+
+  bool _canDeleteDocument(String type) => switch (type.toUpperCase()) {
+        'DEVIS' => _can(AppPermission.devisDelete),
+        'AVOIR' => _can(AppPermission.creditNotesDelete),
+        _ => _can(AppPermission.invoicesDelete),
+      };
 
   @override
   void didChangeDependencies() {
@@ -180,6 +208,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     if (s == 'draft') return 'draft';
     if (s == 'paid') return 'paid';
     if (s == 'unpaid' || s == 'open') return 'unpaid';
+    if (s == 'overdue') return 'overdue';
     if (s == 'cancelled' || s == 'canceled') return 'cancelled';
 
     // Also accept uppercase values.
@@ -199,6 +228,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   Future<void> _createDraftAndOpenEdit() async {
+    if (!_requirePermission(AppPermission.invoicesCreate)) return;
     final l10n = AppLocalizations.of(context)!;
     if (_updatingStatus || _loading) return;
 
@@ -250,6 +280,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   Future<void> _openEdit(int invoiceId) async {
+    if (!_requirePermission(AppPermission.invoicesUpdate)) return;
     if (invoiceId <= 0) return;
 
     await Navigator.push(
@@ -405,6 +436,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     String status, {
     String? paymentMethod,
   }) async {
+    if (!_requirePermission(AppPermission.invoicesUpdate)) return;
     final l10n = AppLocalizations.of(context)!;
 
     if (_updatingStatus) return;
@@ -494,6 +526,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   Future<void> _showStatusSheet(int invoiceId, String currentStatus) async {
+    if (!_requirePermission(AppPermission.invoicesUpdate)) return;
     final l10n = AppLocalizations.of(context)!;
     final normalized = _normalizedStatus(currentStatus);
     if (normalized == 'DRAFT') {
@@ -576,13 +609,32 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
     return Scaffold(
       appBar: AppTopBar(
-        title: l10n.invoices,
+        title: 'Documents',
+        actions: [
+          if (AccessScope.of(context).permissions.allows('orders.view'))
+            IconButton(
+              tooltip: 'Sales orders',
+              icon: const Icon(Icons.shopping_bag_outlined),
+              onPressed: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SalesOrdersScreen())),
+            ),
+          if (AccessScope.of(context).permissions.allows('deliveries.view'))
+            IconButton(
+              tooltip: 'Deliveries',
+              icon: const Icon(Icons.local_shipping_outlined),
+              onPressed: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const DeliveriesScreen())),
+            ),
+        ],
         onToggleTheme: widget.onToggleTheme,
         onChangePrimaryColor: widget.onChangePrimaryColor,
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
-      floatingActionButton: _loading || _invoices.isEmpty
+      floatingActionButton: _loading ||
+              _invoices.isEmpty ||
+              !_can(AppPermission.invoicesCreate) ||
+              !['all', 'FACTURE'].contains(_documentFilter)
           ? null
           : FloatingActionButton.extended(
               onPressed: _createDraftAndOpenEdit,
@@ -635,6 +687,45 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
+                      children: [
+                        _FilterChip(
+                          label: l10n.all,
+                          selected: _documentFilter == 'all',
+                          onTap: () => setState(() => _documentFilter = 'all'),
+                        ),
+                        const SizedBox(width: 8),
+                        if (_can(AppPermission.invoicesView)) ...[
+                          _FilterChip(
+                            label: l10n.invoices,
+                            selected: _documentFilter == 'FACTURE',
+                            onTap: () =>
+                                setState(() => _documentFilter = 'FACTURE'),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        if (_can(AppPermission.devisView)) ...[
+                          _FilterChip(
+                            label: 'Devis',
+                            selected: _documentFilter == 'DEVIS',
+                            onTap: () =>
+                                setState(() => _documentFilter = 'DEVIS'),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        if (_can(AppPermission.creditNotesView))
+                          _FilterChip(
+                            label: 'Avoirs',
+                            selected: _documentFilter == 'AVOIR',
+                            onTap: () =>
+                                setState(() => _documentFilter = 'AVOIR'),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _FilterChip(
@@ -653,6 +744,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                           label: l10n.unpaidLabel,
                           selected: _statusFilter == 'unpaid',
                           onTap: () => setState(() => _statusFilter = 'unpaid'),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Overdue',
+                          selected: _statusFilter == 'overdue',
+                          onTap: () =>
+                              setState(() => _statusFilter = 'overdue'),
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
@@ -759,7 +857,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                         .toString();
                                     final paymentLabel =
                                         _paymentMethodLabel(paymentRaw, l10n);
-                                    final canDelete = status == 'DRAFT';
+                                    final canDelete = status == 'DRAFT' &&
+                                        _canDeleteDocument(invoiceType);
                                     return Dismissible(
                                       key: ValueKey('invoice_$invoiceId'),
                                       direction: canDelete
@@ -818,7 +917,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                       ),
                                       child: InkWell(
                                         borderRadius: BorderRadius.circular(22),
-                                        onTap: () => _openEdit(invoiceId),
+                                        onTap: _canEditDocument(invoiceType)
+                                            ? () => _openEdit(invoiceId)
+                                            : null,
                                         child: Container(
                                           padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
@@ -943,6 +1044,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                                         fg: _statusFg(status,
                                                             overdue, cs),
                                                         onTap: (_updatingStatus ||
+                                                                !_can(AppPermission
+                                                                    .invoicesUpdate) ||
                                                                 status ==
                                                                     'DRAFT')
                                                             ? null
@@ -1027,6 +1130,15 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
               ),
       ),
     );
+  }
+
+  bool _can(AppPermission permission) =>
+      AccessScope.maybeOf(context)?.permissions.can(permission) ?? false;
+
+  bool _requirePermission(AppPermission permission) {
+    if (_can(permission)) return true;
+    AppAlerts.error(context, 'You do not have permission for this action.');
+    return false;
   }
 }
 

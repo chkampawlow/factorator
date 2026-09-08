@@ -1,19 +1,38 @@
-import 'package:my_app/storage/invoices_repo.dart';
+import 'package:my_app/core/api_client.dart';
+import 'package:my_app/core/api_config.dart';
 
 class DashboardRepo {
-  final InvoicesRepo _invoicesRepo = InvoicesRepo();
+  final ApiClient _api = ApiClient.instance;
 
-  Future<List<Map<String, dynamic>>> getRecentInvoices({int limit = 5}) async {
-    final invoices = await _invoicesRepo.getAllInvoices();
+  Future<Map<String, dynamic>> getOverview() async {
+    final response = await _api.get(
+      ApiConfig.dashboardOverview,
+      authRequired: true,
+    );
+    if (response is! Map) {
+      throw Exception('Invalid dashboard response');
+    }
+    final overview = Map<String, dynamic>.from(response);
+    if (overview['success'] != true) {
+      throw Exception(overview['message'] ?? 'Could not load dashboard');
+    }
+    return overview;
+  }
 
-    // sort newest first (same behavior as invoices screen)
-    invoices.sort((a, b) {
-      final aId = int.tryParse(a['id'].toString()) ?? 0;
-      final bId = int.tryParse(b['id'].toString()) ?? 0;
-      return bId.compareTo(aId);
-    });
-
-    // only return the last invoices
-    return invoices.take(limit).toList();
+  Future<Map<String, dynamic>> getNotificationCounts() async {
+    try {
+      final response = await _api.get(
+        ApiConfig.notificationOverview,
+        authRequired: true,
+      );
+      if (response is! Map) return {};
+      final envelope = Map<String, dynamic>.from(response);
+      final counts = envelope['counts'];
+      return counts is Map ? Map<String, dynamic>.from(counts) : {};
+    } catch (_) {
+      // Notifications are supplementary. A deployment that has not exposed
+      // this endpoint yet must not prevent the main dashboard from loading.
+      return {};
+    }
   }
 }

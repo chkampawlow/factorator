@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/api_client.dart';
 import 'package:my_app/core/api_config.dart';
+import 'package:my_app/core/session_service.dart';
+import 'package:my_app/core/token_store.dart';
 
 class AuthService {
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final TokenStore _storage = TokenStore.instance;
   final ApiClient _api = ApiClient.instance;
+  final SessionService _sessions = SessionService.instance;
 
   Future<Map<String, dynamic>> login({
     required String email,
@@ -33,8 +35,12 @@ class AuthService {
         return data;
       }
 
-      final accessToken = (data['access_token'] ?? '').toString();
-      final refreshToken = (data['refresh_token'] ?? '').toString();
+      final accessToken =
+          (data['access_token'] ?? await _storage.read('access_token') ?? '')
+              .toString();
+      final refreshToken =
+          (data['refresh_token'] ?? await _storage.read('refresh_token') ?? '')
+              .toString();
 
       debugPrint('Access token exists: ${accessToken.isNotEmpty}');
       debugPrint('Refresh token exists: ${refreshToken.isNotEmpty}');
@@ -45,16 +51,14 @@ class AuthService {
       }
 
       debugPrint('Writing access_token to secure storage...');
-      await _storage.write(key: 'access_token', value: accessToken);
+      await _storage.write('access_token', accessToken);
 
       debugPrint('Writing refresh_token to secure storage...');
-      await _storage.write(key: 'refresh_token', value: refreshToken);
+      await _storage.write('refresh_token', refreshToken);
 
       debugPrint('Writing remember_me to secure storage...');
-      await _storage.write(
-        key: 'remember_me',
-        value: rememberMe ? 'true' : 'false',
-      );
+      await _storage.write('remember_me', rememberMe ? 'true' : 'false');
+      await _sessions.saveAuthResponse(data);
 
       debugPrint('--- AuthService.login SUCCESS ---');
       return data;
@@ -65,16 +69,16 @@ class AuthService {
   }
 
   Future<String?> getAccessToken() async {
-    return await _storage.read(key: 'access_token');
+    return await _storage.read('access_token');
   }
 
   Future<String?> getRefreshToken() async {
-    return await _storage.read(key: 'refresh_token');
+    return await _storage.read('refresh_token');
   }
 
   Future<bool> shouldAutoLogin() async {
-    final accessToken = await _storage.read(key: 'access_token');
-    final rememberMe = await _storage.read(key: 'remember_me');
+    final accessToken = await _storage.read('access_token');
+    final rememberMe = await _storage.read('remember_me');
 
     return accessToken != null &&
         accessToken.isNotEmpty &&
@@ -122,7 +126,34 @@ class AuthService {
     ) as Map<String, dynamic>;
 
     if (data['success'] == true) {
-      return Map<String, dynamic>.from(data['user'] as Map);
+      final user = Map<String, dynamic>.from(data['user'] as Map);
+      final existing = _sessions.current ?? await _sessions.restore();
+      if (existing == null) {
+        await _sessions.saveAuthResponse({
+          ...data,
+          'user': user,
+          'permissions': data['permissions'] ?? user['permissions'] ?? [],
+        });
+      } else {
+        final membership = data['membership'] ??
+            {
+              'id': existing.membershipId,
+              'tenant_id': existing.tenantId,
+              'company_id': existing.companyId,
+              'role': existing.role,
+              'status': existing.membershipStatus,
+            };
+        await _sessions.saveAuthResponse({
+          ...data,
+          'user': {...existing.user, ...user},
+          'company': data['company'] ?? existing.company,
+          'membership': membership,
+          'permissions': data['permissions'] ??
+              user['permissions'] ??
+              existing.permissions.toList(),
+        });
+      }
+      return user;
     }
 
     throw Exception(data['message'] ?? 'Invalid session');
@@ -177,19 +208,21 @@ class AuthService {
     ) as Map<String, dynamic>;
 
     if (data['success'] == true) {
-      final accessToken = (data['access_token'] ?? '').toString();
-      final refreshToken = (data['refresh_token'] ?? '').toString();
+      final accessToken =
+          (data['access_token'] ?? await _storage.read('access_token') ?? '')
+              .toString();
+      final refreshToken =
+          (data['refresh_token'] ?? await _storage.read('refresh_token') ?? '')
+              .toString();
 
       if (accessToken.isEmpty || refreshToken.isEmpty) {
         throw Exception('Missing authentication tokens');
       }
 
-      await _storage.write(key: 'access_token', value: accessToken);
-      await _storage.write(key: 'refresh_token', value: refreshToken);
-      await _storage.write(
-        key: 'remember_me',
-        value: rememberMe ? 'true' : 'false',
-      );
+      await _storage.write('access_token', accessToken);
+      await _storage.write('refresh_token', refreshToken);
+      await _storage.write('remember_me', rememberMe ? 'true' : 'false');
+      await _sessions.saveAuthResponse(data);
 
       return data;
     }

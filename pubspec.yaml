@@ -22,13 +22,17 @@ dependencies:
   table_calendar: ^3.0.9
   camera: ^0.11.0+2
   image_picker: ^0.8.7+3
+  file_selector: ^1.1.0
   path_provider: ^2.1.5
+  path: ^1.9.0
   permission_handler: ^11.3.1
   fl_chart: ^0.69.0
   flutter_secure_storage: ^10.0.0
   geolocator: ^12.0.0
   geocoding: ^3.0.0
   qr_flutter: ^4.1.0
+  mobile_scanner: ^7.0.1
+  url_launcher: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -38,8 +42,27 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Cairo-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Cairo-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Cairo-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Cairo-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Cairo-Black.ttf
+          weight: 900
   
   assets:
+    - assets/icons/el-fatoura-icon.png
     - assets/fonts/logo.png
     - assets/fonts/Cairo-Black.ttf
     - assets/fonts/Cairo-Light.ttf
@@ -51,5 +74,13 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/fonts/logo_launcher.png
+  image_path: assets/icons/el-fatoura-icon.png
   remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: assets/icons/el-fatoura-icon.png
+    background_color: "#061421"
+    theme_color: "#20D9AE"
+  macos:
+    generate: true
+    image_path: assets/icons/el-fatoura-icon.png

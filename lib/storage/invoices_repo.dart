@@ -12,23 +12,11 @@ class InvoicesRepo {
   }
 
   Future<List<Map<String, dynamic>>> getAllInvoices() async {
-    final response = await _api.get(
+    return _api.getAllPages(
       ApiConfig.getInvoices,
-      authRequired: true,
+      resourceName: 'invoices',
+      keys: const ['data', 'invoices', 'items', 'results'],
     );
-
-    if (response is List) {
-      return response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    }
-
-    if (response is Map<String, dynamic>) {
-      final data = response['data'];
-      if (data is List) {
-        return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      }
-    }
-
-    throw Exception('Invalid invoices response');
   }
 
   Future<int> createInvoiceHeader({
@@ -169,15 +157,16 @@ class InvoicesRepo {
       throw Exception(res['message'] ?? 'Failed to update invoice status');
     }
   }
-  Future<void> deleteInvoice(int invoiceId) async {
-  final res = await _api.post(
-    ApiConfig.deleteInvoice, // <-- add this in ApiConfig
-    authRequired: true,
-    body: {'id': invoiceId},
-  ) as Map<String, dynamic>;
 
-  if (res['success'] != true) {
-    throw Exception(res['message'] ?? 'Delete invoice failed');
+  Future<void> deleteInvoice(int invoiceId) async {
+    final res = await _api.post(
+      ApiConfig.deleteInvoice, // <-- add this in ApiConfig
+      authRequired: true,
+      body: {'id': invoiceId},
+    ) as Map<String, dynamic>;
+
+    if (res['success'] != true) {
+      throw Exception(res['message'] ?? 'Delete invoice failed');
+    }
   }
-}
 }

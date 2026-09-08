@@ -1,0 +1,521 @@
+EL FATOURA APP MANUAL
+
+Overview
+El Fatoura is a business management app for Tunisian small companies. It helps you manage clients, suppliers, products, services, expenses, quotations, sales orders, delivery notes, invoices, credit notes, stock, and PDF extraction.
+
+Main app sections
+- Dashboard
+- Documents
+- Business
+- Profile and settings
+- Chat assistant
+
+
+GETTING STARTED
+
+Create an account
+1. Open the signup page.
+2. Enter your organization name.
+3. Enter your fiscal ID.
+4. Enter your email and phone number.
+5. Create a password.
+6. Submit the form and sign in.
+
+First setup after login
+1. Open Profile.
+2. Fill in your address, website, fax, and phone if they are missing.
+3. Check whether your company uses FODEC.
+4. Save the profile.
+5. Add at least one client.
+6. Add products or services before creating invoices.
+
+Navigation
+- The top bar contains quick actions, settings, notifications, and account options.
+- The left menu contains the main work areas.
+- Overview contains the dashboard.
+- Documents contains all sell and purchase documents.
+- Business contains clients, suppliers, products, services, and expenses.
+
+
+DASHBOARD
+
+Purpose
+The dashboard shows a quick summary of the business.
+
+What you can monitor
+- Number of invoices
+- Revenue total
+- Monthly revenue
+- Net result
+- Paid and unpaid invoices
+- Top client
+- Monthly flow
+- Best selling items
+- Low stock items
+
+How to use it
+- Check revenue and unpaid invoices daily.
+- Watch low stock items before preparing deliveries.
+- Use the sales indicators to know which products move the most.
+
+
+CLIENTS
+
+Purpose
+Clients are the people or companies you sell to.
+
+How to add a client
+1. Open Business > Clients.
+2. Click Add client.
+3. Choose the client type.
+4. Enter the name.
+5. If it is a company, add the fiscal ID.
+6. If it is an individual, add the CIN.
+7. Add email, phone, and address if available.
+8. Save.
+
+Best practice
+- Keep one clean record per real client.
+- Add a valid email if you want to send PDFs by email.
+- Use the correct fiscal ID or CIN.
+
+
+SUPPLIERS
+
+Purpose
+Suppliers are the people or companies you buy from.
+
+How to add a supplier
+1. Open Business > Suppliers.
+2. Click Add supplier.
+3. Enter the supplier name.
+4. Add fiscal ID, phone, email, and address if available.
+5. Save.
+
+Why suppliers matter
+- They are used for supplier purchase orders.
+- They will support future purchase and stock-in flows.
+
+
+PRODUCTS
+
+Purpose
+Products are stock-managed items.
+
+How to add a product
+1. Open Business > Products.
+2. Click Add product.
+3. Enter the product code and name.
+4. Set the selling price.
+5. Choose the TVA rate.
+6. Choose the unit. Default is piece.
+7. Enter the starting stock if needed.
+8. Save.
+
+Product fields
+- Code: internal reference
+- Name: product name
+- Price: selling price
+- TVA rate: tax rate
+- Unit: piece, box, kg, etc.
+- Stock: quantity available
+
+Stock logic
+- Products use movement-based stock.
+- Initial stock creates an initial movement.
+- Delivery notes reduce stock.
+- Future purchase intake should increase stock.
+
+Stock history
+Use stock history to see:
+- Initial stock
+- Delivery movements
+- Future stock corrections and stock-in events
+
+
+SERVICES
+
+Purpose
+Services are sellable items that do not use stock.
+
+Examples
+- Consulting
+- Installation
+- Design
+- Maintenance
+
+How to add a service
+1. Open Business > Services.
+2. Click Add service.
+3. Enter the code and name.
+4. Set the price.
+5. Choose the TVA rate.
+6. Save.
+
+Difference between products and services
+- Products affect stock.
+- Services do not affect stock.
+
+
+EXPENSES
+
+Purpose
+Expenses track business spending.
+
+How to add an expense
+1. Open Business > Expenses.
+2. Click Add expense.
+3. Enter the title.
+4. Choose a category.
+5. Enter the amount.
+6. Set the expense date.
+7. Add description if needed.
+8. Save.
+
+Expense status
+- New expenses start as Pending.
+- You can later change the status from the list.
+
+Examples of expenses
+- Rent
+- Internet
+- Transport
+- Office supplies
+- Utilities
+- Travel
+
+
+DOCUMENTS
+
+Recommended sales flow
+1. Devis
+2. Sales order
+3. Delivery note
+4. Invoice
+5. Credit note if correction is needed
+
+Recommended supplier flow
+1. Supplier purchase order
+2. Supplier invoice or expense capture
+3. Stock-in and purchase follow-up
+
+
+DEVIS
+
+Purpose
+A devis is a quotation sent before the client confirms the sale.
+
+How to create a devis
+1. Open Documents > Devis.
+2. Select the client.
+3. Add products or services.
+4. Review the PDF preview.
+5. Download or send the PDF.
+
+Important rule
+- A devis is not a final invoice.
+- A devis should not change stock.
+- It is useful to keep devis stored for follow-up.
+
+
+SALES ORDERS
+
+Purpose
+A sales order confirms what the client accepted.
+
+Why it is useful
+- It helps organize sales before delivery.
+- It acts as an internal commercial confirmation.
+
+How it links to the rest
+- A sales order can lead to a delivery note.
+- It can also guide the final invoice.
+
+
+SUPPLIER PURCHASE ORDERS
+
+Purpose
+A supplier purchase order is sent to a supplier to request goods or services.
+
+How to create one
+1. Open Documents > Purchase orders.
+2. Choose the supplier.
+3. Set the order date and expected date.
+4. Add the requested items.
+5. Review the PDF preview.
+6. Download the PDF or send it by email to the supplier.
+7. Save if you want to keep it in the list.
+
+Why it matters
+- It formalizes what you are ordering from the supplier.
+- It prepares future purchase and stock operations.
+
+
+DELIVERY NOTES
+
+Purpose
+A delivery note proves that goods left your stock and were delivered.
+
+When to use it
+- When physical goods leave stock
+- When an order is ready for delivery
+
+Stock effect
+- Delivery notes reduce stock for products.
+- Services should not reduce stock.
+
+Why it matters
+- It links stock operations with billing.
+
+
+INVOICES
+
+Purpose
+Invoices are the official billing documents.
+
+How to create an invoice
+1. Open Documents > Invoices.
+2. Click Add invoice.
+3. Select the client.
+4. Add products or services.
+5. Review the PDF preview.
+6. Create the invoice.
+7. Validate the invoice when it is final.
+
+Important rules
+- Validation means the invoice is finalized.
+- Validation does not mean the invoice is paid.
+- Paid and unpaid are payment statuses.
+- A validated invoice should no longer be freely edited.
+
+Invoice statuses
+- Unpaid
+- Paid
+
+Suggested workflow
+1. Prepare the invoice.
+2. Review the PDF.
+3. Validate it when correct.
+4. Mark it paid when payment is received.
+
+FODEC
+- If the user profile is marked as FODEC, the app includes FODEC where applicable.
+- Only enable it if the company really uses it.
+
+
+CREDIT NOTES / AVOIRS
+
+Purpose
+An avoir is a credit note used to correct or reduce an invoice.
+
+Important logic
+- An avoir should be created from an existing invoice.
+- It should not be created alone without a source invoice.
+- Avoir values should be negative.
+
+When to use an avoir
+- Return of goods
+- Correction of billed amount
+- Full or partial reversal of an invoice
+
+Important reminder
+- An avoir is not an unpaid invoice.
+- It is a correction document.
+
+
+EXTRACTOR
+
+Purpose
+The extractor reads invoice PDFs and tries to extract structured data.
+
+How to use it
+1. Open Documents > Extractor.
+2. Upload one or many files.
+3. Wait for extraction.
+4. Review the returned data carefully.
+
+What to verify
+- Invoice number
+- Issue date
+- Due date
+- Supplier name
+- Client name
+- Totals
+- TVA
+- Currency
+
+Important rule
+- Always verify extracted data before using it for accounting or stock decisions.
+
+
+PROFILE
+
+Purpose
+Profile stores your company identity and billing settings.
+
+What to keep updated
+- Organization name
+- Fiscal ID
+- Phone
+- Fax
+- Address
+- Website
+- FODEC setting
+- 2FA security settings
+
+Why it matters
+- Company information appears on generated PDFs.
+- Some calculations depend on profile settings.
+- Notifications may remind the user to complete missing profile data.
+
+
+SETTINGS, LANGUAGE, AND THEME
+
+Settings menu
+The settings menu gives access to:
+- Profile
+- Language
+- Theme
+- Logout
+
+Language
+- Use the language switcher to change the app language.
+
+Theme
+- Use the dark mode switch in settings to change between light and dark mode.
+
+
+CHAT ASSISTANT
+
+Purpose
+The assistant helps users navigate and understand the app.
+
+What it can help with
+- Finding the right page
+- Explaining the next workflow step
+- Answering questions about documents
+- Helping with extractor use
+
+Best use
+- Ask short, clear questions.
+- Use it as guidance, not as final accounting validation.
+
+
+RECOMMENDED DAILY WORKFLOW
+
+If you sell products
+1. Add clients.
+2. Add products.
+3. Create a devis if needed.
+4. Confirm with a sales order if needed.
+5. Create a delivery note when goods leave stock.
+6. Create and validate the invoice.
+7. Mark the invoice as paid when money is received.
+8. Use an avoir if a correction is needed.
+
+If you sell services
+1. Add clients.
+2. Add services.
+3. Create a devis if needed.
+4. Create the invoice.
+5. Validate it.
+6. Mark it paid later.
+
+If you buy from suppliers
+1. Add suppliers.
+2. Create a supplier purchase order.
+3. Send the PDF to the supplier.
+4. Record the supplier invoice or expense when received.
+5. Follow stock-in and purchase logic when available.
+
+
+GOOD PRACTICES
+
+1. Validate invoices only when they are final.
+2. Keep client and supplier records clean.
+3. Use products for stock items and services for non-stock work.
+4. Check TVA rate before saving any item.
+5. Review every PDF before sending it.
+6. Verify extractor results before trusting them.
+7. Monitor low stock regularly.
+8. Keep profile data complete.
+
+
+TVA QUICK GUIDE
+
+Common TVA rates in the app
+- 19% standard rate
+- 13% reduced rate
+- 7% super reduced rate
+- 0% for exempt or zero-rated cases where legally applicable
+
+Reminder
+The app calculates the amounts, but the user must still choose the correct legal rate for the real product or service.
+
+
+COMMON MISTAKES TO AVOID
+
+1. Creating an avoir without a source invoice.
+2. Treating validation as payment.
+3. Mixing products and services in the wrong catalog.
+4. Forgetting to review the PDF before sending.
+5. Using extractor results without checking totals and names.
+6. Ignoring low stock warnings.
+
+
+SHORT GLOSSARY
+
+Devis
+Quotation sent before confirmation.
+
+Sales order
+Confirmation of what the client accepted.
+
+Supplier purchase order
+Order sent to a supplier.
+
+Delivery note
+Proof that goods were delivered or left stock.
+
+Invoice
+Official billing document.
+
+Avoir
+Negative correction document linked to an invoice.
+
+FODEC
+Additional tax-related setting used in some Tunisian business cases.
+
+TVA
+Value-added tax.
+
+
+UI DESIGN REFRESH SCOPE
+
+If the app receives a global design refresh to match the Assistant page, the change should follow these rules:
+
+What will change
+- Card and panel appearance
+- Border radius
+- Shadows and glass-like surface styling
+- Section header styling
+- Button styling
+- Input, select, and textarea styling
+- Table styling
+- Modal styling
+- Shared page surface colors in light and dark mode
+
+What will not change
+- Page routes
+- Page content
+- Business logic
+- Form fields
+- Button actions
+- Navigation structure
+- Placement of major sections on each page
+- Existing workflows
+
+Technical scope
+- The refresh should mainly target shared CSS classes used across the app.
+- Priority classes include container, dash panels, panel heads, stat cards, buttons, inputs, tables, status pills, and modal surfaces.
+- The goal is to make the app visually consistent with the Assistant page without rebuilding each page layout.

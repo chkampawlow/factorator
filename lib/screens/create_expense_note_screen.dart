@@ -8,7 +8,24 @@ import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/expense_notes_repo.dart';
 
 class CreateExpenseNoteScreen extends StatefulWidget {
-  const CreateExpenseNoteScreen({super.key});
+  const CreateExpenseNoteScreen({
+    super.key,
+    this.initialTitle = '',
+    this.initialAmount,
+    this.initialCategory = '',
+    this.initialDescription = '',
+    this.initialReceiptPath = '',
+    this.initialDate,
+    this.initialCurrency,
+  });
+
+  final String initialTitle;
+  final double? initialAmount;
+  final String initialCategory;
+  final String initialDescription;
+  final String initialReceiptPath;
+  final DateTime? initialDate;
+  final String? initialCurrency;
 
   @override
   State<CreateExpenseNoteScreen> createState() =>
@@ -95,6 +112,19 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
   void initState() {
     super.initState();
 
+    _titleController.text = widget.initialTitle;
+    _amountController.text = widget.initialAmount == null
+        ? ''
+        : widget.initialAmount!.toStringAsFixed(3);
+    _categoryController.text = widget.initialCategory;
+    _descriptionController.text = widget.initialDescription;
+    _receiptPathController.text = widget.initialReceiptPath;
+    _selectedDate = widget.initialDate ?? DateTime.now();
+    final initialCurrency = widget.initialCurrency?.toUpperCase();
+    if (initialCurrency != null && _currencies.contains(initialCurrency)) {
+      _currency = initialCurrency;
+    }
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -116,7 +146,11 @@ class _CreateExpenseNoteScreenState extends State<CreateExpenseNoteScreen>
   }
 
   Future<void> _init() async {
-    final currency = await _settingsService.getCurrency();
+    final requestedCurrency = widget.initialCurrency?.toUpperCase();
+    final currency =
+        requestedCurrency != null && _currencies.contains(requestedCurrency)
+            ? requestedCurrency
+            : await _settingsService.getCurrency();
     if (!mounted) return;
     setState(() => _currency = currency);
     _animController.forward();

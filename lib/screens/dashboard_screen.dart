@@ -1,12 +1,18 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:my_app/core/access_scope.dart';
+import 'package:my_app/core/permission_service.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:my_app/screens/add_client_screen.dart';
+import 'package:my_app/screens/add_product_screen.dart';
+import 'package:my_app/screens/capture_extractor_screen.dart';
 import 'package:my_app/screens/create_expense_note_screen.dart';
-import 'package:my_app/screens/clients_screen.dart';
 import 'package:my_app/screens/invoice_edit_screen.dart';
 import 'package:my_app/screens/invoices_screen.dart';
-import 'package:my_app/screens/scan_invoice_screen.dart';
+import 'package:my_app/screens/notification_center_screen.dart';
+import 'package:my_app/screens/products_screen.dart';
+import 'package:my_app/screens/global_search_screen.dart';
+import 'package:my_app/screens/supplier_receptions_screen.dart';
 
 import '../storage/invoices_repo.dart';
 
@@ -14,8 +20,8 @@ import 'package:my_app/services/currency_service.dart';
 import '../services/settings_service.dart';
 import '../storage/clients_repo.dart';
 import '../storage/dashboard_repo.dart';
-import '../storage/expense_notes_repo.dart';
 import '../widgets/action_tile.dart';
+import '../widgets/app_alerts.dart';
 import '../widgets/app_top_bar.dart';
 
 enum _ExpenseEntryMode { manual, scan }
@@ -42,23 +48,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _repo = DashboardRepo();
   final _clientsRepo = ClientsRepo();
   final _settingsService = SettingsService();
-  final _expenseRepo = ExpenseNotesRepo();
   final _invoicesRepo = InvoicesRepo();
 
   bool _loading = true;
+  String? _loadError;
 
   int _customersCount = 0;
   String _currency = 'TND';
-  double _pendingAmount = 0;
   double _monthlyExpenses = 0;
   int _paidCount = 0;
   int _unpaidCount = 0;
   List<double> _monthlyRevenue = List.filled(6, 0);
-  List<double> _growth = [];
+  List<double> _chartRevenue = [];
+  List<String> _chartMonths = [];
   double _paymentRate = 0;
 
   double _avgInvoice = 0;
   List<MapEntry<String, double>> _topClients = [];
+  List<Map<String, dynamic>> _recentDocuments = [];
+  List<Map<String, dynamic>> _attention = [];
+  Map<String, dynamic> _notificationCounts = {};
 
   bool _didLoadOnce = false;
 
@@ -86,6 +95,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _createInvoiceAndOpenEditor() async {
+    if (!_requirePermission(AppPermission.invoicesCreate)) return;
     final l10n = AppLocalizations.of(context)!;
 
     final selectedClient = await _pickClientForNewInvoice();
@@ -139,129 +149,231 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _computeStats(List<Map<String, dynamic>> invoices) {
-    double totalRevenue = 0;
-    double pendingAmount = 0;
-    int paidCount = 0;
-    int unpaidCount = 0;
+  double _number(dynamic value) =>
+      value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
 
-    final now = DateTime.now();
-    final monthBuckets = <String, double>{};
-    for (int i = 5; i >= 0; i--) {
-      final d = DateTime(now.year, now.month - i, 1);
-      final key = '${d.year}-${d.month.toString().padLeft(2, '0')}';
-      monthBuckets[key] = 0;
-    }
+  int _integer(dynamic value) =>
+      value is int ? value : int.tryParse('$value') ?? 0;
 
-    for (final inv in invoices) {
-      final status = (inv['status'] ?? 'UNPAID').toString().toUpperCase();
-      final total = double.tryParse((inv['total'] ?? '0').toString()) ?? 0.0;
-      final invoiceDate = _parseDate((inv['invoice_date'] ?? '').toString());
-      final key =
-          '${invoiceDate.year}-${invoiceDate.month.toString().padLeft(2, '0')}';
+  Map<String, dynamic> _map(dynamic value) =>
+      value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
 
-      if (status == 'PAID') {
-        totalRevenue += total;
-        paidCount++;
-        if (monthBuckets.containsKey(key)) {
-          monthBuckets[key] = (monthBuckets[key] ?? 0) + total;
-        }
-      } else {
-        pendingAmount += total;
-        unpaidCount++;
-      }
-    }
+  void _applyOverview(Map<String, dynamic> overview) {
+    final invoice = _map(overview['invoice']);
+    final sales = _map(overview['sales']);
+    final accounting = _map(overview['accounting']);
+    final source = sales.isNotEmpty
+        ? sales
+        : accounting.isNotEmpty
+            ? accounting
+            : invoice;
 
-    _pendingAmount = pendingAmount;
-    _paidCount = paidCount;
-    _unpaidCount = unpaidCount;
-    _monthlyRevenue = monthBuckets.values.toList();
+    _paidCount = _integer(source['paid_count']);
+    _unpaidCount =
+        _integer(source['unpaid_count']) + _integer(source['overdue_count']);
+    final invoiceCount = _integer(source['invoice_count']);
+    final totalRevenue = _number(source['revenue_total']);
+    final monthlyRevenue = _number(source['monthly_revenue']);
+    final rawMonthlySeries = overview['monthly_series'];
+    final monthlyRows = rawMonthlySeries is List
+        ? rawMonthlySeries
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList()
+        : <Map<String, dynamic>>[];
+    final monthlySeries =
+        monthlyRows.map((row) => _number(row['revenue'])).toList();
+    _monthlyExpenses = _number(
+      accounting['monthly_expenses'] ?? overview['monthly_expenses'],
+    );
+    _monthlyRevenue =
+        monthlySeries.isEmpty ? <double>[monthlyRevenue] : monthlySeries;
+    _chartRevenue = List<double>.from(_monthlyRevenue);
+    _chartMonths = monthlyRows.map((row) => '${row['month'] ?? ''}').toList();
+    _paymentRate = invoiceCount == 0 ? 0 : (_paidCount / invoiceCount) * 100;
+    _avgInvoice = invoiceCount == 0 ? 0 : totalRevenue / invoiceCount;
 
-    _computeGrowth();
-
-    final totalInvoices = paidCount + unpaidCount;
-    _paymentRate = totalInvoices == 0 ? 0 : (paidCount / totalInvoices) * 100;
-
-    // avg invoice
-    _avgInvoice =
-        invoices.isEmpty ? 0 : (totalRevenue + pendingAmount) / invoices.length;
-
-    // top clients (by revenue)
-    final clientTotals = <String, double>{};
-    for (final inv in invoices) {
-      final client = (inv['client_name'] ?? 'Unknown').toString();
-      final total = double.tryParse((inv['total'] ?? '0').toString()) ?? 0.0;
-      clientTotals[client] = (clientTotals[client] ?? 0) + total;
-    }
-
-    final sorted = clientTotals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    _topClients = sorted.take(3).toList();
+    final rawTopClients = overview['top_clients'];
+    _topClients = rawTopClients is List
+        ? rawTopClients
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .map((row) => MapEntry(
+                  (row['label'] ?? '').toString(),
+                  _number(row['value']),
+                ))
+            .where((entry) => entry.key.isNotEmpty)
+            .take(3)
+            .toList()
+        : [];
+    final rawRecent = overview['recent_invoices'] ?? source['recent_invoices'];
+    _recentDocuments = rawRecent is List
+        ? rawRecent
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .take(5)
+            .toList()
+        : [];
+    final rawAttention = overview['attention'];
+    _attention = rawAttention is List
+        ? rawAttention
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList()
+        : [];
   }
 
-  void _computeGrowth() {
-    _growth = [];
-
-    for (int i = 1; i < _monthlyRevenue.length; i++) {
-      final prev = _monthlyRevenue[i - 1];
-      final current = _monthlyRevenue[i];
-
-      if (prev == 0) {
-        _growth.add(0);
-      } else {
-        _growth.add(((current - prev) / prev) * 100);
-      }
+  String _attentionLabel(String type) {
+    final language = Localizations.localeOf(context).languageCode;
+    if (language == 'fr') {
+      return switch (type) {
+        'OVERDUE_INVOICES' => 'Factures en retard',
+        'ACCEPTED_DEVIS' => 'Devis acceptés',
+        'DELIVERIES_TO_INVOICE' => 'Livraisons prêtes à facturer',
+        'INVOICE_DRAFTS' => 'Brouillons à compléter',
+        'LOW_STOCK' => 'Stock faible',
+        'ZERO_STOCK' => 'Rupture de stock',
+        'PRODUCT_PRICING_REQUIRED' => 'Prix de vente manquants',
+        'PENDING_SUPPLIER_ORDERS' => 'Commandes fournisseur en attente',
+        'PENDING_RECEPTIONS' => 'Réceptions en attente',
+        'PENDING_INVITATIONS' => 'Invitations en attente',
+        _ => type.replaceAll('_', ' ').toLowerCase(),
+      };
     }
+    if (language == 'ar') {
+      return switch (type) {
+        'OVERDUE_INVOICES' => 'فواتير متأخرة',
+        'ACCEPTED_DEVIS' => 'عروض أسعار مقبولة',
+        'DELIVERIES_TO_INVOICE' => 'تسليمات جاهزة للفوترة',
+        'INVOICE_DRAFTS' => 'مسودات تحتاج إلى إكمال',
+        'LOW_STOCK' => 'مخزون منخفض',
+        'ZERO_STOCK' => 'نفاد المخزون',
+        'PRODUCT_PRICING_REQUIRED' => 'منتجات دون سعر بيع',
+        'PENDING_SUPPLIER_ORDERS' => 'طلبات موردين معلقة',
+        'PENDING_RECEPTIONS' => 'عمليات استلام معلقة',
+        'PENDING_INVITATIONS' => 'دعوات معلقة',
+        _ => type.replaceAll('_', ' ').toLowerCase(),
+      };
+    }
+    return switch (type) {
+      'OVERDUE_INVOICES' => 'Overdue invoices',
+      'ACCEPTED_DEVIS' => 'Accepted quotations to process',
+      'DELIVERIES_TO_INVOICE' => 'Deliveries ready to invoice',
+      'INVOICE_DRAFTS' => 'Invoice drafts to complete',
+      'LOW_STOCK' => 'Low-stock products',
+      'ZERO_STOCK' => 'Out-of-stock products',
+      'PRODUCT_PRICING_REQUIRED' => 'Products requiring a selling price',
+      'PENDING_SUPPLIER_ORDERS' => 'Pending supplier orders',
+      'PENDING_RECEPTIONS' => 'Pending supplier receptions',
+      'PENDING_INVITATIONS' => 'Pending invitations',
+      _ => type.replaceAll('_', ' ').toLowerCase(),
+    };
+  }
+
+  String _performanceLabel(String localeName) => switch (localeName) {
+        'fr' => 'Performance',
+        'ar' => 'الأداء',
+        _ => 'Performance',
+      };
+
+  String _recentDocumentsLabel(String localeName) => switch (localeName) {
+        'fr' => 'Documents récents',
+        'ar' => 'المستندات الأخيرة',
+        _ => 'Recent documents',
+      };
+
+  String _tipTitle(String localeName) => switch (localeName) {
+        'fr' => 'Astuce du jour',
+        'ar' => 'نصيحة اليوم',
+        _ => 'Tip of the day',
+      };
+
+  String _tipBody(String localeName) => switch (localeName) {
+        'fr' =>
+          'Relancez les factures en retard pour améliorer votre trésorerie.',
+        'ar' => 'تابع الفواتير المتأخرة لتحسين التدفق النقدي.',
+        _ => 'Follow up overdue invoices to improve your cash flow.',
+      };
+
+  Future<void> _openAttention(Map<String, dynamic> item) async {
+    final type = '${item['type'] ?? ''}';
+    if (type == 'OVERDUE_INVOICES' || type == 'INVOICE_DRAFTS') {
+      await _openInvoicesWithStatus(
+        type == 'OVERDUE_INVOICES' ? 'OVERDUE' : 'DRAFT',
+      );
+    } else if (type == 'LOW_STOCK' ||
+        type == 'ZERO_STOCK' ||
+        type == 'PRODUCT_PRICING_REQUIRED') {
+      await _go(ProductsScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+        initialFilter: type == 'PRODUCT_PRICING_REQUIRED' ? 'pricing' : 'low',
+      ));
+    } else if (type == 'PENDING_RECEPTIONS') {
+      if (!_requirePermission(AppPermission.supplierReceptionsView)) return;
+      await _go(SupplierReceptionsScreen(
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ));
+    }
+  }
+
+  Future<void> _showNotifications() async {
+    final permissions = AccessScope.of(context).permissions;
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NotificationCenterScreen(
+          permissions: permissions,
+          onToggleTheme: widget.onToggleTheme,
+          onChangePrimaryColor: widget.onChangePrimaryColor,
+          onChangeLanguage: widget.onChangeLanguage,
+          currentPrimaryColor: widget.currentPrimaryColor,
+        ),
+      ),
+    );
+    if (mounted) await _load();
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
 
     try {
-      final invoices = await _repo.getRecentInvoices(limit: 500);
-      final customers = await _countCustomers();
-      final currency = await _settingsService.getCurrency();
+      final results = await Future.wait([
+        _repo.getOverview(),
+        _repo.getNotificationCounts(),
+        _can(AppPermission.clientsView) ? _countCustomers() : Future.value(0),
+        _settingsService.getCurrency(),
+      ]);
+      final overview = results[0] as Map<String, dynamic>;
+      final notifications = results[1] as Map<String, dynamic>;
+      final customers = results[2] as int;
+      final currency = results[3] as String;
 
-      final expenses = await _expenseRepo.listExpenseNotes();
-
-      final now = DateTime.now();
-      final startOfMonth = DateTime(now.year, now.month, 1);
-      final startOfNextMonth = DateTime(now.year, now.month + 1, 1);
-
-      double monthlyExpenses = 0.0;
-      for (final e in expenses) {
-        final rawDate = (e['expense_date'] ?? e['date'] ?? '').toString();
-        final d = DateTime.tryParse(rawDate);
-        if (d == null) continue;
-        if (d.isBefore(startOfMonth) || !d.isBefore(startOfNextMonth)) continue;
-
-        final st = (e['status'] ?? '').toString().trim().toLowerCase();
-        if (st == 'cancelled' || st == 'canceled' || st == 'rejected') continue;
-
-        final amt = (e['amount'] is num)
-            ? (e['amount'] as num).toDouble()
-            : double.tryParse(e['amount'].toString().replaceAll(',', '.'));
-        if (amt == null) continue;
-
-        monthlyExpenses += amt;
-      }
+      if (!mounted) return;
 
       setState(() {
         _customersCount = customers;
         _currency = currency;
-        _computeStats(invoices);
-        _monthlyExpenses = monthlyExpenses;
+        _applyOverview(overview);
+        _notificationCounts = notifications;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _loading = false;
+        _loadError = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
-
-  DateTime _parseDate(String s) => DateTime.tryParse(s) ?? DateTime.now();
 
   Future<void> _go(Widget page) async {
     final res = await Navigator.push(
@@ -271,11 +383,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (res == true) await _load();
   }
 
+  Future<void> _openRecentDocument(Map<String, dynamic> document) async {
+    final id = _integer(document['id']);
+    if (id <= 0) return;
+    await _go(
+      InvoiceEditScreen(
+        invoiceId: id,
+        onToggleTheme: widget.onToggleTheme,
+        onChangePrimaryColor: widget.onChangePrimaryColor,
+        onChangeLanguage: widget.onChangeLanguage,
+        currentPrimaryColor: widget.currentPrimaryColor,
+      ),
+    );
+  }
+
   Future<void> _openAddClient() async {
+    if (!_requirePermission(AppPermission.clientsCreate)) return;
     await _go(const AddClientScreen());
   }
 
   Future<void> _openNewExpenseOptions() async {
+    if (!_requirePermission(AppPermission.expensesCreate)) return;
     final l10n = AppLocalizations.of(context)!;
 
     final mode = await showModalBottomSheet<_ExpenseEntryMode>(
@@ -324,11 +452,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         break;
       case _ExpenseEntryMode.scan:
         await _go(
-          ScanInvoiceScreen(
+          CaptureExtractorScreen(
             onToggleTheme: widget.onToggleTheme,
             onChangePrimaryColor: widget.onChangePrimaryColor,
             onChangeLanguage: widget.onChangeLanguage,
             currentPrimaryColor: widget.currentPrimaryColor,
+            permissions: AccessScope.of(context).permissions,
           ),
         );
         break;
@@ -336,6 +465,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _openInvoicesWithStatus(String status) async {
+    final access = AccessScope.maybeOf(context)?.permissions;
+    if (access?.canViewFeature(AppFeature.invoices) != true) {
+      AppAlerts.error(context, 'You do not have permission for this action.');
+      return;
+    }
     // Open invoices list and pass initialStatus as a constructor parameter.
     final res = await Navigator.push(
       context,
@@ -359,435 +493,1118 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
-    final statsColumns = screenWidth < 360 ? 1 : (screenWidth < 520 ? 2 : 3);
     final stackCharts = screenWidth < 700;
+    final quickActions = <Widget>[
+      if (_can(AppPermission.invoicesCreate))
+        ActionTile(
+          label: l10n.createInvoice,
+          icon: Icons.add_circle_outline,
+          bg: cs.primary,
+          fg: cs.onPrimary,
+          onTap: _createInvoiceAndOpenEditor,
+        ),
+      if (_can(AppPermission.expensesCreate))
+        ActionTile(
+          label: l10n.createExpenseNoteTitle,
+          icon: Icons.account_balance_wallet_outlined,
+          bg: cs.secondary,
+          onTap: _openNewExpenseOptions,
+        ),
+      if (_can(AppPermission.clientsCreate))
+        ActionTile(
+          label: l10n.newCustomer,
+          icon: Icons.person_add_alt_1_outlined,
+          bg: const Color(0xFF8B5CF6),
+          fg: cs.onSecondary,
+          onTap: _openAddClient,
+        ),
+      if (_can(AppPermission.productsCreate))
+        ActionTile(
+          label: l10n.addProduct,
+          icon: Icons.inventory_2_outlined,
+          bg: cs.tertiary,
+          onTap: () => _go(const AddProductScreen()),
+        ),
+    ];
+    final topClientMax = _topClients.fold<double>(
+      0,
+      (maximum, entry) => math.max(maximum, entry.value),
+    );
 
     return Scaffold(
       appBar: AppTopBar(
-        title: l10n.dashboard,
+        title: 'El Fatoura',
+        actions: [
+          IconButton(
+            tooltip: 'Notifications',
+            icon: Badge(
+              isLabelVisible: _integer(
+                    _notificationCounts['unread_count'] ??
+                        _notificationCounts['unread'],
+                  ) >
+                  0,
+              label: Text('${_integer(
+                _notificationCounts['unread_count'] ??
+                    _notificationCounts['unread'],
+              )}'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            onPressed: _showNotifications,
+          ),
+        ],
         onToggleTheme: widget.onToggleTheme,
         onChangePrimaryColor: widget.onChangePrimaryColor,
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  const SizedBox(height: 18),
-                  Text(l10n.quickActions, style: t.headlineSmall),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: screenWidth < 380 ? 74 : 82,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: ActionTile(
-                            label: l10n.createInvoice,
-                            icon: Icons.add_circle_outline,
-                            bg: cs.primary,
-                            fg: cs.onPrimary,
-                            onTap: _createInvoiceAndOpenEditor,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ActionTile(
-                            label: l10n.createExpenseNoteTitle,
-                            icon: Icons.account_balance_wallet_outlined,
-                            bg: cs.tertiaryContainer.withValues(alpha: .40),
-                            onTap: _openNewExpenseOptions,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ActionTile(
-                            label: l10n.newCustomer,
-                            icon: Icons.person_add_alt_1_outlined,
-                            bg: cs.secondary,
-                            fg: cs.onSecondary,
-                            onTap: _openAddClient,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    l10n.recentTransactions,
-                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 10),
-                  // ===== SUMMARY (non-clickable) =====
-                  LayoutBuilder(
-                    builder: (context, c) {
-                      final isNarrow = c.maxWidth < 720;
-
-                      final items = <Widget>[
-                        _MiniStatRect(
-                          title: l10n.netMonthlyRevenue,
-                          value: CurrencyService.format(
-                            (_monthlyRevenue.isNotEmpty
-                                    ? _monthlyRevenue.last
-                                    : 0) -
-                                _monthlyExpenses,
-                            _currency,
-                          ),
-                          subtitle: '',
-                          icon: Icons.payments_outlined,
-                        ),
-                        _MiniStatRect(
-                          title: l10n.monthlyRevenue,
-                          value: CurrencyService.format(
-                            _monthlyRevenue.isNotEmpty
-                                ? _monthlyRevenue.last
-                                : 0,
-                            _currency,
-                          ),
-                          subtitle: '',
-                          icon: Icons.trending_up_rounded,
-                        ),
-                        _MiniStatRect(
-                          title: l10n.averageInvoice,
-                          value: CurrencyService.format(_avgInvoice, _currency),
-                          subtitle: '',
-                          icon: Icons.bar_chart_rounded,
-                        ),
-                      ];
-
-                      if (isNarrow) {
-                        return SizedBox(
-                          height: 110,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: items.length,
-                            padding: EdgeInsets.zero,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 10),
-                            itemBuilder: (context, i) => SizedBox(
-                              width: 235,
-                              child: items[i],
-                            ),
-                          ),
-                        );
-                      }
-
-                      return Row(
-                        children: [
-                          Expanded(child: items[0]),
-                          const SizedBox(width: 10),
-                          Expanded(child: items[1]),
-                          const SizedBox(width: 10),
-                          Expanded(child: items[2]),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 10),
-
-                  // ===== ACTION CARDS (clickable) =====
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: statsColumns,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: statsColumns == 1
-                        ? 2.2
-                        : (statsColumns == 2 ? 1.25 : 1.0),
+          ? const _DashboardLoading()
+          : _loadError != null
+              ? RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(24),
                     children: [
-                      // Pending card (open unpaid invoices), subtitle is ''
-                      _ActionStatCard(
-                        title: l10n.pending,
-                        value:
-                            CurrencyService.format(_pendingAmount, _currency),
-                        subtitle: '',
-                        icon: Icons.hourglass_bottom_rounded,
-                        color: cs.tertiary,
-                        onTap: () => _openInvoicesWithStatus('UNPAID'),
+                      const SizedBox(height: 120),
+                      Icon(Icons.cloud_off_rounded, size: 54, color: cs.error),
+                      const SizedBox(height: 16),
+                      Text(
+                        '${l10n.loadFailed}: $_loadError',
+                        textAlign: TextAlign.center,
+                        style: t.titleMedium,
                       ),
-                      // New expense note card, subtitle is ''
-                      _ActionStatCard(
-                        title: l10n.createExpenseNoteTitle,
-                        value:
-                            CurrencyService.format(_monthlyExpenses, _currency),
-                        subtitle: '',
-                        icon: Icons.account_balance_wallet_outlined,
-                        color: cs.tertiary,
-                        onTap: _openNewExpenseOptions,
-                      ),
-                      // Paid card, subtitle shows invoices + unpaid count
-                      _ActionStatCard(
-                        title: l10n.paidLabel,
-                        value: '$_paidCount',
-                        subtitle:
-                            '${l10n.invoices} • ${l10n.unpaidLabel}: $_unpaidCount',
-                        icon: Icons.check_circle_outline_rounded,
-                        color: cs.secondary,
-                        onTap: () => _openInvoicesWithStatus('PAID'),
-                      ),
-                      // Clients card replaces unpaid card
-                      _ActionStatCard(
-                        title: l10n.client,
-                        value: '$_customersCount',
-                        subtitle: '',
-                        icon: Icons.people_alt_outlined,
-                        color: cs.primary,
-                        onTap: () => _go(
-                          ClientsScreen(
-                            onToggleTheme: widget.onToggleTheme,
-                            onChangePrimaryColor: widget.onChangePrimaryColor,
-                            onChangeLanguage: widget.onChangeLanguage,
-                            currentPrimaryColor: widget.currentPrimaryColor,
-                          ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: FilledButton.icon(
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(l10n.retry),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
-
-                  // ===== NEW STATS SECTION =====
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.topClients,
-                            style: t.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
-                          const SizedBox(height: 12),
-                          ..._topClients.map((e) => Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        e.key,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: t.bodyMedium,
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1080),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _DashboardSearch(
+                                  onSearch: () {
+                                    final permissions =
+                                        AccessScope.of(context).permissions;
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => GlobalSearchScreen(
+                                          permissions: permissions,
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      CurrencyService.format(
-                                          e.value, _currency),
-                                      style: t.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w800),
-                                    ),
-                                  ],
+                                    );
+                                  },
                                 ),
-                              )),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  stackCharts
-                      ? Column(
-                          children: [
-                            Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      l10n.growthCurve,
-                                      style: t.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w900),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    SizedBox(
-                                      height: 180,
-                                      child: _growth.isEmpty
-                                          ? Center(
-                                              child: Text(
-                                                l10n.noInvoicesYet,
-                                                style: t.bodyMedium?.copyWith(
-                                                  color: cs.onSurfaceVariant,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                            )
-                                          : CustomPaint(
-                                              painter: _RevenueLineChartPainter(
-                                                values: _growth,
-                                                lineColor: cs.primary,
-                                                fillColor: cs.primary
-                                                    .withValues(alpha: 0.10),
-                                                gridColor: cs.outlineVariant
-                                                    .withValues(alpha: 0.25),
-                                              ),
-                                              child: const SizedBox.expand(),
-                                            ),
-                                    ),
-                                  ],
+                                const SizedBox(height: 22),
+                                Text(
+                                  _performanceLabel(l10n.localeName),
+                                  style: t.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      l10n.paymentRate,
-                                      style: t.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w900),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    SizedBox(
-                                      height: 180,
+                                const SizedBox(height: 10),
+                                // ===== SUMMARY (non-clickable) =====
+                                LayoutBuilder(
+                                  builder: (context, c) {
+                                    final isNarrow = c.maxWidth < 720;
+
+                                    final items = <Widget>[
+                                      _MiniStatRect(
+                                        title: l10n.netMonthlyRevenue,
+                                        value: CurrencyService.format(
+                                          (_monthlyRevenue.isNotEmpty
+                                                  ? _monthlyRevenue.last
+                                                  : 0) -
+                                              _monthlyExpenses,
+                                          _currency,
+                                        ),
+                                        subtitle:
+                                            '${l10n.monthlyExpenses}: -${CurrencyService.format(_monthlyExpenses, _currency)}',
+                                        icon: Icons.payments_outlined,
+                                        color: cs.primary,
+                                      ),
+                                      _MiniStatRect(
+                                        title: l10n.monthlyRevenue,
+                                        value: CurrencyService.format(
+                                          _monthlyRevenue.isNotEmpty
+                                              ? _monthlyRevenue.last
+                                              : 0,
+                                          _currency,
+                                        ),
+                                        subtitle: '',
+                                        icon: Icons.trending_up_rounded,
+                                        color: cs.secondary,
+                                      ),
+                                      _MiniStatRect(
+                                        title: l10n.averageInvoice,
+                                        value: CurrencyService.format(
+                                            _avgInvoice, _currency),
+                                        subtitle: '',
+                                        icon: Icons.bar_chart_rounded,
+                                        color: cs.tertiary,
+                                      ),
+                                      _MiniStatRect(
+                                        title: l10n.clients,
+                                        value: '$_customersCount',
+                                        subtitle: '',
+                                        icon: Icons.people_alt_outlined,
+                                        color: const Color(0xFF8B5CF6),
+                                      ),
+                                    ];
+
+                                    if (isNarrow) {
+                                      return GridView.count(
+                                        shrinkWrap: true,
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        crossAxisCount: 2,
+                                        mainAxisSpacing: 10,
+                                        crossAxisSpacing: 10,
+                                        childAspectRatio:
+                                            c.maxWidth < 380 ? 1.45 : 1.62,
+                                        children: items,
+                                      );
+                                    }
+
+                                    return Row(
+                                      children: [
+                                        Expanded(child: items[0]),
+                                        const SizedBox(width: 10),
+                                        Expanded(child: items[1]),
+                                        const SizedBox(width: 10),
+                                        Expanded(child: items[2]),
+                                        const SizedBox(width: 10),
+                                        Expanded(child: items[3]),
+                                      ],
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 18),
+
+                                if (quickActions.isNotEmpty) ...[
+                                  Text(
+                                    l10n.quickActions,
+                                    style: t.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  GridView.count(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    crossAxisCount: screenWidth < 620 ? 2 : 4,
+                                    mainAxisSpacing: 10,
+                                    crossAxisSpacing: 10,
+                                    childAspectRatio:
+                                        screenWidth < 420 ? 1.65 : 2.15,
+                                    children: quickActions,
+                                  ),
+                                  const SizedBox(height: 18),
+                                ],
+
+                                if (_recentDocuments.isNotEmpty) ...[
+                                  Text(
+                                    _recentDocumentsLabel(l10n.localeName),
+                                    style: t.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _RecentDocumentsCard(
+                                    documents: _recentDocuments,
+                                    currency: _currency,
+                                    onTap: _openRecentDocument,
+                                  ),
+                                  const SizedBox(height: 18),
+                                ],
+
+                                if (_attention.isNotEmpty) ...[
+                                  Text(
+                                    l10n.needsAttention,
+                                    style: t.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _DashboardAttentionCard(
+                                    items: _attention,
+                                    labelFor: _attentionLabel,
+                                    onTap: _openAttention,
+                                  ),
+                                  const SizedBox(height: 18),
+                                ],
+
+                                // ===== NEW STATS SECTION =====
+                                if (_topClients.isNotEmpty)
+                                  Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            l10n.paymentRate,
+                                            l10n.topClients,
                                             style: t.titleSmall?.copyWith(
                                                 fontWeight: FontWeight.w900),
                                           ),
                                           const SizedBox(height: 12),
-                                          LinearProgressIndicator(
-                                            value: _paymentRate / 100,
-                                            minHeight: 10,
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            '${_paymentRate.toStringAsFixed(1)}%',
-                                            style: t.titleMedium?.copyWith(
-                                                fontWeight: FontWeight.w900),
-                                          ),
-                                          Text(
-                                            '$_paidCount ${l10n.paidLabel} / $_unpaidCount ${l10n.unpaidLabel}',
-                                            style: t.bodySmall,
-                                          ),
+                                          ..._topClients.asMap().entries.map(
+                                                (entry) => _TopClientRow(
+                                                  rank: entry.key + 1,
+                                                  client: entry.value,
+                                                  maximum: topClientMax,
+                                                  currency: _currency,
+                                                ),
+                                              ),
                                         ],
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            Expanded(
-                              child: Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        l10n.growthCurve,
-                                        style: t.titleSmall?.copyWith(
-                                            fontWeight: FontWeight.w900),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      SizedBox(
-                                        height: 180,
-                                        child: _growth.isEmpty
-                                            ? Center(
-                                                child: Text(
-                                                  l10n.noInvoicesYet,
-                                                  style: t.bodyMedium?.copyWith(
-                                                    color: cs.onSurfaceVariant,
-                                                    fontWeight: FontWeight.w700,
+                                  ),
+
+                                const SizedBox(height: 18),
+
+                                stackCharts
+                                    ? Column(
+                                        children: [
+                                          Card(
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(16),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  _ChartTitleRow(
+                                                    title: l10n.monthlyRevenue,
+                                                    value:
+                                                        CurrencyService.format(
+                                                      _chartRevenue.isEmpty
+                                                          ? 0
+                                                          : _chartRevenue.last,
+                                                      _currency,
+                                                    ),
                                                   ),
-                                                ),
-                                              )
-                                            : CustomPaint(
-                                                painter:
-                                                    _RevenueLineChartPainter(
-                                                  values: _growth,
-                                                  lineColor: cs.primary,
-                                                  fillColor: cs.primary
-                                                      .withValues(alpha: 0.10),
-                                                  gridColor: cs.outlineVariant
-                                                      .withValues(alpha: 0.25),
-                                                ),
-                                                child: const SizedBox.expand(),
+                                                  const SizedBox(height: 12),
+                                                  SizedBox(
+                                                    height: 180,
+                                                    child: _chartRevenue.isEmpty
+                                                        ? Center(
+                                                            child: Text(
+                                                              l10n.noInvoicesYet,
+                                                              style: t
+                                                                  .bodyMedium
+                                                                  ?.copyWith(
+                                                                color: cs
+                                                                    .onSurfaceVariant,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w700,
+                                                              ),
+                                                            ),
+                                                          )
+                                                        : CustomPaint(
+                                                            painter:
+                                                                _RevenueLineChartPainter(
+                                                              values:
+                                                                  _chartRevenue,
+                                                              labels:
+                                                                  _chartMonths,
+                                                              lineColor:
+                                                                  cs.primary,
+                                                              fillColor: cs
+                                                                  .primary
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          0.10),
+                                                              gridColor: cs
+                                                                  .outlineVariant
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          0.25),
+                                                            ),
+                                                            child:
+                                                                const SizedBox
+                                                                    .expand(),
+                                                          ),
+                                                  ),
+                                                ],
                                               ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Card(
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(16),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    l10n.paymentRate,
+                                                    style: t.titleSmall
+                                                        ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w900),
+                                                  ),
+                                                  const SizedBox(height: 12),
+                                                  SizedBox(
+                                                    height: 180,
+                                                    child: _PaymentRateContent(
+                                                      rate: _paymentRate,
+                                                      paidCount: _paidCount,
+                                                      unpaidCount: _unpaidCount,
+                                                      paidLabel: l10n.paidLabel,
+                                                      unpaidLabel:
+                                                          l10n.unpaidLabel,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Row(
+                                        children: [
+                                          Expanded(
+                                            child: Card(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    _ChartTitleRow(
+                                                      title:
+                                                          l10n.monthlyRevenue,
+                                                      value: CurrencyService
+                                                          .format(
+                                                        _chartRevenue.isEmpty
+                                                            ? 0
+                                                            : _chartRevenue
+                                                                .last,
+                                                        _currency,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    SizedBox(
+                                                      height: 180,
+                                                      child:
+                                                          _chartRevenue.isEmpty
+                                                              ? Center(
+                                                                  child: Text(
+                                                                    l10n.noInvoicesYet,
+                                                                    style: t
+                                                                        .bodyMedium
+                                                                        ?.copyWith(
+                                                                      color: cs
+                                                                          .onSurfaceVariant,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w700,
+                                                                    ),
+                                                                  ),
+                                                                )
+                                                              : CustomPaint(
+                                                                  painter:
+                                                                      _RevenueLineChartPainter(
+                                                                    values:
+                                                                        _chartRevenue,
+                                                                    labels:
+                                                                        _chartMonths,
+                                                                    lineColor: cs
+                                                                        .primary,
+                                                                    fillColor: cs
+                                                                        .primary
+                                                                        .withValues(
+                                                                            alpha:
+                                                                                0.10),
+                                                                    gridColor: cs
+                                                                        .outlineVariant
+                                                                        .withValues(
+                                                                            alpha:
+                                                                                0.25),
+                                                                  ),
+                                                                  child: const SizedBox
+                                                                      .expand(),
+                                                                ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Card(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      l10n.paymentRate,
+                                                      style: t.titleSmall
+                                                          ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w900),
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    SizedBox(
+                                                      height: 180,
+                                                      child:
+                                                          _PaymentRateContent(
+                                                        rate: _paymentRate,
+                                                        paidCount: _paidCount,
+                                                        unpaidCount:
+                                                            _unpaidCount,
+                                                        paidLabel:
+                                                            l10n.paidLabel,
+                                                        unpaidLabel:
+                                                            l10n.unpaidLabel,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                const SizedBox(height: 18),
+                                _DashboardTipCard(
+                                  title: _tipTitle(l10n.localeName),
+                                  body: _tipBody(l10n.localeName),
                                 ),
-                              ),
+                                const SizedBox(height: 20),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        l10n.paymentRate,
-                                        style: t.titleSmall?.copyWith(
-                                            fontWeight: FontWeight.w900),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      SizedBox(
-                                        height: 180,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              l10n.paymentRate,
-                                              style: t.titleSmall?.copyWith(
-                                                  fontWeight: FontWeight.w900),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            LinearProgressIndicator(
-                                              value: _paymentRate / 100,
-                                              minHeight: 10,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              '${_paymentRate.toStringAsFixed(1)}%',
-                                              style: t.titleMedium?.copyWith(
-                                                  fontWeight: FontWeight.w900),
-                                            ),
-                                            Text(
-                                              '$_paidCount ${l10n.paidLabel} / $_unpaidCount ${l10n.unpaidLabel}',
-                                              style: t.bodySmall,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                  const SizedBox(height: 20),
+                      ),
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  bool _can(AppPermission permission) =>
+      AccessScope.maybeOf(context)?.permissions.can(permission) ?? false;
+
+  bool _requirePermission(AppPermission permission) {
+    if (_can(permission)) return true;
+    AppAlerts.error(context, 'You do not have permission for this action.');
+    return false;
+  }
+}
+
+class _DashboardSearch extends StatelessWidget {
+  final VoidCallback onSearch;
+
+  const _DashboardSearch({required this.onSearch});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          button: true,
+          label: MaterialLocalizations.of(context).searchFieldLabel,
+          child: InkWell(
+            onTap: onSearch,
+            borderRadius: BorderRadius.circular(15),
+            child: Ink(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: cs.outlineVariant),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.search_rounded, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 11),
+                  Text(
+                    MaterialLocalizations.of(context).searchFieldLabel,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DashboardLoading extends StatelessWidget {
+  const _DashboardLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final placeholder = cs.surfaceContainerHighest.withValues(alpha: 0.72);
+
+    Widget block({required double height, double? width, double radius = 14}) {
+      return Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: placeholder,
+          borderRadius: BorderRadius.circular(radius),
+          border: Border.all(
+            color: cs.outlineVariant.withValues(alpha: 0.55),
+          ),
+        ),
+      );
+    }
+
+    return SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1080),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              block(height: 50),
+              const SizedBox(height: 24),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final count = constraints.maxWidth < 720 ? 2 : 4;
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: 4,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: count,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: constraints.maxWidth < 380 ? 1.45 : 1.7,
+                    ),
+                    itemBuilder: (_, __) => block(height: 112),
+                  );
+                },
+              ),
+              const SizedBox(height: 18),
+              block(height: 210),
+              const SizedBox(height: 18),
+              block(height: 156),
+              const SizedBox(height: 18),
+              const Center(
+                child: SizedBox.square(
+                  dimension: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChartTitleRow extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _ChartTitleRow({required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          value,
+          style: textTheme.labelLarge?.copyWith(
+            color: cs.primary,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PaymentRateContent extends StatelessWidget {
+  final double rate;
+  final int paidCount;
+  final int unpaidCount;
+  final String paidLabel;
+  final String unpaidLabel;
+
+  const _PaymentRateContent({
+    required this.rate,
+    required this.paidCount,
+    required this.unpaidCount,
+    required this.paidLabel,
+    required this.unpaidLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final normalizedRate = (rate / 100).clamp(0.0, 1.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 43,
+              height: 43,
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(Icons.donut_large_rounded, color: cs.primary),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '${rate.toStringAsFixed(1)}%',
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        LinearProgressIndicator(
+          value: normalizedRate,
+          minHeight: 8,
+          borderRadius: BorderRadius.circular(99),
+          backgroundColor: cs.surfaceContainerHighest,
+        ),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            _ChartLegendItem(
+              color: cs.primary,
+              label: '$paidCount $paidLabel',
+            ),
+            _ChartLegendItem(
+              color: cs.error,
+              label: '$unpaidCount $unpaidLabel',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ChartLegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _ChartLegendItem({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+class _DashboardTipCard extends StatelessWidget {
+  final String title;
+  final String body;
+
+  const _DashboardTipCard({required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            cs.primary.withValues(alpha: 0.17),
+            cs.surfaceContainerHigh.withValues(alpha: 0.92),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: cs.primary.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(Icons.lightbulb_outline_rounded, color: cs.primary),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.titleSmall?.copyWith(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  body,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentDocumentsCard extends StatelessWidget {
+  final List<Map<String, dynamic>> documents;
+  final String currency;
+  final ValueChanged<Map<String, dynamic>> onTap;
+
+  const _RecentDocumentsCard({
+    required this.documents,
+    required this.currency,
+    required this.onTap,
+  });
+
+  double _amount(Map<String, dynamic> document) {
+    final value = document['total_tnd'] ?? document['total'] ?? 0;
+    return value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        child: Column(
+          children: [
+            for (var index = 0; index < documents.length; index++) ...[
+              Builder(
+                builder: (context) {
+                  final document = documents[index];
+                  final status = '${document['status'] ?? ''}'.toUpperCase();
+                  final accent = status == 'PAID' || status == 'PAYED'
+                      ? cs.primary
+                      : status == 'OVERDUE'
+                          ? cs.error
+                          : cs.secondary;
+                  final number = '${document['invoice'] ?? '-'}';
+                  final client = '${document['client_name'] ?? ''}'.trim();
+                  final date = '${document['invoice_date'] ?? ''}'.trim();
+
+                  return ListTile(
+                    minTileHeight: 64,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.receipt_long_rounded,
+                        size: 20,
+                        color: accent,
+                      ),
+                    ),
+                    title: Text(
+                      number,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: Text(
+                      [client, date]
+                          .where((value) => value.isNotEmpty)
+                          .join(' • '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          CurrencyService.format(_amount(document), currency),
+                          style: textTheme.labelMedium?.copyWith(
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                    onTap: () => onTap(document),
+                  );
+                },
+              ),
+              if (index < documents.length - 1)
+                const Divider(indent: 58, endIndent: 8),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TopClientRow extends StatelessWidget {
+  final int rank;
+  final MapEntry<String, double> client;
+  final double maximum;
+  final String currency;
+
+  const _TopClientRow({
+    required this.rank,
+    required this.client,
+    required this.maximum,
+    required this.currency,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final colors = <Color>[
+      cs.primary,
+      cs.secondary,
+      const Color(0xFF8B5CF6),
+    ];
+    final accent = colors[(rank - 1).clamp(0, colors.length - 1)];
+    final progress = maximum <= 0 ? 0.0 : (client.value / maximum).clamp(0, 1);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Text(
+              '$rank',
+              style: textTheme.labelMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  client.key,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelLarge,
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress.toDouble(),
+                    minHeight: 5,
+                    color: accent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            CurrencyService.format(client.value, currency),
+            style: textTheme.labelMedium?.copyWith(
+              color: cs.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardAttentionCard extends StatelessWidget {
+  final List<Map<String, dynamic>> items;
+  final String Function(String type) labelFor;
+  final ValueChanged<Map<String, dynamic>> onTap;
+
+  const _DashboardAttentionCard({
+    required this.items,
+    required this.labelFor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final visibleItems = items.take(5).toList();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        child: Column(
+          children: [
+            for (var index = 0; index < visibleItems.length; index++) ...[
+              Builder(
+                builder: (context) {
+                  final item = visibleItems[index];
+                  final tone = '${item['tone'] ?? ''}';
+                  final color = tone == 'danger'
+                      ? cs.error
+                      : tone == 'warning'
+                          ? cs.tertiary
+                          : cs.primary;
+                  return ListTile(
+                    minTileHeight: 58,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    leading: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        tone == 'danger'
+                            ? Icons.warning_amber_rounded
+                            : Icons.schedule_rounded,
+                        color: color,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      labelFor('${item['type'] ?? ''}'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${item['count'] ?? 0}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: color,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: cs.onSurfaceVariant,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                    onTap: () => onTap(item),
+                  );
+                },
+              ),
+              if (index < visibleItems.length - 1)
+                const Divider(indent: 54, endIndent: 8),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1107,12 +1924,14 @@ class _DashboardClientPickerSheetState
 
 class _RevenueLineChartPainter extends CustomPainter {
   final List<double> values;
+  final List<String> labels;
   final Color lineColor;
   final Color fillColor;
   final Color gridColor;
 
   _RevenueLineChartPainter({
     required this.values,
+    required this.labels,
     required this.lineColor,
     required this.fillColor,
     required this.gridColor,
@@ -1120,47 +1939,84 @@ class _RevenueLineChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const leftPad = 8.0;
-    const bottomPad = 12.0;
-    final chartWidth = size.width - leftPad;
-    final chartHeight = size.height - bottomPad;
+    if (values.isEmpty) return;
+
+    const horizontalPad = 8.0;
+    const topPad = 10.0;
+    const bottomPad = 26.0;
+    final chartWidth = size.width - (horizontalPad * 2);
+    final chartHeight = size.height - topPad - bottomPad;
 
     final gridPaint = Paint()
       ..color = gridColor
       ..strokeWidth = 1;
 
     for (int i = 0; i < 4; i++) {
-      final y = (chartHeight / 3) * i;
-      canvas.drawLine(Offset(leftPad, y), Offset(size.width, y), gridPaint);
+      final y = topPad + ((chartHeight / 3) * i);
+      canvas.drawLine(
+        Offset(horizontalPad, y),
+        Offset(size.width - horizontalPad, y),
+        gridPaint,
+      );
     }
 
+    final minValue = values.reduce(math.min);
     final maxValue = values.reduce(math.max);
-    if (maxValue <= 0 || values.length < 2) return;
+    final valueRange = maxValue - minValue;
 
-    final dx = chartWidth / (values.length - 1);
-    final path = Path();
-    final fillPath = Path();
-
-    for (int i = 0; i < values.length; i++) {
-      final x = leftPad + (dx * i);
-      final y = chartHeight - ((values[i] / maxValue) * (chartHeight - 8));
-      if (i == 0) {
-        path.moveTo(x, y);
-        fillPath.moveTo(x, chartHeight);
-        fillPath.lineTo(x, y);
-      } else {
-        path.lineTo(x, y);
-        fillPath.lineTo(x, y);
-      }
+    Offset pointFor(int index) {
+      final x = values.length == 1
+          ? size.width / 2
+          : horizontalPad + (chartWidth / (values.length - 1) * index);
+      final normalized = valueRange.abs() < 0.000001
+          ? 0.5
+          : (values[index] - minValue) / valueRange;
+      final y = topPad + ((1 - normalized) * chartHeight);
+      return Offset(x, y);
     }
 
-    fillPath.lineTo(leftPad + (dx * (values.length - 1)), chartHeight);
-    fillPath.close();
+    final points = List<Offset>.generate(values.length, pointFor);
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
 
-    final fillPaint = Paint()
-      ..color = fillColor
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(fillPath, fillPaint);
+    // Catmull-Rom-inspired control points keep the revenue line fluid without
+    // overshooting the actual monthly values.
+    for (int i = 0; i < points.length - 1; i++) {
+      final p0 = i == 0 ? points[i] : points[i - 1];
+      final p1 = points[i];
+      final p2 = points[i + 1];
+      final p3 = i + 2 < points.length ? points[i + 2] : p2;
+      const tension = 0.18;
+      path.cubicTo(
+        p1.dx + ((p2.dx - p0.dx) * tension),
+        p1.dy + ((p2.dy - p0.dy) * tension),
+        p2.dx - ((p3.dx - p1.dx) * tension),
+        p2.dy - ((p3.dy - p1.dy) * tension),
+        p2.dx,
+        p2.dy,
+      );
+    }
+
+    if (values.length > 1) {
+      final fillPath = Path.from(path);
+      fillPath.lineTo(
+        points.last.dx,
+        size.height - bottomPad,
+      );
+      fillPath.lineTo(points.first.dx, size.height - bottomPad);
+      fillPath.close();
+      canvas.drawPath(
+        fillPath,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [fillColor, fillColor.withValues(alpha: 0)],
+          ).createShader(
+            Rect.fromLTWH(0, topPad, size.width, chartHeight),
+          )
+          ..style = PaintingStyle.fill,
+      );
+    }
 
     final linePaint = Paint()
       ..color = lineColor
@@ -1172,31 +2028,45 @@ class _RevenueLineChartPainter extends CustomPainter {
 
     final pointPaint = Paint()..color = lineColor;
     for (int i = 0; i < values.length; i++) {
-      final x = leftPad + (dx * i);
-      final y = chartHeight - ((values[i] / maxValue) * (chartHeight - 8));
-      canvas.drawCircle(Offset(x, y), 3.8, pointPaint);
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: '${values[i].toStringAsFixed(0)}%',
-          style: TextStyle(
-            color: values[i] >= 0 ? Colors.green : Colors.red,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      final point = points[i];
+      if (i == values.length - 1) {
+        canvas.drawCircle(
+          point,
+          8,
+          Paint()..color = lineColor.withValues(alpha: 0.16),
+        );
+      }
+      canvas.drawCircle(point, i == values.length - 1 ? 4.5 : 3.2, pointPaint);
 
-      textPainter.paint(
-        canvas,
-        Offset(x - textPainter.width / 2, y - 16),
-      );
+      if (i < labels.length) {
+        final parts = labels[i].split('-');
+        final label = parts.length == 2 ? parts.last : labels[i];
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: label,
+            style: TextStyle(
+              color: gridColor.withValues(alpha: 0.95),
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        textPainter.paint(
+          canvas,
+          Offset(
+            point.dx - (textPainter.width / 2),
+            size.height - bottomPad + 7,
+          ),
+        );
+      }
     }
   }
 
   @override
   bool shouldRepaint(covariant _RevenueLineChartPainter oldDelegate) {
     return oldDelegate.values != values ||
+        oldDelegate.labels != labels ||
         oldDelegate.lineColor != lineColor ||
         oldDelegate.fillColor != fillColor ||
         oldDelegate.gridColor != gridColor;
@@ -1208,162 +2078,65 @@ class _MiniStatRect extends StatelessWidget {
   final String value;
   final String subtitle;
   final IconData icon;
+  final Color? color;
 
   const _MiniStatRect({
     required this.title,
     required this.value,
     required this.subtitle,
     required this.icon,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
+    final tone = color ?? cs.primary;
 
     return Container(
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(18),
-        border: Border(
-          left: BorderSide(
-            color: cs.primary.withValues(alpha: 0.45),
-            width: 3,
-          ),
+        border: Border.all(
+          color: cs.outlineVariant.withValues(alpha: 0.72),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
-              color: cs.primaryContainer.withValues(alpha: 0.30),
-              borderRadius: BorderRadius.circular(14),
+              color: tone.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(icon, size: 20, color: cs.primary),
+            child: Icon(icon, size: 19, color: tone),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: t.labelMedium?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w800,
-                    height: 1.15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: t.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: t.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ActionStatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ActionStatCard({
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Ink(
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: cs.outlineVariant.withValues(alpha: 0.25),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: t.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: t.labelSmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

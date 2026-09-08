@@ -158,6 +158,146 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadFailed => 'Load failed';
 
   @override
+  String get serverUnavailable => 'Unable to reach the server. Check your connection and try again.';
+
+  @override
+  String get requestTimedOut => 'The server took too long to respond. Please try again.';
+
+  @override
+  String get accountingServerUpdateRequired => 'Accounting Review is not installed on the server yet. Deploy the latest backend, then try again.';
+
+  @override
+  String get captureCenterTitle => 'Capture';
+
+  @override
+  String get captureCenterSubtitle => 'Scan a document, choose PDF/images, or look up a product barcode.';
+
+  @override
+  String get captureTakePhoto => 'Take photo';
+
+  @override
+  String get captureChooseFiles => 'Choose PDF or images';
+
+  @override
+  String get captureScanBarcode => 'Scan product barcode';
+
+  @override
+  String get extractorTitle => 'Document extractor';
+
+  @override
+  String get extractorReady => 'Choose up to 10 files, then run extraction.';
+
+  @override
+  String extractorSelectedFiles(int count) {
+    return '$count file(s) selected';
+  }
+
+  @override
+  String get extractorRun => 'Run extraction';
+
+  @override
+  String extractorUploading(int percent) {
+    return 'Uploading $percent%';
+  }
+
+  @override
+  String get extractorProcessing => 'Upload complete. Extracting document fields…';
+
+  @override
+  String get extractorReviewRequired => 'Extraction never validates a financial document. Review every field before creating a draft.';
+
+  @override
+  String extractorBatchSummary(int processed, int requested) {
+    return '$processed of $requested file(s) processed';
+  }
+
+  @override
+  String get extractorSuccessRate => 'Success rate';
+
+  @override
+  String get extractorPages => 'Pages';
+
+  @override
+  String get extractorFailed => 'Extraction failed';
+
+  @override
+  String get extractorReview => 'Review fields';
+
+  @override
+  String get extractorReviewTitle => 'Human review';
+
+  @override
+  String get extractorReviewSubtitle => 'Correct extracted values and choose the intended document type.';
+
+  @override
+  String get extractorDocumentType => 'Document type';
+
+  @override
+  String get extractorExpense => 'Expense receipt';
+
+  @override
+  String get extractorSupplierInvoice => 'Supplier invoice';
+
+  @override
+  String get extractorSupplierDelivery => 'Supplier delivery document';
+
+  @override
+  String get extractorPurchaseOrder => 'Purchase order';
+
+  @override
+  String get extractorWarnings => 'Review warnings';
+
+  @override
+  String get extractorLineItems => 'Extracted line items';
+
+  @override
+  String get extractorNoLineItems => 'No line items were detected.';
+
+  @override
+  String extractorConfidence(int percent) {
+    return 'Confidence: $percent%';
+  }
+
+  @override
+  String get extractorConfirmReviewed => 'I reviewed and corrected the extracted values.';
+
+  @override
+  String get extractorCreatePendingExpense => 'Prepare pending expense';
+
+  @override
+  String get extractorDraftNotice => 'This opens a prefilled form. Nothing is saved until you review and submit it, and the new expense always starts as pending.';
+
+  @override
+  String get extractorDestinationNeedsWeb => 'This destination needs authoritative supplier, order, reception, product, and tax-profile matching. Complete it in the web workspace for now.';
+
+  @override
+  String get extractorPermissionDenied => 'Your role can capture documents but cannot use the extractor.';
+
+  @override
+  String get extractorExpensePermissionDenied => 'Your role cannot create expense notes.';
+
+  @override
+  String get extractorServerUpdateRequired => 'The extractor is not installed on the deployed server yet.';
+
+  @override
+  String get extractorRemoveFile => 'Remove file';
+
+  @override
+  String get extractorRawText => 'Raw extracted text';
+
+  @override
+  String get extractorFileLimits => 'PDF, PNG, JPG, TIFF, BMP or WebP · 15 MB per file · 50 MB per batch';
+
+  @override
+  String get extractorNoFilesSelected => 'Choose at least one PDF or image.';
+
+  @override
+  String get extractorExtractedData => 'Extracted data';
+
+  @override
+  String get extractorTaxAmount => 'Tax amount';
+
+  @override
   String get invalidNumber => 'Invalid number';
 
   @override
@@ -394,7 +534,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoices => 'Invoices';
 
   @override
-  String get overdue => 'Overdue';
+  String get overdue => 'overdue';
 
   @override
   String get code => 'Indicatif';
@@ -520,6 +660,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountCreatedSuccessfully => 'Account created successfully';
+
+  @override
+  String get accountAwaitingApproval => 'Account created and awaiting administrator approval.';
 
   @override
   String get whoAreYou => 'Who are you?';
@@ -1191,4 +1334,550 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invoiceDeleted => 'Invoice deleted.';
+
+  @override
+  String get mobileSearchHint => 'Search clients, products, documents…';
+
+  @override
+  String get enterTwoCharacters => 'Enter at least 2 characters';
+
+  @override
+  String get noPermittedResults => 'No permitted results found';
+
+  @override
+  String get scanProduct => 'Scan product';
+
+  @override
+  String get lookingUpBarcode => 'Looking up barcode';
+
+  @override
+  String get productNotFoundBarcode => 'Product not found. Try another barcode.';
+
+  @override
+  String get pointCameraBarcode => 'Point the camera at a product barcode';
+
+  @override
+  String get toggleTorch => 'Toggle flashlight';
+
+  @override
+  String get documentsTitle => 'Documents';
+
+  @override
+  String get documentSearchHint => 'Search number, client or supplier';
+
+  @override
+  String get searchAction => 'Search';
+
+  @override
+  String get allDocuments => 'All documents';
+
+  @override
+  String get dates => 'Dates';
+
+  @override
+  String get clearDates => 'Clear dates';
+
+  @override
+  String get documentSourcesFailed => 'document sources could not be loaded.';
+
+  @override
+  String get noDocumentsFilters => 'No documents match these filters.';
+
+  @override
+  String get cannotViewDocument => 'You cannot view this document.';
+
+  @override
+  String get cannotViewRelatedDocument => 'You cannot view this related document.';
+
+  @override
+  String get previewOrSharePdf => 'Preview or share PDF';
+
+  @override
+  String get relatedDocuments => 'Related documents';
+
+  @override
+  String get lines => 'Lines';
+
+  @override
+  String get party => 'Party';
+
+  @override
+  String get dueExpected => 'Due / expected';
+
+  @override
+  String get balance => 'Balance';
+
+  @override
+  String get match => 'Match';
+
+  @override
+  String get sourceOrder => 'Source order';
+
+  @override
+  String get invoiceNumber => 'Invoice number';
+
+  @override
+  String get deliveryNote => 'Delivery note';
+
+  @override
+  String get exception => 'Exception';
+
+  @override
+  String get exceptionReason => 'Exception reason';
+
+  @override
+  String get source => 'Source';
+
+  @override
+  String get descriptionLabel => 'Description';
+
+  @override
+  String get documentLine => 'Document line';
+
+  @override
+  String get accepted => 'Accepted';
+
+  @override
+  String get damaged => 'Damaged';
+
+  @override
+  String get rejected => 'Rejected';
+
+  @override
+  String get quantityShort => 'Qty';
+
+  @override
+  String get allStatuses => 'All statuses';
+
+  @override
+  String get statusDraftMobile => 'Draft';
+
+  @override
+  String get statusOpen => 'Open';
+
+  @override
+  String get statusCompleted => 'Completed';
+
+  @override
+  String get statusCancelledMobile => 'Cancelled';
+
+  @override
+  String get kindInvoice => 'Invoice';
+
+  @override
+  String get kindQuotation => 'Quotation';
+
+  @override
+  String get kindCreditNote => 'Credit note';
+
+  @override
+  String get kindSalesOrder => 'Sales order';
+
+  @override
+  String get kindDeliveryNote => 'Delivery note';
+
+  @override
+  String get kindSupplierOrder => 'Supplier PO';
+
+  @override
+  String get kindSupplierReception => 'Supplier reception';
+
+  @override
+  String get kindSupplierInvoice => 'Supplier invoice';
+
+  @override
+  String get kindExpense => 'Expense';
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get markAllRead => 'Mark all as read';
+
+  @override
+  String get allNotificationsRead => 'All notifications marked as read.';
+
+  @override
+  String get notificationNoDestination => 'This notification has no mobile destination.';
+
+  @override
+  String get searchNotifications => 'Search notifications';
+
+  @override
+  String get unread => 'Unread';
+
+  @override
+  String get read => 'Read';
+
+  @override
+  String get allAreas => 'All areas';
+
+  @override
+  String get nothingNeedsAttention => 'Nothing needs your attention.';
+
+  @override
+  String get notificationOptions => 'Notification options';
+
+  @override
+  String get markUnread => 'Mark unread';
+
+  @override
+  String get markRead => 'Mark read';
+
+  @override
+  String get unreadNotifications => 'Unread notifications';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get salesArea => 'Sales';
+
+  @override
+  String get stockArea => 'Stock';
+
+  @override
+  String get logisticsArea => 'Logistics';
+
+  @override
+  String get purchasingArea => 'Purchasing';
+
+  @override
+  String get accountingArea => 'Accounting';
+
+  @override
+  String get financeReview => 'Finance review';
+
+  @override
+  String get refreshBalances => 'Refresh balances';
+
+  @override
+  String get noMobileDocumentLinked => 'No mobile document is linked to this entry.';
+
+  @override
+  String get reviewTab => 'Review';
+
+  @override
+  String get receivables => 'Receivables';
+
+  @override
+  String get payables => 'Payables';
+
+  @override
+  String get expensesTab => 'Expenses';
+
+  @override
+  String get activityTab => 'Activity';
+
+  @override
+  String get searchPartyDocument => 'Search party or document';
+
+  @override
+  String get needsAttention => 'Needs attention';
+
+  @override
+  String get nothingReviewQueue => 'Nothing in this review queue.';
+
+  @override
+  String get accountingAttentionQueue => 'Accounting attention queue';
+
+  @override
+  String get authoritativeBalances => 'Authoritative backend balances';
+
+  @override
+  String get updated => 'Updated';
+
+  @override
+  String get expenseReview => 'Expense review';
+
+  @override
+  String get matchingIssues => 'Matching issues';
+
+  @override
+  String get certificatesPending => 'certificates pending';
+
+  @override
+  String get approveExpenses => 'Approve expenses';
+
+  @override
+  String get viewExpenses => 'View expenses';
+
+  @override
+  String get yourFinanceAccess => 'Your finance access';
+
+  @override
+  String get customerPaymentLedger => 'Customer payment ledger';
+
+  @override
+  String get withholdingCertificates => 'Withholding certificates';
+
+  @override
+  String get supplierPaymentRecording => 'Supplier payment recording';
+
+  @override
+  String get supplierCredits => 'Supplier credits';
+
+  @override
+  String get supplierReturns => 'Supplier returns';
+
+  @override
+  String get accountingReports => 'Accounting reports';
+
+  @override
+  String get backendAmountsNotice => 'Amounts are calculated by the backend. Recording and validation still use the existing audited workflows.';
+
+  @override
+  String get salesOrdersTitle => 'Sales orders';
+
+  @override
+  String get deliveriesTitle => 'Deliveries';
+
+  @override
+  String get searchOrderClient => 'Search order or client';
+
+  @override
+  String get searchDeliveryClientOrder => 'Search delivery, client or order';
+
+  @override
+  String get salesOrderLabel => 'Sales order';
+
+  @override
+  String get deliveryLabel => 'Delivery';
+
+  @override
+  String get sourceLabel => 'Source';
+
+  @override
+  String get itemsLabel => 'Items';
+
+  @override
+  String get quantityLabel => 'Quantity';
+
+  @override
+  String get invoicesLabel => 'invoices';
+
+  @override
+  String get deliveriesLabel => 'deliveries';
+
+  @override
+  String get confirmDelivery => 'Confirm delivery';
+
+  @override
+  String get markDelivered => 'Mark as delivered';
+
+  @override
+  String get cancelDelivery => 'Cancel delivery';
+
+  @override
+  String get readyToInvoice => 'Ready to invoice';
+
+  @override
+  String get supplierReceptionsTitle => 'Supplier receptions';
+
+  @override
+  String get cannotCreateReception => 'You cannot create supplier receptions.';
+
+  @override
+  String get noSupplierOrderAvailable => 'No sent or partially received supplier order is available.';
+
+  @override
+  String get selectSupplierOrder => 'Select a supplier order';
+
+  @override
+  String get purchaseOrder => 'Purchase order';
+
+  @override
+  String get receiveOrder => 'Receive order';
+
+  @override
+  String get searchSupplierOrderDocument => 'Search supplier, order or document number';
+
+  @override
+  String get noSupplierReceptions => 'No supplier receptions found.';
+
+  @override
+  String get receptionLabel => 'Reception';
+
+  @override
+  String get confirmSupplierReception => 'Confirm supplier reception?';
+
+  @override
+  String get atomicStockNotice => 'Accepted quantities will be posted to stock atomically. The reception cannot be edited afterwards.';
+
+  @override
+  String get createLinkedExpense => 'Create linked expense';
+
+  @override
+  String get confirmPostStock => 'Confirm and post stock';
+
+  @override
+  String get receptionConfirmed => 'Reception confirmed.';
+
+  @override
+  String get productLinesPosted => 'product line(s) posted to stock.';
+
+  @override
+  String get receptionDetails => 'Reception details';
+
+  @override
+  String get editDraft => 'Edit draft';
+
+  @override
+  String get stockPosted => 'Stock posted';
+
+  @override
+  String get stockPending => 'Stock pending';
+
+  @override
+  String get supplierDeliveryNote => 'Supplier delivery note';
+
+  @override
+  String get supplierInvoice => 'Supplier invoice';
+
+  @override
+  String get received => 'Received';
+
+  @override
+  String get receptionLines => 'Reception lines';
+
+  @override
+  String get totalHt => 'Total excl. tax';
+
+  @override
+  String get vat => 'VAT';
+
+  @override
+  String get totalTtc => 'Total incl. tax';
+
+  @override
+  String get postingStock => 'Posting stock…';
+
+  @override
+  String get editReception => 'Edit reception';
+
+  @override
+  String get newReception => 'New reception';
+
+  @override
+  String get receptionWithoutOrder => 'Reception without purchase order';
+
+  @override
+  String get supplierInvoiceOptional => 'Supplier invoice number (optional)';
+
+  @override
+  String get supplierDeliveryNumber => 'Supplier delivery-note number';
+
+  @override
+  String get invoiceDate => 'Invoice date';
+
+  @override
+  String get receivedDate => 'Received date';
+
+  @override
+  String get deliveryDateOptional => 'Delivery-note date (optional)';
+
+  @override
+  String get notSet => 'Not set';
+
+  @override
+  String get receivedQuantities => 'Received quantities';
+
+  @override
+  String get receptionException => 'Reception exception';
+
+  @override
+  String get none => 'None';
+
+  @override
+  String get overdelivery => 'Overdelivery';
+
+  @override
+  String get noPurchaseOrder => 'No purchase order';
+
+  @override
+  String get internalNotes => 'Internal notes';
+
+  @override
+  String get takeEvidencePhoto => 'Take evidence photo';
+
+  @override
+  String get chooseEvidencePhoto => 'Choose evidence photo';
+
+  @override
+  String get couldNotSelectPhoto => 'Could not select photo';
+
+  @override
+  String get negativeReceptionQuantities => 'Reception quantities cannot be negative.';
+
+  @override
+  String get enterReceivedQuantity => 'Enter a received quantity or remove the line.';
+
+  @override
+  String get discrepancyReasonRequired => 'A discrepancy reason is required.';
+
+  @override
+  String get selectReceptionLine => 'Select at least one line for this reception.';
+
+  @override
+  String get explainReceptionException => 'Explain the reception exception before saving.';
+
+  @override
+  String get evidenceUploadFailed => 'Reception saved, but the evidence photo could not be uploaded.';
+
+  @override
+  String get receptionDraftSaved => 'Supplier reception draft saved.';
+
+  @override
+  String get addDiscrepancyEvidence => 'Add discrepancy evidence';
+
+  @override
+  String get evidenceFileHelp => 'JPEG, PNG or WebP; maximum 10 MB';
+
+  @override
+  String get receptionTotals => 'Reception totals';
+
+  @override
+  String get saveReceptionDraft => 'Save reception draft';
+
+  @override
+  String get ordered => 'Ordered';
+
+  @override
+  String get remaining => 'Remaining';
+
+  @override
+  String get discrepancyReason => 'Discrepancy reason';
+
+  @override
+  String get statusConfirmed => 'Confirmed';
+
+  @override
+  String get statusDelivered => 'Delivered';
+
+  @override
+  String get statusInvoiced => 'Invoiced';
+
+  @override
+  String get statusReviewed => 'Reviewed';
+
+  @override
+  String get statusPartiallyDelivered => 'Partially delivered';
+
+  @override
+  String get statusPartiallyReceived => 'Partially received';
+
+  @override
+  String get statusSent => 'Sent';
+
+  @override
+  String get supplierLabel => 'Supplier';
+
+  @override
+  String get more => 'More';
+
+  @override
+  String get noMobileFeatures => 'No mobile features are assigned to this user.';
 }
