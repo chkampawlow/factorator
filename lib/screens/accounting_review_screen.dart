@@ -19,12 +19,14 @@ enum _FinanceView { overview, receivables, payables, expenses, activity }
 class AccountingReviewScreen extends StatefulWidget {
   const AccountingReviewScreen({
     super.key,
+    required this.permissions,
     required this.onToggleTheme,
     required this.onChangePrimaryColor,
     required this.onChangeLanguage,
     required this.currentPrimaryColor,
   });
 
+  final PermissionService permissions;
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
   final void Function(String code) onChangeLanguage;
@@ -42,7 +44,7 @@ class _AccountingReviewScreenState extends State<AccountingReviewScreen> {
   String? _error;
   bool _loading = true;
 
-  PermissionService get _permissions => AccessScope.of(context).permissions;
+  PermissionService get _permissions => widget.permissions;
 
   @override
   void initState() {

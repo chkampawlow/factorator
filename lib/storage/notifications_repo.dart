@@ -11,11 +11,12 @@ class NotificationsRepo {
     NotificationReadFilter read = NotificationReadFilter.all,
   }) async {
     const pageSize = 100;
+    const maxPages = 1000;
     final items = <AppNotification>[];
     var total = 0;
     var unread = 0;
     var categoryCounts = <String, int>{};
-    for (var page = 1; page <= 5; page++) {
+    for (var page = 1; page <= maxPages; page++) {
       final raw = await _api.get(
         ApiConfig.notificationsList,
         authRequired: true,

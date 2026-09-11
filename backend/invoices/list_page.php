@@ -10,9 +10,13 @@ require_once __DIR__ . '/../auth/role_helper.php';
 require_once __DIR__ . '/../config/field_projection.php';
 
 try {
-    $userId = (int)requireAuth()->id;
+    $debugStage = 'authentication';
+    $principal = requireAuth();
+    $actorId = authActorId($principal);
+    $tenantId = authTenantId($principal);
     $conn = db();
-    $visibleDocumentTypes = requireAnyInvoiceDocumentView($conn, $userId);
+    $debugStage = 'authorization';
+    $visibleDocumentTypes = requireAnyInvoiceDocumentView($conn, $actorId);
 
     [$page, $pageSize, $offset] = paginationInput($_GET);
     $search = trim((string)($_GET['search'] ?? ''));
@@ -22,7 +26,7 @@ try {
     $to = trim((string)($_GET['date_to'] ?? ''));
     $where = ['i.user_id=?', 'UPPER(i.invoice_type) IN (' . implode(',', array_fill(0, count($visibleDocumentTypes), '?')) . ')'];
     $types = 'i' . str_repeat('s', count($visibleDocumentTypes));
-    $args = [$userId, ...$visibleDocumentTypes];
+    $args = [$tenantId, ...$visibleDocumentTypes];
 
     if ($search !== '') {
         $where[] = "CONCAT_WS(' ',i.invoice,c.name,c.email,i.salesperson_name,i.status) LIKE ?";
@@ -30,10 +34,10 @@ try {
         $args[] = '%' . $search . '%';
     }
     if ($documentType === 'INVOICE') {
-        requirePermission($conn, $userId, 'invoices.view');
+        requirePermission($conn, $actorId, 'invoices.view');
         $where[] = "UPPER(i.invoice_type) NOT IN('DEVIS','AVOIR')";
     } elseif (in_array($documentType, ['DEVIS', 'AVOIR'], true)) {
-        requireInvoiceDocumentPermission($conn, $userId, $documentType, 'view');
+        requireInvoiceDocumentPermission($conn, $actorId, $documentType, 'view');
         $where[] = 'UPPER(i.invoice_type)=?';
         $types .= 's';
         $args[] = $documentType;
@@ -70,12 +74,14 @@ try {
     $whereSql = implode(' AND ', $where);
     $joins = " FROM erp_invoices i
         LEFT JOIN clients c ON c.id=CAST(i.custom_code AS UNSIGNED) AND c.user_id=i.user_id";
+    $debugStage = 'aggregate_query';
     $aggregateStmt = $conn->prepare("SELECT COUNT(*) total,ROUND(COALESCE(SUM(i.total_tnd),0),3) amount $joins WHERE $whereSql");
     $aggregateStmt->bind_param($types, ...$args);
     $aggregateStmt->execute();
     $pageAggregates = $aggregateStmt->get_result()->fetch_assoc() ?: [];
     $aggregateStmt->close();
 
+    $debugStage = 'workflow_query';
     $workflowStmt = $conn->prepare("SELECT
         COALESCE(SUM(invoice_type='DEVIS' AND status='DRAFT'),0) devis_drafts,
         COALESCE(SUM(invoice_type='DEVIS' AND status='SENT'),0) devis_sent,
@@ -88,7 +94,7 @@ try {
         COALESCE(SUM(UPPER(invoice_type)='FACTURE' AND is_validated=1 AND UPPER(status) NOT IN('PAID','PAYED','PAID_IN_FULL','CANCELLED') AND invoice_due_date>=CURDATE()),0) invoice_unpaid
         FROM erp_invoices WHERE user_id=? AND UPPER(invoice_type) IN (" . implode(',', array_fill(0, count($visibleDocumentTypes), '?')) . ")");
     $workflowTypes = 'i' . str_repeat('s', count($visibleDocumentTypes));
-    $workflowArgs = [$userId, ...$visibleDocumentTypes];
+    $workflowArgs = [$tenantId, ...$visibleDocumentTypes];
     $workflowStmt->bind_param($workflowTypes, ...$workflowArgs);
     $workflowStmt->execute();
     $workflowAggregates = $workflowStmt->get_result()->fetch_assoc() ?: [];
@@ -109,6 +115,7 @@ try {
             i.notes,i.invoice_type,i.status,i.transformation_status,i.is_validated,
             i.payment_method,i.timbre
         $joins WHERE $whereSql ORDER BY $order LIMIT ? OFFSET ?";
+    $debugStage = 'page_query';
     $stmt = $conn->prepare($sql);
     $queryTypes = $types . 'ii';
     $queryArgs = [...$args, $pageSize, $offset];
@@ -116,12 +123,17 @@ try {
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
-    $role = currentUserRole($conn, $userId);
+    $role = currentUserRole($conn, $actorId);
     $rows = projectRows($rows, static fn(array $row): array => projectInvoiceFields($row, $role));
 
     $total = (int)($pageAggregates['total'] ?? 0);
     $aggregates = ['amount' => (string)($pageAggregates['amount'] ?? '0.000')] + $workflowAggregates;
     paginatedResponse($rows, $page, $pageSize, $total, $aggregates);
 } catch (Throwable $e) {
+    structuredLog('ERROR', 'INVOICE_LIST.LOAD_FAILED', [
+        'stage' => $debugStage ?? 'request',
+        'exception' => get_class($e),
+        'message' => $e->getMessage(),
+    ]);
     jsonResponse(['success' => false, 'message' => 'Could not load documents.', 'error_code' => 'INVOICE_LIST_FAILED'], 500);
 }

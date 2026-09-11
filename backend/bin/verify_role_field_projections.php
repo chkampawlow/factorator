@@ -37,6 +37,12 @@ projectionCheck(($accountingInvoice['payment_method']??'')==='TRANSFER' && !isse
 
 $stockDashboard = projectDashboardFields(['success'=>true,'sales'=>['revenue_total'=>10],'accounting'=>['monthly_expenses'=>2],'inventory'=>['product_count'=>3],'administration'=>['active_members'=>4],'recent_invoices'=>[['id'=>1]]], 'STOCK');
 projectionCheck(isset($stockDashboard['inventory']) && !isset($stockDashboard['sales'],$stockDashboard['accounting'],$stockDashboard['administration'],$stockDashboard['recent_invoices']), 'STOCK dashboard contains inventory workspace only', $failures);
+$commercialDashboard = projectDashboardFields(['sales'=>['revenue_total'=>10],'accounting'=>['monthly_expenses'=>2],'inventory'=>['product_count'=>3],'administration'=>['active_members'=>4],'monthly_series'=>[['month'=>'2026-09','revenue'=>10]]], 'COMMERCIAL');
+projectionCheck(isset($commercialDashboard['sales'],$commercialDashboard['monthly_series']) && !isset($commercialDashboard['accounting'],$commercialDashboard['inventory'],$commercialDashboard['administration']), 'COMMERCIAL dashboard contains sales workspace only', $failures);
+$accountingDashboard = projectDashboardFields(['sales'=>['revenue_total'=>10],'accounting'=>['monthly_expenses'=>2],'inventory'=>['product_count'=>3],'administration'=>['active_members'=>4],'monthly_series'=>[['month'=>'2026-09','revenue'=>10]]], 'ACCOUNTING');
+projectionCheck(isset($accountingDashboard['sales'],$accountingDashboard['accounting'],$accountingDashboard['monthly_series']) && !isset($accountingDashboard['inventory'],$accountingDashboard['administration']), 'ACCOUNTING dashboard contains sales and accounting workspaces only', $failures);
+$administratorDashboard = projectDashboardFields(['sales'=>[],'accounting'=>[],'inventory'=>[],'administration'=>[]], 'ADMINISTRATOR');
+projectionCheck(isset($administratorDashboard['sales'],$administratorDashboard['accounting'],$administratorDashboard['inventory'],$administratorDashboard['administration']), 'ADMINISTRATOR dashboard retains every workspace', $failures);
 projectionCheck(array_keys(projectNotificationCounts(['unpaid_count'=>2,'low_stock_count'=>3,'client_count'=>4,'product_count'=>5], 'ACCOUNTING'))===['unpaid_count'], 'ACCOUNTING notification response excludes catalog and client counts', $failures);
 
 $endpointChecks = [

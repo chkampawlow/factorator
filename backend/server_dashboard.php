@@ -245,6 +245,30 @@ function shortChecksum(string $checksum): string
     return $checksum === '' ? '-' : substr($checksum, 0, 12) . '…';
 }
 
+function auditChangedFields(mixed $beforeJson, mixed $afterJson): array
+{
+    $decode = static function (mixed $value): array {
+        if (!is_string($value) || trim($value) === '') return [];
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
+    };
+
+    $before = $decode($beforeJson);
+    $after = $decode($afterJson);
+    $keys = array_values(array_unique(array_merge(array_keys($before), array_keys($after))));
+    $changed = [];
+    foreach ($keys as $key) {
+        $field = (string)$key;
+        if (preg_match('/password|token|secret|authorization|cookie|credential|otp|2fa|hash/i', $field)) continue;
+        $beforeValue = array_key_exists($key, $before) ? $before[$key] : null;
+        $afterValue = array_key_exists($key, $after) ? $after[$key] : null;
+        if (json_encode($beforeValue) === json_encode($afterValue)) continue;
+        $changed[] = $field;
+        if (count($changed) >= 8) break;
+    }
+    return $changed;
+}
+
 function dashboardTableExists(mysqli $db, string $table): bool
 {
     try {
@@ -1190,9 +1214,10 @@ $auditExplorerTotal = 0;
 $auditPage = max(1, (int)($_POST['audit_page'] ?? $_GET['audit_page'] ?? 1));
 $auditPageSize = 100;
 $auditFilters = [
+    'account_id' => trim((string)($_POST['audit_account_id'] ?? $_GET['audit_account_id'] ?? '')),
     'action' => trim((string)($_POST['audit_action'] ?? $_GET['audit_action'] ?? '')),
     'entity_type' => trim((string)($_POST['audit_entity_type'] ?? $_GET['audit_entity_type'] ?? '')),
-    'actor_id' => trim((string)($_POST['audit_actor_id'] ?? $_GET['audit_actor_id'] ?? '')),
+    'actor' => trim((string)($_POST['audit_actor'] ?? $_GET['audit_actor'] ?? $_POST['audit_actor_id'] ?? $_GET['audit_actor_id'] ?? '')),
     'from' => trim((string)($_POST['audit_from'] ?? $_GET['audit_from'] ?? '')),
     'to' => trim((string)($_POST['audit_to'] ?? $_GET['audit_to'] ?? '')),
 ];
@@ -1643,46 +1668,93 @@ if ($db instanceof mysqli) {
     // Audit explorer
     // -------------------------------------------------------------------------
     if (dashboardTableExists($db,'app_audit_log')) {
+        $hasAuditUsers = dashboardTableExists($db, 'users');
+        $hasAuditDisplayName = $hasAuditUsers && dashboardColumnExists($db, 'users', 'display_name');
+        $hasAuditCompanies = dashboardTableExists($db, 'companies');
+        $hasAuditMemberships = dashboardTableExists($db, 'company_memberships');
+        $auditJoins = [];
+        if ($hasAuditUsers) {
+            $auditJoins[] = 'LEFT JOIN users actor_user ON actor_user.id=a.actor_id';
+            $auditJoins[] = 'LEFT JOIN users tenant_user ON tenant_user.id=a.tenant_id';
+        }
+        if ($hasAuditCompanies) {
+            $auditJoins[] = 'LEFT JOIN companies audit_company ON audit_company.id=a.tenant_id';
+        }
+        if ($hasAuditMemberships) {
+            $auditJoins[] = 'LEFT JOIN company_memberships audit_membership ON audit_membership.company_id=a.tenant_id AND audit_membership.user_id=a.actor_id';
+        }
+        $auditJoinSql = implode(' ', $auditJoins);
         $where = ['1=1'];
         $types = '';
         $args = [];
 
+        if ($auditFilters['account_id'] !== '' && ctype_digit($auditFilters['account_id'])) {
+            $where[] = 'a.tenant_id = ?';
+            $types .= 'i';
+            $args[] = (int)$auditFilters['account_id'];
+        }
         if ($auditFilters['action'] !== '') {
-            $where[] = 'action LIKE ?';
+            $where[] = 'a.action LIKE ?';
             $types .= 's';
             $args[] = '%' . $auditFilters['action'] . '%';
         }
         if ($auditFilters['entity_type'] !== '') {
-            $where[] = 'entity_type LIKE ?';
+            $where[] = 'a.entity_type LIKE ?';
             $types .= 's';
             $args[] = '%' . $auditFilters['entity_type'] . '%';
         }
-        if ($auditFilters['actor_id'] !== '' && ctype_digit($auditFilters['actor_id'])) {
-            $where[] = 'actor_id = ?';
-            $types .= 'i';
-            $args[] = (int)$auditFilters['actor_id'];
+        if ($auditFilters['actor'] !== '') {
+            if (ctype_digit($auditFilters['actor'])) {
+                $where[] = 'a.actor_id = ?';
+                $types .= 'i';
+                $args[] = (int)$auditFilters['actor'];
+            } elseif ($hasAuditUsers) {
+                $actorSearch = '%' . $auditFilters['actor'] . '%';
+                if ($hasAuditDisplayName) {
+                    $where[] = '(actor_user.email LIKE ? OR actor_user.display_name LIKE ?)';
+                    $types .= 'ss';
+                    $args[] = $actorSearch;
+                    $args[] = $actorSearch;
+                } else {
+                    $where[] = 'actor_user.email LIKE ?';
+                    $types .= 's';
+                    $args[] = $actorSearch;
+                }
+            }
         }
         if ($auditFilters['from'] !== '') {
-            $where[] = 'created_at >= ?';
+            $where[] = 'a.created_at >= ?';
             $types .= 's';
             $args[] = $auditFilters['from'] . ' 00:00:00';
         }
         if ($auditFilters['to'] !== '') {
-            $where[] = 'created_at <= ?';
+            $where[] = 'a.created_at <= ?';
             $types .= 's';
             $args[] = $auditFilters['to'] . ' 23:59:59';
         }
 
         $whereSql = implode(' AND ', $where);
 
-        $countStatement = $db->prepare("SELECT COUNT(*) total FROM app_audit_log WHERE {$whereSql}");
+        $countStatement = $db->prepare("SELECT COUNT(*) total FROM app_audit_log a {$auditJoinSql} WHERE {$whereSql}");
         if ($types !== '') $countStatement->bind_param($types, ...$args);
         $countStatement->execute();
         $auditExplorerTotal = (int)($countStatement->get_result()->fetch_assoc()['total'] ?? 0);
         $countStatement->close();
 
+        $auditPage = min($auditPage, max(1, (int)ceil($auditExplorerTotal / $auditPageSize)));
         $offset = ($auditPage - 1) * $auditPageSize;
-        $query = "SELECT action,entity_type,entity_id,actor_id,created_at FROM app_audit_log WHERE {$whereSql} ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $actorSelect = $hasAuditUsers
+            ? ($hasAuditDisplayName ? 'actor_user.display_name actor_name,' : 'NULL actor_name,') . 'actor_user.email actor_email'
+            : 'NULL actor_name,NULL actor_email';
+        $accountSelect = $hasAuditCompanies && $hasAuditUsers
+            ? 'COALESCE(audit_company.organization_name,tenant_user.organization_name) account_name'
+            : ($hasAuditCompanies
+                ? 'audit_company.organization_name account_name'
+                : ($hasAuditUsers ? 'tenant_user.organization_name account_name' : 'NULL account_name'));
+        $roleSelect = $hasAuditMemberships
+            ? 'COALESCE(audit_membership.role,' . ($hasAuditUsers ? 'actor_user.role' : 'NULL') . ') actor_role'
+            : ($hasAuditUsers ? 'actor_user.role actor_role' : 'NULL actor_role');
+        $query = "SELECT a.tenant_id,a.actor_id,a.action,a.entity_type,a.entity_id,a.before_values,a.after_values,a.request_id,a.source,a.created_at,{$actorSelect},{$accountSelect},{$roleSelect} FROM app_audit_log a {$auditJoinSql} WHERE {$whereSql} ORDER BY a.created_at DESC,a.id DESC LIMIT ? OFFSET ?";
         $statement = $db->prepare($query);
         $queryTypes = $types . 'ii';
         $queryArgs = array_merge($args, [$auditPageSize, $offset]);
@@ -1809,7 +1881,7 @@ $csrf = h((string)$_SESSION['super_admin_csrf']);
 <style nonce="<?= h($cspNonce) ?>">
 :root{color-scheme:dark;--bg:#07111f;--sidebar:#0a1729;--panel:#0f2036;--panel2:#132841;--line:#263e5f;--text:#edf5ff;--muted:#94a9c4;--blue:#3b82f6;--green:#34d399;--amber:#fbbf24;--red:#fb7185;--shadow:0 24px 60px rgba(0,0,0,.22)}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 80% 0,rgba(59,130,246,.12),transparent 28%),var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.layout{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}.sidebar{position:sticky;top:0;height:100vh;padding:24px 17px;border-right:1px solid var(--line);background:rgba(10,23,41,.95)}.brand{display:flex;align-items:center;gap:12px;padding:0 8px 25px}.logo{display:grid;place-items:center;width:43px;height:43px;border-radius:14px;background:linear-gradient(135deg,#2563eb,#60a5fa);font-weight:950}.brand strong{display:block}.brand small{color:var(--muted)}.nav{display:grid;gap:7px}.nav button{width:100%;display:flex;align-items:center;gap:10px;padding:12px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--muted);font:inherit;font-weight:800;text-align:left;cursor:pointer}.nav button:hover,.nav button.active{border-color:var(--line);background:var(--panel);color:var(--text)}.sideFoot{position:absolute;left:17px;right:17px;bottom:20px}.logout{width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--muted);font-weight:800;cursor:pointer}.main{min-width:0;padding:27px clamp(18px,3vw,42px) 60px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:25px}.eyebrow{margin:0 0 5px;color:#75a9ff;font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}h1{margin:0;font-size:clamp(25px,3vw,34px)}.topMeta{display:flex;gap:9px;flex-wrap:wrap}.pill{padding:8px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:12px;font-weight:800}.pill.good{color:#a7f3d0;border-color:rgba(52,211,153,.35)}.pill.bad{color:#fecdd3;border-color:rgba(251,113,133,.35)}.pill.warn{color:#fde68a;border-color:rgba(251,191,36,.35)}.section{display:none}.section.active{display:block}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{padding:20px;border:1px solid var(--line);border-radius:19px;background:linear-gradient(180deg,rgba(255,255,255,.018),transparent),var(--panel);box-shadow:var(--shadow)}.metric span{color:var(--muted);font-size:12px;font-weight:800}.metric strong{display:block;margin-top:9px;font-size:25px}.metric small{display:block;margin-top:6px;color:var(--muted);font-size:10px}.metric.goodMetric strong{color:#a7f3d0}.metric.badMetric strong{color:#fecdd3}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.cardHead{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:16px}.cardHead h2{margin:0;font-size:17px}.cardHead p{margin:5px 0 0;color:var(--muted);font-size:12px}.notice{padding:13px 15px;margin-bottom:14px;border:1px solid rgba(251,191,36,.34);border-radius:13px;background:rgba(251,191,36,.08);color:#fde68a;font-size:13px;line-height:1.55}.notice.error{border-color:rgba(251,113,133,.35);background:rgba(251,113,133,.09);color:#fecdd3}.notice.success{border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.08);color:#a7f3d0}.formGrid{display:grid;gap:13px}.field{display:grid;gap:7px}.field span{color:var(--muted);font-size:12px;font-weight:850}.input,.textarea{width:100%;border:1px solid var(--line);border-radius:13px;background:#08172a;color:var(--text);font:inherit}.input{min-height:44px;padding:0 13px}.textarea{min-height:300px;padding:15px;resize:vertical;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:2}.confirm{display:grid;grid-template-columns:auto minmax(180px,330px) 1fr;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:13px;background:rgba(7,17,31,.55)}.confirm label{display:flex;gap:8px;color:#fde68a;font-size:12px;font-weight:800}.button{display:inline-flex;align-items:center;justify-content:center;min-height:43px;padding:0 15px;border:0;border-radius:12px;background:linear-gradient(135deg,#2563eb,#4f8cff);color:white;font:inherit;font-weight:900;cursor:pointer}.button.secondary{border:1px solid var(--line);background:var(--panel2);color:var(--text)}.button.danger{border:1px solid rgba(251,113,133,.4);background:rgba(251,113,133,.1);color:#fecdd3}.button.small{min-height:34px;padding:0 11px;font-size:12px}.button:disabled{opacity:.45;cursor:not-allowed}.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:12px}th{background:#0b1a2e;color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase}tr:last-child td{border-bottom:0}.status{padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900}.status.applied{color:#a7f3d0;background:rgba(52,211,153,.1)}.status.pending{color:#fde68a;background:rgba(251,191,36,.1)}.status.modified{color:#fecdd3;background:rgba(251,113,133,.1)}.result{margin-top:15px}.result h3{font-size:14px}.empty{padding:25px;color:var(--muted);text-align:center}.mobileNav{display:none;margin-bottom:15px}.auditHelp{color:var(--muted);font-size:12px;line-height:1.6}.schemaToolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.schemaSearch{flex:1;min-width:220px}.schemaCanvasWrap{position:relative;overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:16px;background:radial-gradient(circle at 20% 10%,rgba(59,130,246,.08),transparent 26%),#081422;padding:18px}.schemaCanvas{position:relative;min-width:980px}.schemaLinks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}.schemaGrid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:18px}.schemaTable{border:1px solid var(--line);border-radius:15px;background:rgba(15,32,54,.97);box-shadow:0 15px 34px rgba(0,0,0,.18);overflow:hidden}.schemaTable.hidden{display:none}.schemaTableHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:13px 14px;border-bottom:1px solid var(--line);background:#0b1a2e}.schemaTableHead strong{font-size:13px}.schemaTableMeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;color:var(--muted);font-size:9px}.schemaColumns{max-height:260px;overflow:auto}.schemaColumn{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(38,62,95,.65);font-size:11px}.schemaColumn:last-child{border-bottom:0}.schemaColumnName{min-width:0;overflow:hidden;text-overflow:ellipsis}.schemaColumnType{color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px}.schemaBadges{display:flex;gap:4px}.schemaBadge{padding:2px 5px;border-radius:999px;font-size:8px;font-weight:900}.schemaBadge.pk{color:#fde68a;background:rgba(251,191,36,.12)}.schemaBadge.fk{color:#bfdbfe;background:rgba(59,130,246,.12)}.schemaTableFoot{display:flex;gap:7px;padding:10px;border-top:1px solid var(--line)}.schemaRelationPath{fill:none;stroke:rgba(96,165,250,.38);stroke-width:1.5}.schemaRelationPath.highlight{stroke:#60a5fa;stroke-width:2.5}.schemaRelationDot{fill:#60a5fa}.schemaRelationList{margin-top:16px}.schemaLegend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:11px}.schemaLegend span{display:flex;align-items:center;gap:6px}.legendLine{display:inline-block;width:22px;height:2px;background:#60a5fa}.schemaStats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}.schemaStats .card{padding:14px}.schemaStats strong{display:block;font-size:20px;margin-top:5px}.schemaStats span{color:var(--muted);font-size:10px;font-weight:800}.migrationActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.migrationConfirm{display:grid;grid-template-columns:minmax(220px,360px) auto;gap:12px;align-items:end;margin:0 0 16px;padding:15px;border:1px solid var(--line);border-radius:14px;background:rgba(7,17,31,.5)}.migrationConfirm .hint{grid-column:1/-1;margin:0;color:var(--muted);font-size:12px;line-height:1.5}.checksum{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}@media(max-width:1300px){.schemaGrid{grid-template-columns:repeat(3,minmax(240px,1fr))}}@media(max-width:1050px){.layout{grid-template-columns:1fr}.sidebar{display:none}.mobileNav{display:flex;gap:7px;overflow:auto}.mobileNav button{white-space:nowrap;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--muted)}.metrics{grid-template-columns:1fr 1fr}.schemaGrid{grid-template-columns:repeat(2,minmax(240px,1fr))}.schemaStats{grid-template-columns:repeat(3,1fr)}}@media(max-width:680px){.main{padding:18px 12px 45px}.topbar{align-items:flex-start;flex-direction:column}.metrics,.grid2{grid-template-columns:1fr}.confirm,.migrationConfirm{grid-template-columns:1fr}.textarea{min-height:240px}.schemaGrid{grid-template-columns:1fr}.schemaStats{grid-template-columns:1fr 1fr}.schemaCanvas{min-width:300px}}
 
-.opsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.healthItem{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}.healthItem:last-child{border-bottom:0}.healthName{font-weight:850;font-size:12px}.healthDetail{margin-top:4px;color:var(--muted);font-size:10px;line-height:1.45}.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}.dot.good{background:var(--green)}.dot.bad{background:var(--red)}.dot.warn{background:var(--amber)}.integrityGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.integrityCard{padding:15px;border:1px solid var(--line);border-radius:14px;background:#0b1a2e}.integrityCard.ok{border-color:rgba(52,211,153,.28)}.integrityCard.issues{border-color:rgba(251,113,133,.35)}.integrityCard.skipped{border-color:rgba(251,191,36,.25)}.integrityTop{display:flex;justify-content:space-between;gap:12px}.integrityTop strong{font-size:13px}.integrityCard p{margin:8px 0 0;color:var(--muted);font-size:11px}.tenantGrid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px}.scrollList{max-height:68vh;overflow:auto}.tenantButton{display:block;width:100%;padding:12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left;cursor:pointer}.tenantButton:hover{background:rgba(59,130,246,.07)}.tenantButton strong{display:block}.tenantButton small{color:var(--muted)}.countGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.countBox{padding:13px;border:1px solid var(--line);border-radius:12px;background:#0b1a2e}.countBox span{display:block;color:var(--muted);font-size:10px}.countBox strong{display:block;margin-top:5px;font-size:18px}.backupActions{display:flex;gap:8px;flex-wrap:wrap}.securityGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.auditFilters{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr)) auto;gap:10px;align-items:end}.paginationBar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:14px}.tiny{font-size:10px;color:var(--muted)}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.dangerText{color:#fecdd3}.warnText{color:#fde68a}.goodText{color:#a7f3d0}@media(max-width:1100px){.opsGrid{grid-template-columns:1fr 1fr}.tenantGrid,.securityGrid{grid-template-columns:1fr}.auditFilters{grid-template-columns:1fr 1fr}.countGrid{grid-template-columns:1fr 1fr}}@media(max-width:680px){.opsGrid,.integrityGrid,.auditFilters,.countGrid{grid-template-columns:1fr}}
+.opsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.healthItem{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}.healthItem:last-child{border-bottom:0}.healthName{font-weight:850;font-size:12px}.healthDetail{margin-top:4px;color:var(--muted);font-size:10px;line-height:1.45}.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}.dot.good{background:var(--green)}.dot.bad{background:var(--red)}.dot.warn{background:var(--amber)}.integrityGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.integrityCard{padding:15px;border:1px solid var(--line);border-radius:14px;background:#0b1a2e}.integrityCard.ok{border-color:rgba(52,211,153,.28)}.integrityCard.issues{border-color:rgba(251,113,133,.35)}.integrityCard.skipped{border-color:rgba(251,191,36,.25)}.integrityTop{display:flex;justify-content:space-between;gap:12px}.integrityTop strong{font-size:13px}.integrityCard p{margin:8px 0 0;color:var(--muted);font-size:11px}.tenantGrid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px}.scrollList{max-height:68vh;overflow:auto}.tenantButton{display:block;width:100%;padding:12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left;cursor:pointer}.tenantButton:hover{background:rgba(59,130,246,.07)}.tenantButton strong{display:block}.tenantButton small{color:var(--muted)}.countGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.countBox{padding:13px;border:1px solid var(--line);border-radius:12px;background:#0b1a2e}.countBox span{display:block;color:var(--muted);font-size:10px}.countBox strong{display:block;margin-top:5px;font-size:18px}.backupActions{display:flex;gap:8px;flex-wrap:wrap}.securityGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.auditFilters{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr)) auto;gap:10px;align-items:end}.auditIdentity strong{display:block;font-size:12px}.auditIdentity span{display:block;margin-top:3px}.auditAction{font-weight:800;color:#dbeafe}.auditFields{display:block;margin-top:5px;max-width:280px;white-space:normal;line-height:1.4}.paginationBar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:14px}.tiny{font-size:10px;color:var(--muted)}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.dangerText{color:#fecdd3}.warnText{color:#fde68a}.goodText{color:#a7f3d0}@media(max-width:1100px){.opsGrid{grid-template-columns:1fr 1fr}.tenantGrid,.securityGrid{grid-template-columns:1fr}.auditFilters{grid-template-columns:1fr 1fr}.countGrid{grid-template-columns:1fr 1fr}}@media(max-width:680px){.opsGrid,.integrityGrid,.auditFilters,.countGrid{grid-template-columns:1fr}}
 
 </style>
 <style nonce="<?= h($cspNonce) ?>">
@@ -1821,9 +1893,9 @@ $csrf = h((string)$_SESSION['super_admin_csrf']);
 </head>
 <body>
 <div class="layout">
-<aside class="sidebar"><div class="brand"><div class="logo">EF</div><div><strong>El Fatoura</strong><small>Super Admin</small></div></div><nav class="nav"><button type="button" data-tab="overview">◫ Operations</button><button type="button" data-tab="health">♡ Health</button><button type="button" data-tab="errors">⚠ Error Center<?= ($logStats['errors_24h'] + $applicationIssueCount) > 0 ? ' (' . h($logStats['errors_24h'] + $applicationIssueCount) . ')' : '' ?></button><button type="button" data-tab="tenants">▦ Tenants</button><button type="button" data-tab="integrity">✓ Integrity</button><button type="button" data-tab="backups">⇩ Backups</button><button type="button" data-tab="security">⌾ Security</button><button type="button" data-tab="audit">◷ Audit Explorer</button><button type="button" data-tab="sql">⌘ SQL Console</button><button type="button" data-tab="migrations">⇧ Migrations</button><button type="button" data-tab="schema">⌘ Schema Map</button><button type="button" data-tab="storage">▤ Database</button></nav><form class="sideFoot" method="post"><input type="hidden" name="csrf_token" value="<?= $csrf ?>"><input type="hidden" name="action" value="logout"><button class="logout" type="submit">Sign out</button></form></aside>
+<aside class="sidebar"><div class="brand"><div class="logo">EF</div><div><strong>El Fatoura</strong><small>Super Admin</small></div></div><nav class="nav"><button type="button" data-tab="overview">◫ Operations</button><button type="button" data-tab="health">♡ Health</button><button type="button" data-tab="errors">⚠ Error Center<?= ($logStats['errors_24h'] + $applicationIssueCount) > 0 ? ' (' . h($logStats['errors_24h'] + $applicationIssueCount) . ')' : '' ?></button><button type="button" data-tab="tenants">▦ Tenants</button><button type="button" data-tab="integrity">✓ Integrity</button><button type="button" data-tab="backups">⇩ Backups</button><button type="button" data-tab="security">⌾ Security</button><button type="button" data-tab="audit">◷ Account Activity</button><button type="button" data-tab="sql">⌘ SQL Console</button><button type="button" data-tab="migrations">⇧ Migrations</button><button type="button" data-tab="schema">⌘ Schema Map</button><button type="button" data-tab="storage">▤ Database</button></nav><form class="sideFoot" method="post"><input type="hidden" name="csrf_token" value="<?= $csrf ?>"><input type="hidden" name="action" value="logout"><button class="logout" type="submit">Sign out</button></form></aside>
 <main class="main">
-<div class="mobileNav"><button type="button" data-tab="overview">Operations</button><button type="button" data-tab="health">Health</button><button type="button" data-tab="errors">Errors <?= h($logStats['errors_24h'] + $applicationIssueCount) ?></button><button type="button" data-tab="tenants">Tenants</button><button type="button" data-tab="integrity">Integrity</button><button type="button" data-tab="backups">Backups</button><button type="button" data-tab="security">Security</button><button type="button" data-tab="audit">Audit</button><button type="button" data-tab="sql">SQL Console</button><button type="button" data-tab="migrations">Migrations</button><button type="button" data-tab="schema">Schema Map</button><button type="button" data-tab="storage">Database</button></div>
+<div class="mobileNav"><button type="button" data-tab="overview">Operations</button><button type="button" data-tab="health">Health</button><button type="button" data-tab="errors">Errors <?= h($logStats['errors_24h'] + $applicationIssueCount) ?></button><button type="button" data-tab="tenants">Tenants</button><button type="button" data-tab="integrity">Integrity</button><button type="button" data-tab="backups">Backups</button><button type="button" data-tab="security">Security</button><button type="button" data-tab="audit">Activity</button><button type="button" data-tab="sql">SQL Console</button><button type="button" data-tab="migrations">Migrations</button><button type="button" data-tab="schema">Schema Map</button><button type="button" data-tab="storage">Database</button></div>
 <header class="topbar"><div><p class="eyebrow">Restricted owner workspace</p><h1>Server Control Center</h1></div><div class="topMeta"><span class="pill <?= $db instanceof mysqli ? 'good' : 'bad' ?>"><?= $db instanceof mysqli ? '● Database connected' : '● Database offline' ?></span><span class="pill <?= ($logStats['errors_24h'] + $applicationIssueCount) > 0 ? 'bad' : 'good' ?>"><?= h($logStats['errors_24h'] + $applicationIssueCount) ?> detected error<?= ($logStats['errors_24h'] + $applicationIssueCount) === 1 ? '' : 's' ?></span><span class="pill <?= $sqlEnabled ? 'good' : 'bad' ?>">SQL <?= $sqlEnabled ? 'enabled' : 'disabled' ?></span><span class="pill <?= count($pendingMigrations) > 0 ? 'warn' : 'good' ?>"><?= h(count($pendingMigrations)) ?> pending migration<?= count($pendingMigrations) === 1 ? '' : 's' ?></span></div></header>
 
 <?php if ($operationError !== ''): ?><div class="notice error"><?= h($operationError) ?></div><?php elseif ($operationMessage !== ''): ?><div class="notice success"><?= h($operationMessage) ?></div><?php endif; ?>
@@ -1999,9 +2071,9 @@ $csrf = h((string)$_SESSION['super_admin_csrf']);
 
 <section class="section" data-section="audit">
 <article class="card">
-<div class="cardHead"><div><h2>Audit Explorer</h2><p>Search application audit events without exposing tokens or IP addresses</p></div><span class="pill"><?= h(number_format($auditExplorerTotal)) ?> matches</span></div>
-<form method="post" class="auditFilters"><input type="hidden" name="csrf_token" value="<?= $csrf ?>"><input type="hidden" name="action" value="audit_filter"><label class="field"><span>Action</span><input class="input" name="audit_action" value="<?= h($auditFilters['action']) ?>" placeholder="AUTH., EMAIL., INVOICE..."></label><label class="field"><span>Entity type</span><input class="input" name="audit_entity_type" value="<?= h($auditFilters['entity_type']) ?>" placeholder="INVOICE"></label><label class="field"><span>Actor ID</span><input class="input" name="audit_actor_id" value="<?= h($auditFilters['actor_id']) ?>" inputmode="numeric"></label><label class="field"><span>From</span><input class="input" type="date" name="audit_from" value="<?= h($auditFilters['from']) ?>"></label><label class="field"><span>To</span><input class="input" type="date" name="audit_to" value="<?= h($auditFilters['to']) ?>"></label><button class="button" type="submit">Search</button></form>
-<div style="margin-top:16px" class="tableWrap"><table><thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Entity ID</th><th>Actor</th></tr></thead><tbody><?php foreach ($auditExplorerRows as $row): ?><tr><td><?= h($row['created_at']) ?></td><td><?= h($row['action']) ?></td><td><?= h($row['entity_type']) ?></td><td><?= h($row['entity_id'] ?? '-') ?></td><td><?= h($row['actor_id'] ?? 'system') ?></td></tr><?php endforeach; ?></tbody></table></div>
+<div class="cardHead"><div><h2>Account Activity</h2><p>See who performed each action across every company account. Sensitive values, tokens and IP addresses stay hidden.</p></div><span class="pill"><?= h(number_format($auditExplorerTotal)) ?> matches</span></div>
+<form method="post" class="auditFilters"><input type="hidden" name="csrf_token" value="<?= $csrf ?>"><input type="hidden" name="action" value="audit_filter"><label class="field"><span>Account</span><select class="input" name="audit_account_id"><option value="">All accounts</option><?php foreach ($companiesList as $company): ?><option value="<?= h($company['id']) ?>" <?= (string)$auditFilters['account_id']===(string)$company['id']?'selected':'' ?>><?= h($company['organization_name']) ?> (#<?= h($company['id']) ?>)</option><?php endforeach; ?></select></label><label class="field"><span>Person</span><input class="input" name="audit_actor" value="<?= h($auditFilters['actor']) ?>" placeholder="Name, email or user ID"></label><label class="field"><span>Action</span><input class="input" name="audit_action" value="<?= h($auditFilters['action']) ?>" placeholder="AUTH., EMAIL., INVOICE..."></label><label class="field"><span>Target type</span><input class="input" name="audit_entity_type" value="<?= h($auditFilters['entity_type']) ?>" placeholder="INVOICE, CLIENT..."></label><label class="field"><span>From</span><input class="input" type="date" name="audit_from" value="<?= h($auditFilters['from']) ?>"></label><label class="field"><span>To</span><input class="input" type="date" name="audit_to" value="<?= h($auditFilters['to']) ?>"></label><button class="button" type="submit">Search</button></form>
+<?php if (!$auditExplorerRows): ?><div class="empty" style="margin-top:16px">No activity matches these filters.</div><?php else: ?><div style="margin-top:16px" class="tableWrap"><table><thead><tr><th>Time</th><th>Account</th><th>Performed by</th><th>Action</th><th>Target</th><th>Source</th><th>Request</th></tr></thead><tbody><?php foreach ($auditExplorerRows as $row): $changedFields=auditChangedFields($row['before_values'] ?? null,$row['after_values'] ?? null); ?><tr><td><span class="mono"><?= h($row['created_at']) ?></span></td><td><div class="auditIdentity"><strong><?= h($row['account_name'] ?: (($row['tenant_id'] ?? null)!==null?'Account #'.$row['tenant_id']:'Platform')) ?></strong><span class="tiny"><?= ($row['tenant_id'] ?? null)!==null?'Account ID '.h($row['tenant_id']):'Global event' ?></span></div></td><td><div class="auditIdentity"><strong><?= h($row['actor_name'] ?: ($row['actor_email'] ?: (($row['actor_id'] ?? null)!==null?'User #'.$row['actor_id']:'System'))) ?></strong><?php if (!empty($row['actor_name']) && !empty($row['actor_email'])): ?><span class="tiny"><?= h($row['actor_email']) ?></span><?php endif; ?><span class="tiny"><?= h($row['actor_role'] ?: 'Automated') ?><?= ($row['actor_id'] ?? null)!==null?' · ID '.h($row['actor_id']):'' ?></span></div></td><td><span class="auditAction"><?= h($row['action']) ?></span><?php if ($changedFields): ?><span class="tiny auditFields">Changed: <?= h(implode(', ',$changedFields)) ?></span><?php endif; ?></td><td><?= h($row['entity_type']) ?><br><span class="tiny mono"><?= h($row['entity_id'] ?? '-') ?></span></td><td><span class="pill"><?= h($row['source'] ?: 'API') ?></span></td><td><span class="tiny mono" title="<?= h($row['request_id']) ?>"><?= h(shortChecksum((string)$row['request_id'])) ?></span></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?>
 <?php $auditPages=max(1,(int)ceil($auditExplorerTotal/$auditPageSize)); ?>
 <div class="paginationBar"><span class="tiny">Page <?= h($auditPage) ?> / <?= h($auditPages) ?> · <?= h($auditPageSize) ?> rows per page</span><div class="backupActions"><?php if ($auditPage>1): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $csrf ?>"><input type="hidden" name="action" value="audit_filter"><input type="hidden" name="audit_page" value="<?= h($auditPage-1) ?>"><?php foreach ($auditFilters as $k=>$v): ?><input type="hidden" name="audit_<?= h($k) ?>" value="<?= h($v) ?>"><?php endforeach; ?><button class="button secondary small" type="submit">Previous</button></form><?php endif; ?><?php if ($auditPage<$auditPages): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $csrf ?>"><input type="hidden" name="action" value="audit_filter"><input type="hidden" name="audit_page" value="<?= h($auditPage+1) ?>"><?php foreach ($auditFilters as $k=>$v): ?><input type="hidden" name="audit_<?= h($k) ?>" value="<?= h($v) ?>"><?php endforeach; ?><button class="button secondary small" type="submit">Next</button></form><?php endif; ?></div></div>
 </article>

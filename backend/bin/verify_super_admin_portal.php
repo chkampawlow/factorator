@@ -57,6 +57,10 @@ $requiredGuards = [
     "Recent application errors",
     "Supplier workflow diagnostics",
     "dashboardDiagnosticHint",
+    "Account Activity",
+    "Performed by",
+    "actor_user.email",
+    "auditChangedFields",
 ];
 
 foreach ($requiredGuards as $guard) {
@@ -102,4 +106,4 @@ if ($failures) {
     exit(1);
 }
 
-echo 'PASS Super Admin portal access, user approval, dashboard charts, operations metrics, email audit and SQL guards' . PHP_EOL;
+echo 'PASS Super Admin portal access, user approval, cross-account actor audit, dashboard charts, operations metrics, email audit and SQL guards' . PHP_EOL;

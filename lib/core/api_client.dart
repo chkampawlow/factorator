@@ -261,44 +261,31 @@ class ApiClient {
     return Uint8List.fromList(bytes);
   }
 
-  /// Loads pages from the backend's standard paginated list contract.
-  /// Mobile screens render the first page immediately by default instead of
-  /// waiting for the account's complete history.
+  /// Loads all available pages from the backend's standard paginated list
+  /// contract. [maxPages] is a defensive ceiling, not the normal page count.
   Future<List<Map<String, dynamic>>> getAllPages(
     String endpoint, {
     required String resourceName,
     Iterable<String> keys = const ['data', 'items', 'results'],
     Map<String, dynamic>? queryParams,
-    int maxPages = 1,
+    int maxPages = 1000,
   }) async {
     const pageSize = 100;
-    final rows = <Map<String, dynamic>>[];
-
-    final pageLimit = maxPages.clamp(1, 1000);
-    for (var page = 1; page <= pageLimit; page++) {
-      final response = await get(
+    return ApiCollection.collectPages(
+      fetchPage: (page, requestedPageSize) => get(
         endpoint,
         authRequired: true,
         queryParams: {
           ...?queryParams,
           'page': page,
-          'page_size': pageSize,
+          'page_size': requestedPageSize,
         },
-      );
-      final pageRows = ApiCollection.parse(
-        response,
-        keys: keys,
-        resourceName: resourceName,
-      );
-      rows.addAll(pageRows);
-
-      if (response is! Map) break;
-      final envelope = Map<String, dynamic>.from(response);
-      final total = int.tryParse((envelope['total'] ?? '').toString());
-      if (total == null || rows.length >= total || pageRows.isEmpty) break;
-    }
-
-    return rows;
+      ),
+      keys: keys,
+      resourceName: resourceName,
+      pageSize: pageSize,
+      maxPages: maxPages.clamp(1, 1000),
+    );
   }
 
   Future<dynamic> post(

@@ -390,6 +390,7 @@ class _MainShellState extends State<MainShell> {
       _ShellDestination(
         feature: AppFeature.dashboard,
         page: DashboardScreen(
+          permissions: permissions,
           onToggleTheme: widget.onToggleTheme,
           onChangePrimaryColor: widget.onChangePrimaryColor,
           onChangeLanguage: widget.onChangeLanguage,
@@ -404,6 +405,7 @@ class _MainShellState extends State<MainShell> {
       _ShellDestination(
         feature: AppFeature.finance,
         page: AccountingReviewScreen(
+          permissions: permissions,
           onToggleTheme: widget.onToggleTheme,
           onChangePrimaryColor: widget.onChangePrimaryColor,
           onChangeLanguage: widget.onChangeLanguage,
@@ -429,21 +431,20 @@ class _MainShellState extends State<MainShell> {
           label: l10n.clients,
         ),
       ),
-      if (permissions.role != AppRole.accounting)
-        _ShellDestination(
-          feature: AppFeature.invoices,
-          page: InvoicesScreen(
-            onToggleTheme: widget.onToggleTheme,
-            onChangePrimaryColor: widget.onChangePrimaryColor,
-            onChangeLanguage: widget.onChangeLanguage,
-            currentPrimaryColor: widget.currentPrimaryColor,
-          ),
-          destination: NavigationDestination(
-            icon: const _CenterInvoiceNavIcon(selected: false),
-            selectedIcon: const _CenterInvoiceNavIcon(selected: true),
-            label: l10n.invoices,
-          ),
+      _ShellDestination(
+        feature: AppFeature.invoices,
+        page: InvoicesScreen(
+          onToggleTheme: widget.onToggleTheme,
+          onChangePrimaryColor: widget.onChangePrimaryColor,
+          onChangeLanguage: widget.onChangeLanguage,
+          currentPrimaryColor: widget.currentPrimaryColor,
         ),
+        destination: NavigationDestination(
+          icon: const _CenterInvoiceNavIcon(selected: false),
+          selectedIcon: const _CenterInvoiceNavIcon(selected: true),
+          label: l10n.invoices,
+        ),
+      ),
       _ShellDestination(
         feature: AppFeature.deliveries,
         page: const DeliveriesScreen(),
@@ -511,21 +512,20 @@ class _MainShellState extends State<MainShell> {
           label: l10n.captureCenterTitle,
         ),
       ),
-      if (permissions.role != AppRole.accounting)
-        _ShellDestination(
-          feature: AppFeature.expenses,
-          page: ExpenseNotesScreen(
-            onToggleTheme: widget.onToggleTheme,
-            onChangePrimaryColor: widget.onChangePrimaryColor,
-            onChangeLanguage: widget.onChangeLanguage,
-            currentPrimaryColor: widget.currentPrimaryColor,
-          ),
-          destination: NavigationDestination(
-            icon: const Icon(Icons.payments_outlined),
-            selectedIcon: const Icon(Icons.payments_rounded),
-            label: l10n.expenseNotesTitle,
-          ),
+      _ShellDestination(
+        feature: AppFeature.expenses,
+        page: ExpenseNotesScreen(
+          onToggleTheme: widget.onToggleTheme,
+          onChangePrimaryColor: widget.onChangePrimaryColor,
+          onChangeLanguage: widget.onChangeLanguage,
+          currentPrimaryColor: widget.currentPrimaryColor,
         ),
+        destination: NavigationDestination(
+          icon: const Icon(Icons.payments_outlined),
+          selectedIcon: const Icon(Icons.payments_rounded),
+          label: l10n.expenseNotesTitle,
+        ),
+      ),
       if (ApiConfig.assistantEnabled)
         _ShellDestination(
           feature: AppFeature.assistant,

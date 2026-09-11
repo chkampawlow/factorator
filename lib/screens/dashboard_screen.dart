@@ -27,6 +27,7 @@ import '../widgets/app_top_bar.dart';
 enum _ExpenseEntryMode { manual, scan }
 
 class DashboardScreen extends StatefulWidget {
+  final PermissionService permissions;
   final VoidCallback onToggleTheme;
   final void Function(Color color) onChangePrimaryColor;
   final void Function(String code) onChangeLanguage;
@@ -34,6 +35,7 @@ class DashboardScreen extends StatefulWidget {
 
   const DashboardScreen({
     super.key,
+    required this.permissions,
     required this.onToggleTheme,
     required this.onChangePrimaryColor,
     required this.onChangeLanguage,
@@ -67,9 +69,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<MapEntry<String, double>> _topClients = [];
   List<Map<String, dynamic>> _recentDocuments = [];
   List<Map<String, dynamic>> _attention = [];
+  List<Map<String, dynamic>> _lowStock = [];
+  List<MapEntry<String, double>> _topProducts = [];
   Map<String, dynamic> _notificationCounts = {};
+  int _productCount = 0;
+  int _lowStockCount = 0;
+  int _zeroStockCount = 0;
+  int _pendingSupplierOrders = 0;
 
   bool _didLoadOnce = false;
+
+  PermissionService get _permissions => widget.permissions;
+  AppRole get _role => _permissions.role;
+  bool get _showsFinancialPerformance =>
+      _role == AppRole.administrator ||
+      _role == AppRole.commercial ||
+      _role == AppRole.accounting;
+  bool get _showsInventoryPerformance =>
+      _role == AppRole.stock || _role == AppRole.administrator;
 
   @override
   void didChangeDependencies() {
@@ -126,12 +143,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => InvoiceEditScreen(
-            invoiceId: draftId,
-            onToggleTheme: widget.onToggleTheme,
-            onChangePrimaryColor: widget.onChangePrimaryColor,
-            onChangeLanguage: widget.onChangeLanguage,
-            currentPrimaryColor: widget.currentPrimaryColor,
+          builder: (_) => AccessScope(
+            permissions: _permissions,
+            child: InvoiceEditScreen(
+              invoiceId: draftId,
+              onToggleTheme: widget.onToggleTheme,
+              onChangePrimaryColor: widget.onChangePrimaryColor,
+              onChangeLanguage: widget.onChangeLanguage,
+              currentPrimaryColor: widget.currentPrimaryColor,
+            ),
           ),
         ),
       );
@@ -162,6 +182,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final invoice = _map(overview['invoice']);
     final sales = _map(overview['sales']);
     final accounting = _map(overview['accounting']);
+    final inventory = _map(overview['inventory']);
+    final workflow = _map(overview['workflow']);
     final source = sales.isNotEmpty
         ? sales
         : accounting.isNotEmpty
@@ -221,6 +243,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
             .map((item) => Map<String, dynamic>.from(item))
             .toList()
         : [];
+
+    _productCount = _integer(inventory['product_count']);
+    _lowStockCount = _integer(
+      inventory['low_stock_count'] ?? overview['low_stock_count'],
+    );
+    _zeroStockCount = _integer(inventory['zero_stock_count']);
+    _pendingSupplierOrders = _integer(
+      inventory['pending_supplier_orders'] ??
+          workflow['pending_supplier_orders'],
+    );
+    final rawLowStock = inventory['low_stock'] ?? overview['low_stock'];
+    _lowStock = rawLowStock is List
+        ? rawLowStock
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .take(5)
+            .toList()
+        : [];
+
+    final rawTopProducts =
+        inventory['top_products'] ?? overview['top_products'];
+    _topProducts = rawTopProducts is List
+        ? rawTopProducts
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .map(
+              (row) => MapEntry(
+                (row['label'] ?? '').toString(),
+                _number(row['value']),
+              ),
+            )
+            .where((entry) => entry.key.isNotEmpty)
+            .take(5)
+            .toList()
+        : [];
   }
 
   String _attentionLabel(String type) {
@@ -232,9 +289,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'DELIVERIES_TO_INVOICE' => 'Livraisons prêtes à facturer',
         'INVOICE_DRAFTS' => 'Brouillons à compléter',
         'LOW_STOCK' => 'Stock faible',
-        'ZERO_STOCK' => 'Rupture de stock',
+        'ZERO_STOCK' || 'OUT_OF_STOCK' => 'Rupture de stock',
         'PRODUCT_PRICING_REQUIRED' => 'Prix de vente manquants',
-        'PENDING_SUPPLIER_ORDERS' => 'Commandes fournisseur en attente',
+        'PENDING_SUPPLIER_ORDERS' ||
+        'SUPPLIER_ORDERS_PENDING' =>
+          'Commandes fournisseur en attente',
         'PENDING_RECEPTIONS' => 'Réceptions en attente',
         'PENDING_INVITATIONS' => 'Invitations en attente',
         _ => type.replaceAll('_', ' ').toLowerCase(),
@@ -247,9 +306,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'DELIVERIES_TO_INVOICE' => 'تسليمات جاهزة للفوترة',
         'INVOICE_DRAFTS' => 'مسودات تحتاج إلى إكمال',
         'LOW_STOCK' => 'مخزون منخفض',
-        'ZERO_STOCK' => 'نفاد المخزون',
+        'ZERO_STOCK' || 'OUT_OF_STOCK' => 'نفاد المخزون',
         'PRODUCT_PRICING_REQUIRED' => 'منتجات دون سعر بيع',
-        'PENDING_SUPPLIER_ORDERS' => 'طلبات موردين معلقة',
+        'PENDING_SUPPLIER_ORDERS' ||
+        'SUPPLIER_ORDERS_PENDING' =>
+          'طلبات موردين معلقة',
         'PENDING_RECEPTIONS' => 'عمليات استلام معلقة',
         'PENDING_INVITATIONS' => 'دعوات معلقة',
         _ => type.replaceAll('_', ' ').toLowerCase(),
@@ -261,9 +322,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'DELIVERIES_TO_INVOICE' => 'Deliveries ready to invoice',
       'INVOICE_DRAFTS' => 'Invoice drafts to complete',
       'LOW_STOCK' => 'Low-stock products',
-      'ZERO_STOCK' => 'Out-of-stock products',
+      'ZERO_STOCK' || 'OUT_OF_STOCK' => 'Out-of-stock products',
       'PRODUCT_PRICING_REQUIRED' => 'Products requiring a selling price',
-      'PENDING_SUPPLIER_ORDERS' => 'Pending supplier orders',
+      'PENDING_SUPPLIER_ORDERS' ||
+      'SUPPLIER_ORDERS_PENDING' =>
+        'Pending supplier orders',
       'PENDING_RECEPTIONS' => 'Pending supplier receptions',
       'PENDING_INVITATIONS' => 'Pending invitations',
       _ => type.replaceAll('_', ' ').toLowerCase(),
@@ -271,10 +334,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _performanceLabel(String localeName) => switch (localeName) {
-        'fr' => 'Performance',
-        'ar' => 'الأداء',
-        _ => 'Performance',
+        'fr' when _role == AppRole.stock => 'Aperçu du stock',
+        'ar' when _role == AppRole.stock => 'نظرة عامة على المخزون',
+        _ when _role == AppRole.stock => 'Inventory overview',
+        'fr' when _role == AppRole.accounting => 'Aperçu financier',
+        'ar' when _role == AppRole.accounting => 'نظرة مالية عامة',
+        _ when _role == AppRole.accounting => 'Financial overview',
+        'fr' when _role == AppRole.commercial => 'Performance commerciale',
+        'ar' when _role == AppRole.commercial => 'أداء المبيعات',
+        _ when _role == AppRole.commercial => 'Sales performance',
+        'fr' => 'Performance globale',
+        'ar' => 'الأداء العام',
+        _ => 'Business performance',
       };
+
+  String _roleLabel(String key, String localeName) {
+    const labels = {
+      'en': {
+        'products': 'Products',
+        'low_stock': 'Low stock',
+        'out_of_stock': 'Out of stock',
+        'pending_orders': 'Pending supplier orders',
+        'paid_invoices': 'Paid invoices',
+        'unpaid_invoices': 'Unpaid invoices',
+        'inventory_activity': 'Inventory activity',
+        'top_products': 'Top products',
+        'units_sold': 'units sold',
+      },
+      'fr': {
+        'products': 'Produits',
+        'low_stock': 'Stock faible',
+        'out_of_stock': 'Rupture de stock',
+        'pending_orders': 'Commandes fournisseur',
+        'paid_invoices': 'Factures payées',
+        'unpaid_invoices': 'Factures impayées',
+        'inventory_activity': 'Activité du stock',
+        'top_products': 'Meilleurs produits',
+        'units_sold': 'unités vendues',
+      },
+      'ar': {
+        'products': 'المنتجات',
+        'low_stock': 'مخزون منخفض',
+        'out_of_stock': 'نفاد المخزون',
+        'pending_orders': 'طلبات الموردين المعلقة',
+        'paid_invoices': 'الفواتير المدفوعة',
+        'unpaid_invoices': 'الفواتير غير المدفوعة',
+        'inventory_activity': 'حركة المخزون',
+        'top_products': 'أفضل المنتجات',
+        'units_sold': 'وحدة مباعة',
+      },
+    };
+    final language = labels.containsKey(localeName) ? localeName : 'en';
+    return labels[language]![key] ?? key;
+  }
 
   String _recentDocumentsLabel(String localeName) => switch (localeName) {
         'fr' => 'Documents récents',
@@ -289,6 +401,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       };
 
   String _tipBody(String localeName) => switch (localeName) {
+        'fr' when _role == AppRole.stock =>
+          'Traitez d’abord les ruptures et les produits sous le seuil de réapprovisionnement.',
+        'ar' when _role == AppRole.stock =>
+          'ابدأ بمعالجة المنتجات النافدة وتلك التي تقل عن حد إعادة الطلب.',
+        _ when _role == AppRole.stock =>
+          'Start with out-of-stock items and products below their reorder threshold.',
+        'fr' when _role == AppRole.accounting =>
+          'Contrôlez les impayés et les dépenses approuvées pour suivre votre revenu net.',
+        'ar' when _role == AppRole.accounting =>
+          'راجع الفواتير غير المدفوعة والمصاريف المعتمدة لمتابعة صافي الإيرادات.',
+        _ when _role == AppRole.accounting =>
+          'Review unpaid invoices and approved expenses to track net revenue.',
         'fr' =>
           'Relancez les factures en retard pour améliorer votre trésorerie.',
         'ar' => 'تابع الفواتير المتأخرة لتحسين التدفق النقدي.',
@@ -303,6 +427,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     } else if (type == 'LOW_STOCK' ||
         type == 'ZERO_STOCK' ||
+        type == 'OUT_OF_STOCK' ||
         type == 'PRODUCT_PRICING_REQUIRED') {
       await _go(ProductsScreen(
         onToggleTheme: widget.onToggleTheme,
@@ -323,12 +448,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _showNotifications() async {
-    final permissions = AccessScope.of(context).permissions;
     await Navigator.push<void>(
       context,
       MaterialPageRoute(
         builder: (_) => NotificationCenterScreen(
-          permissions: permissions,
+          permissions: _permissions,
           onToggleTheme: widget.onToggleTheme,
           onChangePrimaryColor: widget.onChangePrimaryColor,
           onChangeLanguage: widget.onChangeLanguage,
@@ -378,7 +502,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _go(Widget page) async {
     final res = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => page),
+      MaterialPageRoute(
+        builder: (_) => AccessScope(
+          permissions: _permissions,
+          child: page,
+        ),
+      ),
     );
     if (res == true) await _load();
   }
@@ -457,7 +586,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onChangePrimaryColor: widget.onChangePrimaryColor,
             onChangeLanguage: widget.onChangeLanguage,
             currentPrimaryColor: widget.currentPrimaryColor,
-            permissions: AccessScope.of(context).permissions,
+            permissions: _permissions,
           ),
         );
         break;
@@ -465,8 +594,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _openInvoicesWithStatus(String status) async {
-    final access = AccessScope.maybeOf(context)?.permissions;
-    if (access?.canViewFeature(AppFeature.invoices) != true) {
+    if (!_permissions.canViewFeature(AppFeature.invoices)) {
       AppAlerts.error(context, 'You do not have permission for this action.');
       return;
     }
@@ -474,12 +602,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final res = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => InvoicesScreen(
-          initialStatus: status,
-          onToggleTheme: widget.onToggleTheme,
-          onChangePrimaryColor: widget.onChangePrimaryColor,
-          onChangeLanguage: widget.onChangeLanguage,
-          currentPrimaryColor: widget.currentPrimaryColor,
+        builder: (_) => AccessScope(
+          permissions: _permissions,
+          child: InvoicesScreen(
+            initialStatus: status,
+            onToggleTheme: widget.onToggleTheme,
+            onChangePrimaryColor: widget.onChangePrimaryColor,
+            onChangeLanguage: widget.onChangeLanguage,
+            currentPrimaryColor: widget.currentPrimaryColor,
+          ),
         ),
       ),
     );
@@ -530,6 +661,136 @@ class _DashboardScreenState extends State<DashboardScreen> {
       0,
       (maximum, entry) => math.max(maximum, entry.value),
     );
+    final monthlyRevenue =
+        _monthlyRevenue.isNotEmpty ? _monthlyRevenue.last : 0.0;
+    final performanceItems = switch (_role) {
+      AppRole.stock => <Widget>[
+          _MiniStatRect(
+            title: _roleLabel('products', l10n.localeName),
+            value: '$_productCount',
+            subtitle: '',
+            icon: Icons.inventory_2_outlined,
+            color: cs.primary,
+          ),
+          _MiniStatRect(
+            title: _roleLabel('low_stock', l10n.localeName),
+            value: '$_lowStockCount',
+            subtitle: '',
+            icon: Icons.inventory_outlined,
+            color: cs.tertiary,
+          ),
+          _MiniStatRect(
+            title: _roleLabel('out_of_stock', l10n.localeName),
+            value: '$_zeroStockCount',
+            subtitle: '',
+            icon: Icons.warning_amber_rounded,
+            color: cs.error,
+          ),
+          _MiniStatRect(
+            title: _roleLabel('pending_orders', l10n.localeName),
+            value: '$_pendingSupplierOrders',
+            subtitle: '',
+            icon: Icons.shopping_cart_checkout_rounded,
+            color: cs.secondary,
+          ),
+        ],
+      AppRole.accounting => <Widget>[
+          _MiniStatRect(
+            title: l10n.netMonthlyRevenue,
+            value: CurrencyService.format(
+              monthlyRevenue - _monthlyExpenses,
+              _currency,
+            ),
+            subtitle: '',
+            icon: Icons.account_balance_wallet_outlined,
+            color: cs.primary,
+          ),
+          _MiniStatRect(
+            title: l10n.monthlyRevenue,
+            value: CurrencyService.format(monthlyRevenue, _currency),
+            subtitle: '',
+            icon: Icons.trending_up_rounded,
+            color: cs.secondary,
+          ),
+          _MiniStatRect(
+            title: l10n.monthlyExpenses,
+            value: CurrencyService.format(_monthlyExpenses, _currency),
+            subtitle: '',
+            icon: Icons.trending_down_rounded,
+            color: cs.tertiary,
+          ),
+          _MiniStatRect(
+            title: _roleLabel('unpaid_invoices', l10n.localeName),
+            value: '$_unpaidCount',
+            subtitle: '',
+            icon: Icons.pending_actions_rounded,
+            color: cs.error,
+          ),
+        ],
+      AppRole.commercial => <Widget>[
+          _MiniStatRect(
+            title: l10n.monthlyRevenue,
+            value: CurrencyService.format(monthlyRevenue, _currency),
+            subtitle: '',
+            icon: Icons.trending_up_rounded,
+            color: cs.primary,
+          ),
+          _MiniStatRect(
+            title: l10n.averageInvoice,
+            value: CurrencyService.format(_avgInvoice, _currency),
+            subtitle: '',
+            icon: Icons.bar_chart_rounded,
+            color: cs.secondary,
+          ),
+          _MiniStatRect(
+            title: _roleLabel('paid_invoices', l10n.localeName),
+            value: '$_paidCount',
+            subtitle: '',
+            icon: Icons.task_alt_rounded,
+            color: cs.primary,
+          ),
+          _MiniStatRect(
+            title: l10n.clients,
+            value: '$_customersCount',
+            subtitle: '',
+            icon: Icons.people_alt_outlined,
+            color: const Color(0xFF8B5CF6),
+          ),
+        ],
+      _ => <Widget>[
+          _MiniStatRect(
+            title: l10n.netMonthlyRevenue,
+            value: CurrencyService.format(
+              monthlyRevenue - _monthlyExpenses,
+              _currency,
+            ),
+            subtitle: '',
+            icon: Icons.payments_outlined,
+            color: cs.primary,
+          ),
+          _MiniStatRect(
+            title: l10n.monthlyRevenue,
+            value: CurrencyService.format(monthlyRevenue, _currency),
+            subtitle: '',
+            icon: Icons.trending_up_rounded,
+            color: cs.secondary,
+          ),
+          _MiniStatRect(
+            title: l10n.averageInvoice,
+            value: CurrencyService.format(_avgInvoice, _currency),
+            subtitle: '',
+            icon: Icons.bar_chart_rounded,
+            color: cs.tertiary,
+          ),
+          _MiniStatRect(
+            title: l10n.clients,
+            value: '$_customersCount',
+            subtitle: '',
+            icon: Icons.people_alt_outlined,
+            color: const Color(0xFF8B5CF6),
+          ),
+        ],
+    };
 
     return Scaffold(
       appBar: AppTopBar(
@@ -601,13 +862,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               children: [
                                 _DashboardSearch(
                                   onSearch: () {
-                                    final permissions =
-                                        AccessScope.of(context).permissions;
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => GlobalSearchScreen(
-                                          permissions: permissions,
+                                          permissions: _permissions,
                                         ),
                                       ),
                                     );
@@ -625,49 +884,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   builder: (context, c) {
                                     final isNarrow = c.maxWidth < 720;
 
-                                    final items = <Widget>[
-                                      _MiniStatRect(
-                                        title: l10n.netMonthlyRevenue,
-                                        value: CurrencyService.format(
-                                          (_monthlyRevenue.isNotEmpty
-                                                  ? _monthlyRevenue.last
-                                                  : 0) -
-                                              _monthlyExpenses,
-                                          _currency,
-                                        ),
-                                        subtitle:
-                                            '${l10n.monthlyExpenses}: -${CurrencyService.format(_monthlyExpenses, _currency)}',
-                                        icon: Icons.payments_outlined,
-                                        color: cs.primary,
-                                      ),
-                                      _MiniStatRect(
-                                        title: l10n.monthlyRevenue,
-                                        value: CurrencyService.format(
-                                          _monthlyRevenue.isNotEmpty
-                                              ? _monthlyRevenue.last
-                                              : 0,
-                                          _currency,
-                                        ),
-                                        subtitle: '',
-                                        icon: Icons.trending_up_rounded,
-                                        color: cs.secondary,
-                                      ),
-                                      _MiniStatRect(
-                                        title: l10n.averageInvoice,
-                                        value: CurrencyService.format(
-                                            _avgInvoice, _currency),
-                                        subtitle: '',
-                                        icon: Icons.bar_chart_rounded,
-                                        color: cs.tertiary,
-                                      ),
-                                      _MiniStatRect(
-                                        title: l10n.clients,
-                                        value: '$_customersCount',
-                                        subtitle: '',
-                                        icon: Icons.people_alt_outlined,
-                                        color: const Color(0xFF8B5CF6),
-                                      ),
-                                    ];
+                                    final items = performanceItems;
 
                                     if (isNarrow) {
                                       return GridView.count(
@@ -777,113 +994,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ),
 
-                                const SizedBox(height: 18),
+                                if (_showsInventoryPerformance &&
+                                    (_lowStock.isNotEmpty ||
+                                        _topProducts.isNotEmpty)) ...[
+                                  const SizedBox(height: 18),
+                                  _InventoryActivityCard(
+                                    lowStock: _lowStock,
+                                    topProducts: _topProducts,
+                                    title: _roleLabel(
+                                      'inventory_activity',
+                                      l10n.localeName,
+                                    ),
+                                    lowStockLabel: _roleLabel(
+                                      'low_stock',
+                                      l10n.localeName,
+                                    ),
+                                    topProductsLabel: _roleLabel(
+                                      'top_products',
+                                      l10n.localeName,
+                                    ),
+                                    unitsSoldLabel: _roleLabel(
+                                      'units_sold',
+                                      l10n.localeName,
+                                    ),
+                                  ),
+                                ],
 
-                                stackCharts
-                                    ? Column(
-                                        children: [
-                                          Card(
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(16),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  _ChartTitleRow(
-                                                    title: l10n.monthlyRevenue,
-                                                    value:
-                                                        CurrencyService.format(
-                                                      _chartRevenue.isEmpty
-                                                          ? 0
-                                                          : _chartRevenue.last,
-                                                      _currency,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  SizedBox(
-                                                    height: 180,
-                                                    child: _chartRevenue.isEmpty
-                                                        ? Center(
-                                                            child: Text(
-                                                              l10n.noInvoicesYet,
-                                                              style: t
-                                                                  .bodyMedium
-                                                                  ?.copyWith(
-                                                                color: cs
-                                                                    .onSurfaceVariant,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                              ),
-                                                            ),
-                                                          )
-                                                        : CustomPaint(
-                                                            painter:
-                                                                _RevenueLineChartPainter(
-                                                              values:
-                                                                  _chartRevenue,
-                                                              labels:
-                                                                  _chartMonths,
-                                                              lineColor:
-                                                                  cs.primary,
-                                                              fillColor: cs
-                                                                  .primary
-                                                                  .withValues(
-                                                                      alpha:
-                                                                          0.10),
-                                                              gridColor: cs
-                                                                  .outlineVariant
-                                                                  .withValues(
-                                                                      alpha:
-                                                                          0.25),
-                                                            ),
-                                                            child:
-                                                                const SizedBox
-                                                                    .expand(),
-                                                          ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Card(
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(16),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    l10n.paymentRate,
-                                                    style: t.titleSmall
-                                                        ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w900),
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  SizedBox(
-                                                    height: 180,
-                                                    child: _PaymentRateContent(
-                                                      rate: _paymentRate,
-                                                      paidCount: _paidCount,
-                                                      unpaidCount: _unpaidCount,
-                                                      paidLabel: l10n.paidLabel,
-                                                      unpaidLabel:
-                                                          l10n.unpaidLabel,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Row(
-                                        children: [
-                                          Expanded(
-                                            child: Card(
+                                if (_showsFinancialPerformance) ...[
+                                  const SizedBox(height: 18),
+                                  stackCharts
+                                      ? Column(
+                                          children: [
+                                            Card(
                                               child: Padding(
                                                 padding:
                                                     const EdgeInsets.all(16),
@@ -950,10 +1092,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Card(
+                                            const SizedBox(height: 12),
+                                            Card(
                                               child: Padding(
                                                 padding:
                                                     const EdgeInsets.all(16),
@@ -988,9 +1128,122 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                          ],
+                                        )
+                                      : Row(
+                                          children: [
+                                            Expanded(
+                                              child: Card(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(16),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      _ChartTitleRow(
+                                                        title:
+                                                            l10n.monthlyRevenue,
+                                                        value: CurrencyService
+                                                            .format(
+                                                          _chartRevenue.isEmpty
+                                                              ? 0
+                                                              : _chartRevenue
+                                                                  .last,
+                                                          _currency,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 12),
+                                                      SizedBox(
+                                                        height: 180,
+                                                        child:
+                                                            _chartRevenue
+                                                                    .isEmpty
+                                                                ? Center(
+                                                                    child: Text(
+                                                                      l10n.noInvoicesYet,
+                                                                      style: t
+                                                                          .bodyMedium
+                                                                          ?.copyWith(
+                                                                        color: cs
+                                                                            .onSurfaceVariant,
+                                                                        fontWeight:
+                                                                            FontWeight.w700,
+                                                                      ),
+                                                                    ),
+                                                                  )
+                                                                : CustomPaint(
+                                                                    painter:
+                                                                        _RevenueLineChartPainter(
+                                                                      values:
+                                                                          _chartRevenue,
+                                                                      labels:
+                                                                          _chartMonths,
+                                                                      lineColor:
+                                                                          cs.primary,
+                                                                      fillColor: cs
+                                                                          .primary
+                                                                          .withValues(
+                                                                              alpha: 0.10),
+                                                                      gridColor: cs
+                                                                          .outlineVariant
+                                                                          .withValues(
+                                                                              alpha: 0.25),
+                                                                    ),
+                                                                    child: const SizedBox
+                                                                        .expand(),
+                                                                  ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Card(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(16),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        l10n.paymentRate,
+                                                        style: t.titleSmall
+                                                            ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w900),
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 12),
+                                                      SizedBox(
+                                                        height: 180,
+                                                        child:
+                                                            _PaymentRateContent(
+                                                          rate: _paymentRate,
+                                                          paidCount: _paidCount,
+                                                          unpaidCount:
+                                                              _unpaidCount,
+                                                          paidLabel:
+                                                              l10n.paidLabel,
+                                                          unpaidLabel:
+                                                              l10n.unpaidLabel,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ],
                                 const SizedBox(height: 18),
                                 _DashboardTipCard(
                                   title: _tipTitle(l10n.localeName),
@@ -1008,8 +1261,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  bool _can(AppPermission permission) =>
-      AccessScope.maybeOf(context)?.permissions.can(permission) ?? false;
+  bool _can(AppPermission permission) => _permissions.can(permission);
 
   bool _requirePermission(AppPermission permission) {
     if (_can(permission)) return true;
@@ -1257,6 +1509,148 @@ class _ChartLegendItem extends StatelessWidget {
         const SizedBox(width: 6),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
+    );
+  }
+}
+
+class _InventoryActivityCard extends StatelessWidget {
+  const _InventoryActivityCard({
+    required this.lowStock,
+    required this.topProducts,
+    required this.title,
+    required this.lowStockLabel,
+    required this.topProductsLabel,
+    required this.unitsSoldLabel,
+  });
+
+  final List<Map<String, dynamic>> lowStock;
+  final List<MapEntry<String, double>> topProducts;
+  final String title;
+  final String lowStockLabel;
+  final String topProductsLabel;
+  final String unitsSoldLabel;
+
+  String _quantity(dynamic value) {
+    final number = value is num ? value.toDouble() : double.tryParse('$value');
+    if (number == null) return '0';
+    return number == number.roundToDouble()
+        ? number.toInt().toString()
+        : number.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final lowItems = lowStock.take(3).toList();
+    final productItems = topProducts.take(3).toList();
+
+    Widget sectionTitle(String label, IconData icon, Color color) => Row(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style:
+                  textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ],
+        );
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style:
+                  textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            if (lowItems.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              sectionTitle(
+                lowStockLabel,
+                Icons.warning_amber_rounded,
+                cs.tertiary,
+              ),
+              const SizedBox(height: 6),
+              for (final item in lowItems)
+                ListTile(
+                  dense: true,
+                  minTileHeight: 44,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    '${item['label'] ?? '-'}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: cs.tertiary.withValues(alpha: .13),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${_quantity(item['value'])} ${item['unit'] ?? ''}'
+                          .trim(),
+                      style: textTheme.labelMedium?.copyWith(
+                        color: cs.tertiary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+            if (lowItems.isNotEmpty && productItems.isNotEmpty)
+              const Divider(height: 22),
+            if (productItems.isNotEmpty) ...[
+              sectionTitle(
+                topProductsLabel,
+                Icons.leaderboard_outlined,
+                cs.primary,
+              ),
+              const SizedBox(height: 6),
+              for (var index = 0; index < productItems.length; index++)
+                ListTile(
+                  dense: true,
+                  minTileHeight: 44,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: cs.primary.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: textTheme.labelMedium?.copyWith(
+                        color: cs.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    productItems[index].key,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Text(
+                    '${_quantity(productItems[index].value)} $unitsSoldLabel',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -204,18 +204,29 @@ void main() {
     });
 
     test('each operational role receives its intended navigation baseline', () {
+      final commercial =
+          PermissionService(_session(role: 'COMMERCIAL', permissions: {}));
       final stock = PermissionService(_session(role: 'STOCK', permissions: {}));
       final logistics =
           PermissionService(_session(role: 'LOGISTICS', permissions: {}));
       final accounting =
           PermissionService(_session(role: 'ACCOUNTING', permissions: {}));
 
+      expect(commercial.canViewFeature(AppFeature.clients), isTrue);
+      expect(commercial.canViewFeature(AppFeature.invoices), isTrue);
+      expect(commercial.canViewFeature(AppFeature.deliveries), isTrue);
+      expect(commercial.canViewFeature(AppFeature.scan), isTrue);
+      expect(commercial.canViewFeature(AppFeature.products), isTrue);
       expect(stock.canViewFeature(AppFeature.inventory), isTrue);
+      expect(stock.canViewFeature(AppFeature.deliveries), isTrue);
+      expect(stock.canViewFeature(AppFeature.receptions), isTrue);
+      expect(stock.canViewFeature(AppFeature.scan), isFalse);
       expect(stock.canViewFeature(AppFeature.clients), isFalse);
       expect(logistics.canViewFeature(AppFeature.deliveries), isTrue);
       expect(logistics.canViewFeature(AppFeature.expenses), isFalse);
       expect(accounting.canViewFeature(AppFeature.expenses), isTrue);
       expect(accounting.canViewFeature(AppFeature.finance), isTrue);
+      expect(accounting.canViewFeature(AppFeature.invoices), isTrue);
       expect(accounting.canViewFeature(AppFeature.products), isFalse);
     });
 
