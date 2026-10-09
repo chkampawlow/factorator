@@ -156,6 +156,7 @@ class PermissionService {
   bool _hasExplicitFeatureAccess(AppFeature feature) {
     final resources = switch (feature) {
       AppFeature.receptions => const ['receptions', 'supplierReceptions'],
+      AppFeature.invoices => const ['invoices', 'devis', 'avoirs'],
       AppFeature.documents => const [
           'documents',
           'invoices',

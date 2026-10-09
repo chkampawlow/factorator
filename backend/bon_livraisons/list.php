@@ -66,7 +66,7 @@ try {
     $countStmt->close();
 
     $readinessJoins = deliveryWorkflowReadinessJoins();
-    $sql = "SELECT dn.*, c.name AS client_name, c.email AS client_email, so.order_number,
+    $sql = "SELECT dn.*, c.name AS client_name, c.email AS client_email, c.phone AS client_phone, c.address AS client_address, so.order_number,
             (SELECT COUNT(*) FROM erp_invoices i WHERE i.delivery_note_id=dn.id AND i.user_id=dn.user_id) invoice_count,
             COALESCE(invoice_drafts.draft_invoice_count,0) draft_invoice_count,
             invoice_drafts.draft_invoice_id,

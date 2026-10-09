@@ -31,6 +31,12 @@ class ProductsRepo {
     final product =
         Map<String, dynamic>.from(productEnvelope['product'] as Map);
 
+    final itemType = (product['item_type'] ?? '').toString().toUpperCase();
+    final isService = itemType.isNotEmpty
+        ? itemType == 'SERVICE'
+        : (product['unit'] ?? '').toString().toLowerCase() == 'service';
+    if (isService) return product;
+
     if (!includeHistory) {
       return {
         ...product,

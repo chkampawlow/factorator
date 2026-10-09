@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:my_app/core/api_client.dart';
+import 'package:my_app/core/session_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -11,9 +13,6 @@ import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/location_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/widgets/app_alerts.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -39,7 +38,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final LocationService _locationService = LocationService();
 
   final ImagePicker _imagePicker = ImagePicker();
-  String? _profileImagePath;
+  Uint8List? _companyLogo;
+  bool _uploadingLogo = false;
+  bool get _canChangeLogo =>
+      SessionService.instance.current?.role.toUpperCase() == 'ADMINISTRATOR';
 
   bool _loading = true;
   String? _error;
@@ -86,7 +88,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = await _authService.me();
       final currency = await _settingsService.getCurrency();
-      final imagePath = await _getSavedProfileImagePath();
+      Uint8List? logo;
+      final company = SessionService.instance.current?.company;
+      if ((company?['logo_url'] ?? user['logo_url'] ?? '')
+          .toString()
+          .isNotEmpty) {
+        try {
+          logo = await ApiClient.instance
+              .getCompanyLogo('${ApiConfig.baseUrl}/user/company_logo.php');
+        } catch (_) {
+          // Keep the profile accessible when branding is unavailable.
+        }
+      }
 
       String region;
       try {
@@ -101,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _user = user;
         _currency = currency;
         _region = region;
-        _profileImagePath = imagePath;
+        _companyLogo = logo;
         _loading = false;
       });
     } catch (e) {
@@ -113,46 +126,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<String?> _getSavedProfileImagePath() async {
-    final prefs = await SharedPreferences.getInstance();
-    final path = prefs.getString('profile_image_path');
-
-    if (path == null || path.isEmpty) return null;
-
-    final file = File(path);
-    if (!await file.exists()) return null;
-
-    return path;
-  }
-
   Future<void> _pickProfileImage() async {
+    if (!_canChangeLogo || _uploadingLogo) return;
     final l10n = AppLocalizations.of(context)!;
-
     final picked = await _imagePicker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
     );
-
-    if (picked == null) return;
-
-    final appDir = await getApplicationDocumentsDirectory();
-    final fileName =
-        'profile_${DateTime.now().millisecondsSinceEpoch}${p.extension(picked.path)}';
-
-    final savedFile = await File(picked.path).copy(
-      p.join(appDir.path, fileName),
-    );
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profile_image_path', savedFile.path);
-
-    if (!mounted) return;
-
-    setState(() {
-      _profileImagePath = savedFile.path;
-    });
-
-    AppAlerts.success(context, l10n.profileImageUpdated);
+    if (picked == null || !mounted || !_canChangeLogo) return;
+    setState(() => _uploadingLogo = true);
+    try {
+      if ((await picked.readAsBytes()).length > 2 * 1024 * 1024) {
+        throw Exception('Logo must be a PNG or JPEG smaller than 2 MB.');
+      }
+      await ApiClient.instance.multipartPost(
+        '${ApiConfig.baseUrl}/user/upload_company_logo.php',
+        fileField: 'logo',
+        filePath: picked.path,
+      );
+      await _loadProfileData();
+      if (mounted) AppAlerts.success(context, l10n.profileImageUpdated);
+    } catch (error) {
+      if (mounted) AppAlerts.error(context, error.toString());
+    } finally {
+      if (mounted) setState(() => _uploadingLogo = false);
+    }
   }
 
   Future<void> _updateCompanyInfo({
@@ -546,17 +544,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Column(
                             children: [
                               GestureDetector(
-                                onTap: _pickProfileImage,
+                                onTap: _canChangeLogo && !_uploadingLogo
+                                    ? _pickProfileImage
+                                    : null,
                                 child: Stack(
                                   alignment: Alignment.bottomRight,
                                   children: [
                                     CircleAvatar(
                                       radius: 42,
                                       backgroundColor: cs.primaryContainer,
-                                      backgroundImage: _profileImagePath != null
-                                          ? FileImage(File(_profileImagePath!))
+                                      backgroundImage: _companyLogo != null
+                                          ? MemoryImage(_companyLogo!)
                                           : null,
-                                      child: _profileImagePath == null
+                                      child: _companyLogo == null
                                           ? Icon(
                                               Icons.person,
                                               size: 40,
@@ -564,18 +564,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             )
                                           : null,
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: cs.primary,
-                                        shape: BoxShape.circle,
+                                    if (_canChangeLogo)
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: cs.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.camera_alt,
+                                          size: 16,
+                                          color: cs.onPrimary,
+                                        ),
                                       ),
-                                      child: Icon(
-                                        Icons.camera_alt,
-                                        size: 16,
-                                        color: cs.onPrimary,
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),

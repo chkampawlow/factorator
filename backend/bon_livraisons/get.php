@@ -20,7 +20,7 @@ try {
 
     $conn = db();requirePermission($conn,$userId,'deliveries.view');
     ensureDeliverySchema($conn);
-    $stmt = $conn->prepare("SELECT dn.*, c.name AS client_name, c.email AS client_email, so.order_number
+    $stmt = $conn->prepare("SELECT dn.*, c.name AS client_name, c.email AS client_email, c.phone AS client_phone, c.address AS client_address, so.order_number
         FROM erp_delivery_notes dn
         LEFT JOIN clients c ON c.id = dn.client_id AND c.user_id = dn.user_id
         LEFT JOIN erp_sales_orders so ON so.id = dn.sales_order_id AND so.user_id = dn.user_id

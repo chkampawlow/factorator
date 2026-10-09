@@ -1,3 +1,4 @@
+import 'package:my_app/core/dashboard_revenue.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:my_app/core/access_scope.dart';
@@ -194,15 +195,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _unpaidCount =
         _integer(source['unpaid_count']) + _integer(source['overdue_count']);
     final invoiceCount = _integer(source['invoice_count']);
-    final totalRevenue = _number(source['revenue_total']);
-    final monthlyRevenue = _number(source['monthly_revenue']);
-    final rawMonthlySeries = overview['monthly_series'];
-    final monthlyRows = rawMonthlySeries is List
-        ? rawMonthlySeries
-            .whereType<Map>()
-            .map((row) => Map<String, dynamic>.from(row))
-            .toList()
-        : <Map<String, dynamic>>[];
+    final totalRevenue =
+        _number(dashboardRevenueValue(overview, 'revenue_total'));
+    final monthlyRevenue =
+        _number(dashboardRevenueValue(overview, 'monthly_revenue'));
+    final monthlyRows = dashboardRevenueRows(overview);
     final monthlySeries =
         monthlyRows.map((row) => _number(row['revenue'])).toList();
     _monthlyExpenses = _number(
@@ -211,7 +208,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _monthlyRevenue =
         monthlySeries.isEmpty ? <double>[monthlyRevenue] : monthlySeries;
     _chartRevenue = List<double>.from(_monthlyRevenue);
-    _chartMonths = monthlyRows.map((row) => '${row['month'] ?? ''}').toList();
+    _chartMonths = monthlyRows.isEmpty
+        ? [
+            '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}'
+          ]
+        : monthlyRows.map((row) => '${row['month'] ?? ''}').toList();
     _paymentRate = invoiceCount == 0 ? 0 : (_paidCount / invoiceCount) * 100;
     _avgInvoice = invoiceCount == 0 ? 0 : totalRevenue / invoiceCount;
 
@@ -1049,10 +1050,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                     SizedBox(
                                                       height: 180,
                                                       child:
-                                                          _chartRevenue.isEmpty
+                                                          _chartRevenue.length <
+                                                                  2
                                                               ? Center(
                                                                   child: Text(
-                                                                    l10n.noInvoicesYet,
+                                                                    (Localizations.localeOf(context).languageCode ==
+                                                                            'fr'
+                                                                        ? 'Historique mensuel indisponible'
+                                                                        : Localizations.localeOf(context).languageCode ==
+                                                                                'ar'
+                                                                            ? 'السجل الشهري غير متاح'
+                                                                            : 'Monthly history unavailable'),
                                                                     style: t
                                                                         .bodyMedium
                                                                         ?.copyWith(
@@ -1067,6 +1075,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                               : CustomPaint(
                                                                   painter:
                                                                       _RevenueLineChartPainter(
+                                                                    labelColor:
+                                                                        cs.onSurfaceVariant,
                                                                     values:
                                                                         _chartRevenue,
                                                                     labels:
@@ -1158,43 +1168,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                           height: 12),
                                                       SizedBox(
                                                         height: 180,
-                                                        child:
-                                                            _chartRevenue
-                                                                    .isEmpty
-                                                                ? Center(
-                                                                    child: Text(
-                                                                      l10n.noInvoicesYet,
-                                                                      style: t
-                                                                          .bodyMedium
-                                                                          ?.copyWith(
-                                                                        color: cs
-                                                                            .onSurfaceVariant,
-                                                                        fontWeight:
-                                                                            FontWeight.w700,
-                                                                      ),
-                                                                    ),
-                                                                  )
-                                                                : CustomPaint(
-                                                                    painter:
-                                                                        _RevenueLineChartPainter(
-                                                                      values:
-                                                                          _chartRevenue,
-                                                                      labels:
-                                                                          _chartMonths,
-                                                                      lineColor:
-                                                                          cs.primary,
-                                                                      fillColor: cs
-                                                                          .primary
-                                                                          .withValues(
-                                                                              alpha: 0.10),
-                                                                      gridColor: cs
-                                                                          .outlineVariant
-                                                                          .withValues(
-                                                                              alpha: 0.25),
-                                                                    ),
-                                                                    child: const SizedBox
-                                                                        .expand(),
+                                                        child: _chartRevenue
+                                                                    .length <
+                                                                2
+                                                            ? Center(
+                                                                child: Text(
+                                                                  (Localizations.localeOf(context)
+                                                                              .languageCode ==
+                                                                          'fr'
+                                                                      ? 'Historique mensuel indisponible'
+                                                                      : Localizations.localeOf(context).languageCode ==
+                                                                              'ar'
+                                                                          ? 'السجل الشهري غير متاح'
+                                                                          : 'Monthly history unavailable'),
+                                                                  style: t
+                                                                      .bodyMedium
+                                                                      ?.copyWith(
+                                                                    color: cs
+                                                                        .onSurfaceVariant,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w700,
                                                                   ),
+                                                                ),
+                                                              )
+                                                            : CustomPaint(
+                                                                painter:
+                                                                    _RevenueLineChartPainter(
+                                                                  labelColor: cs
+                                                                      .onSurfaceVariant,
+                                                                  values:
+                                                                      _chartRevenue,
+                                                                  labels:
+                                                                      _chartMonths,
+                                                                  lineColor: cs
+                                                                      .primary,
+                                                                  fillColor: cs
+                                                                      .primary
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.10),
+                                                                  gridColor: cs
+                                                                      .outlineVariant
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.25),
+                                                                ),
+                                                                child:
+                                                                    const SizedBox
+                                                                        .expand(),
+                                                              ),
                                                       ),
                                                     ],
                                                   ),
@@ -2322,6 +2345,7 @@ class _RevenueLineChartPainter extends CustomPainter {
   final Color lineColor;
   final Color fillColor;
   final Color gridColor;
+  final Color labelColor;
 
   _RevenueLineChartPainter({
     required this.values,
@@ -2329,6 +2353,7 @@ class _RevenueLineChartPainter extends CustomPainter {
     required this.lineColor,
     required this.fillColor,
     required this.gridColor,
+    required this.labelColor,
   });
 
   @override
@@ -2439,7 +2464,7 @@ class _RevenueLineChartPainter extends CustomPainter {
           text: TextSpan(
             text: label,
             style: TextStyle(
-              color: gridColor.withValues(alpha: 0.95),
+              color: labelColor,
               fontSize: 9,
               fontWeight: FontWeight.w600,
             ),
@@ -2463,7 +2488,8 @@ class _RevenueLineChartPainter extends CustomPainter {
         oldDelegate.labels != labels ||
         oldDelegate.lineColor != lineColor ||
         oldDelegate.fillColor != fillColor ||
-        oldDelegate.gridColor != gridColor;
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.labelColor != labelColor;
   }
 }
 

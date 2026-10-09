@@ -1,13 +1,16 @@
+import 'package:my_app/screens/invoice_payments_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/l10n/mobile_labels.dart';
 import 'package:my_app/screens/pdf_preview_screen.dart';
 import 'package:my_app/screens/add_client_screen.dart';
 import 'package:my_app/widgets/app_alerts.dart';
 import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/currency_service.dart';
 import 'package:my_app/services/exchange_rate_service.dart';
-import 'package:my_app/services/invoice_pdf_service.dart';
+import 'package:my_app/core/api_client.dart';
+import 'package:my_app/core/api_config.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/clients_repo.dart';
 import 'package:my_app/storage/invoice_items_repo.dart';
@@ -15,7 +18,6 @@ import 'package:my_app/storage/invoices_repo.dart';
 import 'package:my_app/storage/products_repo.dart';
 import 'package:my_app/screens/add_product_screen.dart';
 import 'package:my_app/widgets/app_top_bar.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
   final int invoiceId;
@@ -215,6 +217,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
 
       if (!mounted) return;
       await _loadAll();
+      await _loadAll(recomputeTotals: false);
       _toast(l10n.invoiceStatusUpdated, tone: AlertTone.success);
     } catch (e) {
       if (!mounted) return;
@@ -249,24 +252,9 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       final items = await _invoiceItemsRepo.getInvoiceItems(widget.invoiceId);
       final currentUser = await _authService.me();
       final currency = await _settingsService.getCurrency();
-      final userUsesFodec =
-          ExchangeRateService.fodecEnabledFromMap(currentUser);
-      final invoiceFodecRate = userUsesFodec
-          ? ExchangeRateService.fodecRateForCurrency(currency)
-          : 0.0;
-      final invoiceBaseTva = invoiceFodecRate <= 0.0005
-          ? remoteInv['subtotal']
-          : (remoteInv['base_tva'] ?? remoteInv['subtotal']);
-      final fallbackTotal = _toD(invoiceBaseTva) +
-          _toD(remoteInv['montant_tva']) +
-          _toD(remoteInv['timbre'], ExchangeRateService.timbreTnd);
-      final invoiceTotal = invoiceFodecRate <= 0.0005
-          ? _toD(remoteInv['subtotal']) +
-              _toD(remoteInv['montant_tva']) +
-              _toD(remoteInv['timbre'], ExchangeRateService.timbreTnd)
-          : (_toD(remoteInv['total']) <= fallbackTotal + 0.0005
-              ? fallbackTotal
-              : remoteInv['total']);
+      final invoiceFodecRate = _toD(remoteInv['fodec_rate']);
+      final invoiceBaseTva = remoteInv['base_tva'] ?? remoteInv['subtotal'];
+      final invoiceTotal = remoteInv['total'];
 
       final rawClientId = remoteInv['custom_code'];
       final clientId = rawClientId is int
@@ -291,6 +279,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
 
       final inv = {
         'id': remoteInv['id'],
+        'invoice_type': remoteInv['invoice_type'],
         'clientId': (clientId ?? 0),
         'invoiceNumber': remoteInv['invoice'],
         'issueDate': remoteInv['invoice_date'],
@@ -479,11 +468,16 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       return;
     }
 
+    final isQuotation = _invoice?['invoice_type'] == 'DEVIS';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(l10n.confirmValidateInvoiceTitle),
-        content: Text(l10n.confirmValidateInvoiceBody),
+        title: Text(isQuotation
+            ? l10n.kindQuotation
+            : l10n.confirmValidateInvoiceTitle),
+        content: Text(isQuotation
+            ? localizedWorkflowStatus(l10n, 'SENT')
+            : l10n.confirmValidateInvoiceBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -492,7 +486,9 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
           FilledButton.icon(
             onPressed: () => Navigator.pop(context, true),
             icon: const Icon(Icons.check_rounded),
-            label: Text(l10n.validateInvoice),
+            label: Text(isQuotation
+                ? localizedWorkflowStatus(l10n, 'SENT')
+                : l10n.validateInvoice),
           ),
         ],
       ),
@@ -503,11 +499,15 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
     setState(() => _updatingStatus = true);
 
     try {
-      await _invoicesRepo.updateInvoiceStatus(widget.invoiceId, 'UNPAID');
+      if (isQuotation) {
+        await _invoicesRepo.updateQuotationStatus(widget.invoiceId, 'SENT');
+      } else {
+        await _invoicesRepo.updateInvoiceStatus(widget.invoiceId, 'UNPAID');
+      }
       if (!mounted) return;
 
       setState(() {
-        _invoice!['status'] = 'UNPAID';
+        _invoice!['status'] = isQuotation ? 'SENT' : 'UNPAID';
         _updatingStatus = false;
       });
 
@@ -726,69 +726,37 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
       return;
     }
 
-    final client = <String, dynamic>{
-      'name': _invoice!['clientName'],
-      'type': _invoice!['clientType'],
-      'fiscalId': _invoice!['clientFiscalId'],
-      'cin': _invoice!['clientCin'],
-      'email': _invoice!['clientEmail'],
-      'phone': _invoice!['clientPhone'],
-      'address': _invoice!['clientAddress'],
-    };
-
-    final Map<String, String> labels = {
-      'invoice': l10n.invoice,
-      'issueDate': l10n.issue,
-      'dueDate': l10n.due,
-      'organization': l10n.organizationName,
-      'userFiscalId': l10n.fiscalId,
-      'name': 'Name',
-      'fiscalId': l10n.fiscalId,
-      'cin': l10n.cin,
-      'identifier': 'Identifier',
-      'address': l10n.address,
-      'email': l10n.email,
-      'phone': l10n.phone,
-      'type': 'Type',
-      'items': 'Items',
-      'notes': 'Notes',
-      'subtotal': 'Subtotal',
-      'vat': 'TVA',
-      'total': 'Total',
-      'product': l10n.product,
-      'qty': l10n.qty,
-      'price': l10n.price,
-      'discount': l10n.discountPercent,
-      'ht': 'HT',
-      'ttc': 'TTC',
-      'website': l10n.website,
-      'fax': l10n.fax,
-    };
-
-    final prefs = await SharedPreferences.getInstance();
-    final logoPath = prefs.getString('profile_image_path');
-
-    final bytes = await InvoicePdfService.buildInvoicePdf(
-      invoice: _invoice!,
-      client: client,
-      items: _items,
-      colorScheme: Theme.of(context).colorScheme,
-      labels: labels,
-      logoPath: logoPath,
-    );
-
-    if (!mounted) return;
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PdfPreviewScreen(
-          pdfBytes: bytes,
-          title: (_invoice!['invoiceNumber'] ?? l10n.invoice).toString(),
-          clientEmail: (_invoice!['clientEmail'] ?? '').toString().trim(),
-        ),
-      ),
-    );
+    try {
+      final invoice = await _invoicesRepo.getInvoiceById(widget.invoiceId);
+      final type = switch ('${invoice['invoice_type']}'.toUpperCase()) {
+        'DEVIS' => 'devis',
+        'AVOIR' => 'credit_note',
+        _ => 'invoice',
+      };
+      final bytes = await ApiClient.instance.getPdf(
+        ApiConfig.documentPdf,
+        queryParams: {
+          'type': type,
+          'id': widget.invoiceId,
+          'language': l10n.localeName.split('_').first,
+        },
+      );
+      if (!mounted) return;
+      await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PdfPreviewScreen(
+              pdfBytes: bytes,
+              title: (invoice['invoice_number'] ??
+                      _invoice!['invoiceNumber'] ??
+                      l10n.invoice)
+                  .toString(),
+              clientEmail: (_invoice!['clientEmail'] ?? '').toString().trim(),
+            ),
+          ));
+    } catch (error) {
+      _toast('${l10n.loadFailed}: $error', tone: AlertTone.error);
+    }
   }
 
   void _toast(String msg, {AlertTone tone = AlertTone.info}) {
@@ -1891,6 +1859,18 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
         currentPrimaryColor: widget.currentPrimaryColor,
         showProfileAction: false,
         actions: [
+          if (_invoice?['invoice_type'] == 'FACTURE' && !_isDraftInvoice)
+            IconButton(
+                icon: const Icon(Icons.payments_outlined),
+                tooltip: l10n.paymentMethod,
+                onPressed: () async {
+                  await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => InvoicePaymentsScreen(
+                              invoiceId: widget.invoiceId)));
+                  if (mounted) await _loadAll(recomputeTotals: false);
+                }),
           // PDF preview
           IconButton(
             onPressed: _previewPdf,
@@ -1905,7 +1885,9 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
               child: FilledButton.tonalIcon(
                 onPressed: _canMarkDraftAsUnpaid ? _markDraftAsUnpaid : null,
                 icon: const Icon(Icons.verified_rounded),
-                label: Text(l10n.validateInvoice),
+                label: Text(_invoice?['invoice_type'] == 'DEVIS'
+                    ? localizedWorkflowStatus(l10n, 'SENT')
+                    : l10n.validateInvoice),
               ),
             )
           else

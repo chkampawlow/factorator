@@ -207,7 +207,9 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
               color: cs.surface,
             ),
             pdfPreviewPageDecoration: BoxDecoration(
-              color: cs.surface,
+              // PDF pages use document colours, independent of the app theme.
+              // Transparent page regions need white behind dark invoice text.
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(

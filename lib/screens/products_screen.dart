@@ -375,12 +375,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final id = int.tryParse('${summary['id']}') ?? 0;
     if (id <= 0) return;
     try {
-      final canViewHistory = _can(AppPermission.stockView);
+      final canViewHistory =
+          !_isService(summary) && _can(AppPermission.stockView);
       final product = await _repo.getInventoryDetail(
         id,
         includeHistory: canViewHistory,
       );
       if (!mounted) return;
+      final isService = _isService(product);
       final stock = double.tryParse('${product['current_stock'] ?? 0}') ?? 0;
       final reorder = double.tryParse('${product['reorder_point'] ?? 0}') ?? 0;
       final hasReorderPoint = product.containsKey('reorder_point');
@@ -399,28 +401,29 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   style: Theme.of(context).textTheme.headlineSmall),
               Text('${product['code'] ?? ''} • ${product['unit'] ?? ''}'),
               const SizedBox(height: 18),
-              Card(
-                color: hasReorderPoint && stock <= reorder
-                    ? Theme.of(context).colorScheme.errorContainer
-                    : null,
-                child: ListTile(
-                  leading: const Icon(Icons.inventory_2_outlined),
-                  title: Text('Physical stock: $stock'),
-                  subtitle: hasReorderPoint
-                      ? Text('Reorder point: $reorder')
-                      : const Text('Current product availability'),
-                  trailing: hasReorderPoint && stock <= reorder
-                      ? const Icon(Icons.warning_amber_rounded)
-                      : const Icon(Icons.check_circle_outline),
+              if (!isService)
+                Card(
+                  color: hasReorderPoint && stock <= reorder
+                      ? Theme.of(context).colorScheme.errorContainer
+                      : null,
+                  child: ListTile(
+                    leading: const Icon(Icons.inventory_2_outlined),
+                    title: Text('Physical stock: $stock'),
+                    subtitle: hasReorderPoint
+                        ? Text('Reorder point: $reorder')
+                        : const Text('Current product availability'),
+                    trailing: hasReorderPoint && stock <= reorder
+                        ? const Icon(Icons.warning_amber_rounded)
+                        : const Icon(Icons.check_circle_outline),
+                  ),
                 ),
-              ),
-              if (hasReorderPoint && stock <= reorder)
+              if (!isService && hasReorderPoint && stock <= reorder)
                 const Padding(
                   padding: EdgeInsets.all(8),
                   child: Text('Reorder recommended',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-              if (canViewHistory) ...[
+              if (!isService && canViewHistory) ...[
                 const SizedBox(height: 12),
                 Text('Recent movements',
                     style: Theme.of(context).textTheme.titleMedium),
@@ -444,8 +447,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   );
                 }),
               ],
-              if (_can(AppPermission.stockAdjust) &&
-                  '${product['item_type']}'.toUpperCase() != 'SERVICE') ...[
+              if (!isService && _can(AppPermission.stockAdjust)) ...[
                 const SizedBox(height: 12),
                 FilledButton.icon(
                   onPressed: () {
@@ -480,6 +482,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<void> _adjustStock(
       Map<String, dynamic> product, double currentStock) async {
+    if (_isService(product)) return;
     if (!_requirePermission(AppPermission.stockAdjust)) return;
     final quantity = TextEditingController();
     final detail = TextEditingController();
@@ -601,14 +604,19 @@ class _ProductsScreenState extends State<ProductsScreen> {
         onChangeLanguage: widget.onChangeLanguage,
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
-      floatingActionButton: _filtered.isEmpty ||
-              !_can(AppPermission.productsCreate)
+      floatingActionButton: !(_can(AppPermission.productsCreate) ||
+              AccessScope.of(context).permissions.allows('services.create'))
           ? null
           : FloatingActionButton.extended(
               onPressed: () async {
                 final res = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const AddProductScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => AddProductScreen(
+                          initialItemType: _activeKind == 'service' ||
+                                  !_can(AppPermission.productsCreate)
+                              ? 'SERVICE'
+                              : 'PRODUCT')),
                 );
 
                 // If AddProductScreen returns the created product map, insert it immediately.

@@ -261,6 +261,78 @@ class ApiClient {
     return Uint8List.fromList(bytes);
   }
 
+  Future<Uint8List> getCompanyLogo(
+    String endpoint, {
+    bool authRequired = true,
+    Map<String, dynamic>? queryParams,
+  }) async {
+    Future<http.Response> send() async => http
+        .get(
+          _uri(endpoint, queryParams),
+          headers: await _headers(authRequired: authRequired),
+        )
+        .withApiErrors(_requestTimeout);
+
+    var response = await send();
+    await _captureAuthCookies(response);
+    if (response.statusCode == 401 && authRequired) {
+      final refreshed = await _refreshAccessToken();
+      if (refreshed) {
+        response = await send();
+        await _captureAuthCookies(response);
+      }
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _handleResponse(response);
+    }
+    final bytes = response.bodyBytes;
+    final mime =
+        (response.headers['content-type'] ?? '').split(';').first.trim();
+    if (!['image/png', 'image/jpeg'].contains(mime) ||
+        bytes.isEmpty ||
+        bytes.length > 2 * 1024 * 1024) {
+      throw Exception('Server returned an invalid company logo.');
+    }
+    return Uint8List.fromList(bytes);
+  }
+
+  Future<Uint8List> getPaymentProof(int paymentId) async {
+    const authRequired = true;
+    const endpoint = '${ApiConfig.baseUrl}/invoice_settlements/download.php';
+    final queryParams = {'id': paymentId, 'type': 'PAYMENT'};
+    Future<http.Response> send() async => http
+        .get(
+          _uri(endpoint, queryParams),
+          headers: await _headers(authRequired: authRequired),
+        )
+        .withApiErrors(_requestTimeout);
+
+    var response = await send();
+    await _captureAuthCookies(response);
+    if (response.statusCode == 401 && authRequired) {
+      final refreshed = await _refreshAccessToken();
+      if (refreshed) {
+        response = await send();
+        await _captureAuthCookies(response);
+      }
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _handleResponse(response);
+    }
+    final bytes = response.bodyBytes;
+    final mime =
+        (response.headers['content-type'] ?? '').split(';').first.trim();
+    if (!['application/pdf', 'image/png', 'image/jpeg', 'image/webp']
+            .contains(mime) ||
+        bytes.isEmpty ||
+        bytes.length > 10 * 1024 * 1024) {
+      throw Exception('Server returned an invalid payment proof.');
+    }
+    return Uint8List.fromList(bytes);
+  }
+
   /// Loads all available pages from the backend's standard paginated list
   /// contract. [maxPages] is a defensive ceiling, not the normal page count.
   Future<List<Map<String, dynamic>>> getAllPages(

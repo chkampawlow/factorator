@@ -1,14 +1,15 @@
+import 'package:my_app/screens/invoice_payments_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/core/access_scope.dart';
 import 'package:my_app/core/permission_service.dart';
 import 'package:my_app/l10n/app_localizations.dart';
+import 'package:my_app/l10n/mobile_labels.dart';
+import 'package:my_app/core/invoice_due.dart';
 import 'package:my_app/screens/add_client_screen.dart';
 import 'package:my_app/screens/invoice_edit_screen.dart';
 import 'package:my_app/screens/sales_orders_screen.dart';
 import 'package:my_app/screens/deliveries_screen.dart';
-import 'package:my_app/services/auth_service.dart';
 import 'package:my_app/services/currency_service.dart';
-import 'package:my_app/services/exchange_rate_service.dart';
 import 'package:my_app/services/settings_service.dart';
 import 'package:my_app/storage/clients_repo.dart';
 import 'package:my_app/storage/invoices_repo.dart';
@@ -93,17 +94,16 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   final InvoicesRepo _repo = InvoicesRepo();
-  final AuthService _authService = AuthService();
   final SettingsService _settingsService = SettingsService();
   final ClientsRepo _clientsRepo = ClientsRepo();
   final TextEditingController _searchCtrl = TextEditingController();
 
   bool _loading = true;
   bool _didLoadOnce = false;
-  bool _updatingStatus = false;
+  final bool _updatingStatus = false;
   String _currency = 'TND';
   String _statusFilter = 'all';
-  String _documentFilter = 'all';
+  String _documentFilter = 'FACTURE';
   List<Map<String, dynamic>> _invoices = [];
 
   List<Map<String, dynamic>> get _filteredInvoices {
@@ -131,6 +131,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
               ? _isOverdue(
                   _normalizedStatus((inv['status'] ?? 'UNPAID').toString()),
                   _parseDate(inv['invoice_due_date']),
+                  '${inv['invoice_type'] ?? ''}',
                 )
               : status == _statusFilter;
       final matchesDocument = _documentFilter == 'all' ||
@@ -155,8 +156,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       final aDue = _parseDate(a['invoice_due_date']);
       final bDue = _parseDate(b['invoice_due_date']);
 
-      final aOverdue = _isOverdue(aStatus, aDue);
-      final bOverdue = _isOverdue(bStatus, bDue);
+      final aOverdue = _isOverdue(aStatus, aDue, '${a['invoice_type'] ?? ''}');
+      final bOverdue = _isOverdue(bStatus, bDue, '${b['invoice_type'] ?? ''}');
 
       if (aOverdue != bOverdue) {
         return aOverdue ? -1 : 1;
@@ -188,6 +189,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     super.didChangeDependencies();
     if (!_didLoadOnce) {
       _didLoadOnce = true;
+      if (!_can(AppPermission.invoicesView) && _can(AppPermission.devisView)) {
+        _documentFilter = 'DEVIS';
+      }
       _statusFilter = _normalizeFilterInput(widget.initialStatus);
       _load();
     }
@@ -228,10 +232,32 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   Future<void> _createDraftAndOpenEdit() async {
-    if (!_requirePermission(AppPermission.invoicesCreate)) return;
+    final permissions = AccessScope.of(context).permissions;
+    final types = [
+      if (permissions.allows('invoices.create')) 'FACTURE',
+      if (permissions.allows('devis.create')) 'DEVIS',
+    ];
+    if (types.isEmpty) return;
     final l10n = AppLocalizations.of(context)!;
     if (_updatingStatus || _loading) return;
 
+    final type = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                for (final type in types)
+                  ListTile(
+                    leading: Icon(type == 'DEVIS'
+                        ? Icons.request_quote_outlined
+                        : Icons.receipt_long),
+                    title: Text(
+                        type == 'DEVIS' ? l10n.kindQuotation : l10n.invoice),
+                    onTap: () => Navigator.pop(sheetContext, type),
+                  ),
+              ]),
+            ));
+    if (!mounted || type == null) return;
     final picked = await _pickClient();
     if (!mounted || picked == null) return;
 
@@ -246,6 +272,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     try {
       final invoiceId = await _repo.createInvoiceHeader(
         clientId: clientId,
+        invoiceType: type,
         issueDate: now,
         dueDate: now.add(const Duration(days: 7)),
         status: 'DRAFT',
@@ -255,6 +282,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       );
 
       if (!mounted) return;
+      setState(() {
+        _documentFilter = type;
+        _statusFilter = 'all';
+        _searchCtrl.clear();
+      });
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -280,7 +312,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   Future<void> _openEdit(int invoiceId) async {
-    if (!_requirePermission(AppPermission.invoicesUpdate)) return;
+    final matches =
+        _invoices.where((invoice) => _toInt(invoice['id']) == invoiceId);
+    if (matches.isEmpty ||
+        !_canEditDocument('${matches.first['invoice_type']}')) {
+      return;
+    }
     if (invoiceId <= 0) return;
 
     await Navigator.push(
@@ -310,32 +347,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     try {
       final data = await _repo.getAllInvoices();
       final currency = await _settingsService.getCurrency();
-      final currentUser = await _authService.me();
-      final userUsesFodec =
-          ExchangeRateService.fodecEnabledFromMap(currentUser);
-      final fodecRate = userUsesFodec
-          ? ExchangeRateService.fodecRateForCurrency(currency)
-          : 0.0;
 
       if (!mounted) return;
 
       setState(() {
-        _invoices = data.map((invoice) {
-          final normalized = Map<String, dynamic>.from(invoice);
-          if (!userUsesFodec) {
-            final subtotal = _toDouble(normalized['subtotal']);
-            final vatAmount = _toDouble(normalized['montant_tva']);
-            final timbre = _toDouble(normalized['timbre']);
-            normalized['fodec'] = 0.0;
-            normalized['fodec_rate'] = 0.0;
-            normalized['base_tva'] = subtotal;
-            normalized['total'] = subtotal + vatAmount + timbre;
-          } else {
-            normalized['fodec'] = 1;
-            normalized['fodec_rate'] = fodecRate;
-          }
-          return normalized;
-        }).toList();
+        _invoices =
+            data.map((invoice) => Map<String, dynamic>.from(invoice)).toList();
         _currency = currency;
         _loading = false;
         if (widget.initialInvoiceId > 0) {
@@ -379,7 +396,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     if (s == 'OPEN') return 'UNPAID';
     if (s == 'PAID') return 'PAID';
     if (s == 'CANCELLED' || s == 'CANCELED') return 'CANCELLED';
-    return 'UNPAID';
+    return s;
   }
 
   String _statusLabel(String status, AppLocalizations l10n) {
@@ -387,10 +404,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     if (s == 'DRAFT') return l10n.draftLabel.toUpperCase();
     if (s == 'PAID') return l10n.paidLabel.toUpperCase();
     if (s == 'CANCELLED') return l10n.cancelledLabel.toUpperCase();
-    return l10n.unpaidLabel.toUpperCase();
+    if (s == 'UNPAID') return l10n.unpaidLabel.toUpperCase();
+    return localizedWorkflowStatus(l10n, s).toUpperCase();
   }
 
-  bool _isOverdue(String status, DateTime due) {
+  bool _isOverdue(String status, DateTime due, String type) {
+    if (!hasInvoicePaymentDue(type, status)) return false;
     final normalized = _normalizedStatus(status);
     final now = DateTime.now();
     final dueOnly = DateTime(due.year, due.month, due.day);
@@ -401,7 +420,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         dueOnly.isBefore(today);
   }
 
-  bool _isDueSoon(String status, DateTime due) {
+  bool _isDueSoon(String status, DateTime due, String type) {
+    if (!hasInvoicePaymentDue(type, status)) return false;
     final normalized = _normalizedStatus(status);
     if (normalized == 'PAID' || normalized == 'CANCELLED') return false;
 
@@ -431,167 +451,50 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     return cs.onTertiaryContainer;
   }
 
-  Future<void> _updateInvoiceStatus(
-    int invoiceId,
-    String status, {
-    String? paymentMethod,
-  }) async {
-    if (!_requirePermission(AppPermission.invoicesUpdate)) return;
-    final l10n = AppLocalizations.of(context)!;
-
-    if (_updatingStatus) return;
-
-    setState(() {
-      _updatingStatus = true;
-    });
-
-    try {
-      await _repo.updateInvoiceStatus(
-        invoiceId,
-        status,
-        paymentMethod: paymentMethod,
-      );
-      if (!mounted) return;
-
-      AppAlerts.success(context, l10n.invoiceStatusUpdated);
-
-      await _load();
-    } catch (e) {
-      if (!mounted) return;
-      AppAlerts.error(
-        context,
-        '${l10n.updateFailed}: ${e.toString().replaceFirst('Exception: ', '')}',
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _updatingStatus = false;
-        });
-      }
-    }
-  }
-
-  Future<String?> _pickPaymentMethod() async {
-    final l10n = AppLocalizations.of(context)!;
-    final methods = <({IconData icon, String value, String label})>[
-      (icon: Icons.payments_outlined, value: 'CASH', label: l10n.paymentCash),
-      (icon: Icons.credit_card_rounded, value: 'CARD', label: l10n.paymentCard),
-      (
-        icon: Icons.account_balance_rounded,
-        value: 'TRANSFER',
-        label: l10n.paymentTransfer
-      ),
-      (
-        icon: Icons.receipt_long_outlined,
-        value: 'CHECK',
-        label: l10n.paymentCheck
-      ),
-    ];
-
-    return showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.paymentMethod,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                for (final method in methods) ...[
-                  ListTile(
-                    leading: Icon(method.icon),
-                    title: Text(method.label),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    onTap: () => Navigator.pop(context, method.value),
-                  ),
-                  const SizedBox(height: 4),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _showStatusSheet(int invoiceId, String currentStatus) async {
-    if (!_requirePermission(AppPermission.invoicesUpdate)) return;
-    final l10n = AppLocalizations.of(context)!;
-    final normalized = _normalizedStatus(currentStatus);
-    if (normalized == 'DRAFT') {
+    final rows = _invoices.where((row) => _toInt(row['id']) == invoiceId);
+    if (rows.isEmpty) return;
+    final type = '${rows.first['invoice_type']}'.toUpperCase();
+    if (type == 'DEVIS' && !_canEditDocument(type)) return;
+    if (type != 'DEVIS' &&
+        !AccessScope.of(context)
+            .permissions
+            .allowsAny(['payments.view', 'payments.record', 'invoices.view'])) {
       return;
     }
-
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.changeStatus,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 14),
-                _StatusActionTile(
-                  icon: Icons.check_circle_rounded,
-                  title: l10n.markAsPaid,
-                  selected: normalized == 'PAID',
-                  onTap: () async {
-                    Navigator.pop(context);
-                    final paymentMethod = await _pickPaymentMethod();
-                    if (paymentMethod == null) return;
-                    await _updateInvoiceStatus(
-                      invoiceId,
-                      'PAID',
-                      paymentMethod: paymentMethod,
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                _StatusActionTile(
-                  icon: Icons.payments_outlined,
-                  title: l10n.markAsUnpaid,
-                  selected: normalized == 'UNPAID',
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _updateInvoiceStatus(invoiceId, 'UNPAID');
-                  },
-                ),
-                const SizedBox(height: 8),
-                _StatusActionTile(
-                  icon: Icons.cancel_rounded,
-                  title: l10n.markAsCancelled,
-                  selected: normalized == 'CANCELLED',
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _updateInvoiceStatus(invoiceId, 'CANCELLED');
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    final l10n = AppLocalizations.of(context)!;
+    if (type == 'DEVIS') {
+      final next = currentStatus.toUpperCase() == 'SENT'
+          ? ['ACCEPTED', 'REJECTED']
+          : <String>[];
+      if (next.isEmpty) return;
+      final status = await showModalBottomSheet<String>(
+          context: context,
+          showDragHandle: true,
+          builder: (sheetContext) => SafeArea(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  for (final value in next)
+                    ListTile(
+                      title: Text(localizedWorkflowStatus(l10n, value)),
+                      onTap: () => Navigator.pop(sheetContext, value),
+                    ),
+                ]),
+              ));
+      if (status == null || !mounted) return;
+      try {
+        await _repo.updateQuotationStatus(invoiceId, status);
+        if (mounted) await _load();
+      } catch (error) {
+        if (mounted) AppAlerts.error(context, error.toString());
+      }
+      return;
+    }
+    if (type != 'FACTURE' || currentStatus.toUpperCase() == 'DRAFT') return;
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => InvoicePaymentsScreen(invoiceId: invoiceId)));
+    if (mounted) await _load();
   }
 
   @override
@@ -615,15 +518,29 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
             IconButton(
               tooltip: 'Sales orders',
               icon: const Icon(Icons.shopping_bag_outlined),
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SalesOrdersScreen())),
+              onPressed: () {
+                final permissions = AccessScope.of(context).permissions;
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => AccessScope(
+                            permissions: permissions,
+                            child: const SalesOrdersScreen())));
+              },
             ),
           if (AccessScope.of(context).permissions.allows('deliveries.view'))
             IconButton(
               tooltip: 'Deliveries',
               icon: const Icon(Icons.local_shipping_outlined),
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const DeliveriesScreen())),
+              onPressed: () {
+                final permissions = AccessScope.of(context).permissions;
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => AccessScope(
+                            permissions: permissions,
+                            child: const DeliveriesScreen())));
+              },
             ),
         ],
         onToggleTheme: widget.onToggleTheme,
@@ -632,14 +549,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         currentPrimaryColor: widget.currentPrimaryColor,
       ),
       floatingActionButton: _loading ||
-              _invoices.isEmpty ||
-              !_can(AppPermission.invoicesCreate) ||
-              !['all', 'FACTURE'].contains(_documentFilter)
+              !(_can(AppPermission.invoicesCreate) ||
+                  AccessScope.of(context).permissions.allows('devis.create'))
           ? null
           : FloatingActionButton.extended(
               onPressed: _createDraftAndOpenEdit,
               icon: const Icon(Icons.add),
-              label: Text(l10n.newInvoice),
+              label: Text(l10n.add),
             ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -848,8 +764,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                         _parseDate(inv['invoice_due_date']);
                                     final issue =
                                         _parseDate(inv['invoice_date']);
-                                    final overdue = _isOverdue(status, due);
-                                    final dueSoon = _isDueSoon(status, due);
+                                    final overdue =
+                                        _isOverdue(status, due, invoiceType);
+                                    final dueSoon =
+                                        _isDueSoon(status, due, invoiceType);
 
                                     final paymentRaw = (inv['payment_method'] ??
                                             inv['paymentMethod'] ??
@@ -1044,8 +962,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                                         fg: _statusFg(status,
                                                             overdue, cs),
                                                         onTap: (_updatingStatus ||
-                                                                !_can(AppPermission
-                                                                    .invoicesUpdate) ||
+                                                                !_canEditDocument(
+                                                                    invoiceType) ||
                                                                 status ==
                                                                     'DRAFT')
                                                             ? null
@@ -1238,60 +1156,6 @@ class _MetaChip extends StatelessWidget {
               color: cs.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
-      ),
-    );
-  }
-}
-
-class _StatusActionTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _StatusActionTile({
-    required this.icon,
-    required this.title,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: selected
-              ? cs.primaryContainer.withValues(alpha: 0.65)
-              : cs.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected
-                ? cs.primary.withValues(alpha: 0.4)
-                : cs.outlineVariant.withValues(alpha: 0.25),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-            ),
-            if (selected) const Icon(Icons.check_circle_rounded),
-          ],
-        ),
       ),
     );
   }

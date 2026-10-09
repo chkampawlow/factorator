@@ -114,8 +114,15 @@ class _SalesOrdersScreenState extends State<SalesOrdersScreen> {
           IconButton(
               tooltip: l10n.deliveriesTitle,
               icon: const Icon(Icons.local_shipping_outlined),
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const DeliveriesScreen())))
+              onPressed: () {
+                final permissions = AccessScope.of(context).permissions;
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => AccessScope(
+                            permissions: permissions,
+                            child: const DeliveriesScreen())));
+              })
       ]),
       body: Center(
         child: ConstrainedBox(

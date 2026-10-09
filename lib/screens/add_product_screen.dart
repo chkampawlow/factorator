@@ -1,4 +1,7 @@
 import 'dart:ui';
+import 'package:my_app/core/access_scope.dart';
+import 'package:my_app/core/permission_service.dart';
+import 'package:my_app/core/session_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
@@ -12,8 +15,10 @@ import '../services/exchange_rate_service.dart';
 
 class AddProductScreen extends StatefulWidget {
   final Map<String, dynamic>? product;
+  final String initialItemType;
 
-  const AddProductScreen({super.key, this.product});
+  const AddProductScreen(
+      {super.key, this.product, this.initialItemType = 'PRODUCT'});
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -44,6 +49,7 @@ class _AddProductScreenState extends State<AddProductScreen>
   final _code = TextEditingController();
   final _barcode = TextEditingController();
 
+  String _itemType = 'PRODUCT';
   bool _loading = false;
   String _currency = 'TND';
 
@@ -52,6 +58,16 @@ class _AddProductScreenState extends State<AddProductScreen>
   late final Animation<Offset> _slide;
 
   bool get isEdit => widget.product != null;
+
+  // Navigator routes do not inherit the shell's AccessScope. Use the active
+  // authenticated session there, and deny actions when no session is present.
+  bool _allows(String permission) {
+    final scoped = AccessScope.maybeOf(context)?.permissions;
+    final session = SessionService.instance.current;
+    final permissions =
+        scoped ?? (session == null ? null : PermissionService(session));
+    return permissions?.allows(permission) ?? false;
+  }
 
   @override
   void initState() {
@@ -80,6 +96,12 @@ class _AddProductScreenState extends State<AddProductScreen>
     _loadCurrency();
 
     final p = widget.product;
+    _itemType = (p?['item_type'] ??
+            (p != null && '${p['unit']}'.trim().toLowerCase() == 'service'
+                ? 'SERVICE'
+                : widget.initialItemType))
+        .toString()
+        .toUpperCase();
 
     if (p != null) {
       _code.text = (p['code'] ?? '').toString();
@@ -90,12 +112,25 @@ class _AddProductScreenState extends State<AddProductScreen>
       _unit.text = (p['unit'] ?? '').toString();
     } else {
       _tvaRate.text = '19';
+      if (_itemType == 'SERVICE') _unit.text = 'service';
     }
 
     _name.addListener(_refresh);
     _price.addListener(_refresh);
     _tvaRate.addListener(_refresh);
     _unit.addListener(_refresh);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!isEdit &&
+        _itemType == 'PRODUCT' &&
+        !_allows('products.create') &&
+        _allows('services.create')) {
+      _itemType = 'SERVICE';
+      _unit.text = 'service';
+    }
   }
 
   Future<void> _loadCurrency() async {
@@ -219,12 +254,12 @@ class _AddProductScreenState extends State<AddProductScreen>
           _barcode.text.trim().isEmpty ? null : _barcode.text.trim();
       final name = _name.text.trim();
       final unit = _unit.text.trim().isEmpty ? null : _unit.text.trim();
-      final itemType = isEdit
-          ? (widget.product!['item_type'] ??
-                  (unit?.toLowerCase() == 'service' ? 'SERVICE' : 'PRODUCT'))
-              .toString()
-              .toUpperCase()
-          : (unit?.toLowerCase() == 'service' ? 'SERVICE' : 'PRODUCT');
+      final itemType = _itemType;
+      final permission =
+          '${itemType == 'SERVICE' ? 'services' : 'products'}.${isEdit ? 'edit' : 'create'}';
+      if (!_allows(permission)) {
+        throw Exception('Permission denied');
+      }
 
       final entered = _parseNum(_price.text);
       final tvaRate = _parseNum(_tvaRate.text);
@@ -465,6 +500,39 @@ class _AddProductScreenState extends State<AddProductScreen>
                                   ),
                                   child: Column(
                                     children: [
+                                      DropdownButtonFormField<String>(
+                                        initialValue: _itemType,
+                                        decoration: _fieldDeco(context,
+                                            label: l10n.productsServices,
+                                            icon: Icons.category_outlined),
+                                        items: [
+                                          if (isEdit ||
+                                              _itemType == 'PRODUCT' ||
+                                              _allows('products.create'))
+                                            DropdownMenuItem(
+                                                value: 'PRODUCT',
+                                                child: Text(l10n.product)),
+                                          if (isEdit ||
+                                              _itemType == 'SERVICE' ||
+                                              _allows('services.create'))
+                                            DropdownMenuItem(
+                                                value: 'SERVICE',
+                                                child: Text(l10n.unitService)),
+                                        ],
+                                        onChanged: isEdit || _loading
+                                            ? null
+                                            : (value) {
+                                                if (value == null) return;
+                                                setState(() {
+                                                  _itemType = value;
+                                                  _unit.text =
+                                                      value == 'SERVICE'
+                                                          ? 'service'
+                                                          : 'pcs';
+                                                });
+                                              },
+                                      ),
+                                      const SizedBox(height: 14),
                                       TextFormField(
                                         controller: _code,
                                         decoration: _fieldDeco(

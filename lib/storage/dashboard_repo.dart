@@ -1,3 +1,4 @@
+import 'package:my_app/core/dashboard_revenue.dart';
 import 'package:my_app/core/api_client.dart';
 import 'package:my_app/core/api_config.dart';
 
@@ -15,6 +16,18 @@ class DashboardRepo {
     final overview = Map<String, dynamic>.from(response);
     if (overview['success'] != true) {
       throw Exception(overview['message'] ?? 'Could not load dashboard');
+    }
+    if (dashboardRevenueRows(overview).length < 2) {
+      try {
+        final history = await _api.get(
+            '${ApiConfig.baseUrl}/dashboard/monthly_revenue.php',
+            authRequired: true);
+        if (history is Map && history['monthly_series'] is List) {
+          overview['monthly_series'] = history['monthly_series'];
+        }
+      } catch (_) {
+        // Keep current totals available without inventing historical revenue.
+      }
     }
     return overview;
   }

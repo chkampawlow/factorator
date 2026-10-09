@@ -21,6 +21,7 @@ class InvoicesRepo {
 
   Future<int> createInvoiceHeader({
     int? clientId,
+    String invoiceType = 'FACTURE',
     required DateTime issueDate,
     DateTime? dueDate,
     required String status,
@@ -29,6 +30,9 @@ class InvoicesRepo {
     required double total,
     double timbre = ExchangeRateService.timbreTnd,
   }) async {
+    if (!['FACTURE', 'DEVIS'].contains(invoiceType)) {
+      throw ArgumentError('Unsupported mobile document type');
+    }
     final cid = _toInt(clientId);
     final totalWithTimbre = total + timbre;
 
@@ -46,7 +50,7 @@ class InvoicesRepo {
         'subtotal_ttc': total,
         'timbre': timbre,
         'total': totalWithTimbre,
-        'invoice_type': 'FACTURE',
+        'invoice_type': invoiceType,
         'notes': '',
       },
     ) as Map<String, dynamic>;
@@ -155,6 +159,17 @@ class InvoicesRepo {
 
     if (res['success'] != true) {
       throw Exception(res['message'] ?? 'Failed to update invoice status');
+    }
+  }
+
+  Future<void> updateQuotationStatus(int invoiceId, String status) async {
+    if (!['SENT', 'ACCEPTED', 'REJECTED'].contains(status)) {
+      throw ArgumentError('Invalid quotation status');
+    }
+    final response = await _api.post(ApiConfig.updateInvoice,
+        authRequired: true, body: {'id': invoiceId, 'status': status}) as Map;
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Could not update quotation');
     }
   }
 
